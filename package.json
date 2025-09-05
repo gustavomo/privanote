@@ -1,0 +1,26 @@
+{
+  "name": "privanote",
+  "version": "0.1.0",
+  "description": "Cross-platform note management app with audio/video support",
+  "main": "src/main/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:main\" \"npm:dev:renderer\"",
+    "dev:main": "electron .",
+    "dev:renderer": "vite",
+    "build": "vite build",
+    "start": "electron .",
+    "test": "echo \"No tests\""
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^8.2.0",
+    "electron": "^28.0.0",
+    "vite": "^4.4.0"
+  }
+}

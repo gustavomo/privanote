@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Privanote is a local-first Electron desktop app for managing content nodes with attached files, audio, and video. It stores note and attachment metadata in SQLite on the user's machine and uses a React renderer with a preload-backed IPC boundary for native desktop actions. The current brownfield scope extends the existing local attachment workflow toward in-app media handling and optional cloud-backed attachment providers.
+Privanote is a local-first monorepo that will contain a desktop frontend app and a backend service. The desktop app should let a single user record or import audio, video, and files, generate transcripts, and save everything locally first with optional sync to Google Drive or OneDrive. In v1 the backend ships locally with the desktop app; cloud deployment strategy is deferred to v2.
 
 ## Core Value
 
@@ -18,42 +18,48 @@ A user can capture and revisit media-backed notes locally, quickly, and without 
 
 ### Active
 
-- [ ] Stabilize startup, storage, and deletion behavior so the current desktop workflow is reliable
-- [ ] Add in-app preview and playback for local attachments
-- [ ] Add Google Drive and OneDrive support for cloud-backed attachments
-- [ ] Add settings for storage directories and provider credentials
-- [ ] Add automated regression coverage for startup, database, and attachment flows
+- [ ] Restructure the project into a monorepo that contains the desktop frontend and backend service
+- [ ] Stabilize startup, storage, and deletion behavior so the local-first workflow is reliable
+- [ ] Add audio and video recording plus import flows and save the resulting media through the backend
+- [ ] Add configurable transcription that can run locally or through the backend depending on settings
+- [ ] Add local-first storage settings with optional Google Drive and OneDrive sync
+- [ ] Add automated regression coverage across frontend, backend, recording, transcription, and storage flows
 
 ### Out of Scope
 
-- Real-time collaboration or shared multi-user workspaces — the current product is a single-user local desktop app
-- Web and mobile clients — the current codebase and roadmap are centered on Electron desktop delivery
-- Full cloud sync of the notes database — current scope is cloud-backed attachments, not full multi-device note synchronization
-- Advanced media editing or transcoding — preview and playback matter before authoring workflows
+- User accounts, sign-in, or verification in v1 — the app is single-user for the first release
+- Hosted or cloud-deployed backend in v1 — deployment strategy is intentionally deferred to v2
+- Real-time collaboration or shared multi-user workspaces — the current product remains a personal/local workflow
+- Web and mobile clients — current scope is the desktop app plus its local backend
+- Advanced media editing or transcoding — capture, transcript, save, and sync matter before editing workflows
 
 ## Context
 
 Privanote is being initialized as a brownfield project. The existing codebase already establishes an Electron `main` / `preload` / React `renderer` split, persists node and attachment data with `better-sqlite3`, and exposes CRUD operations over IPC. The codebase map in `.planning/codebase/` documents that baseline and surfaced current risks, including a startup syntax bug in `src/main/main.js`, missing SQLite foreign-key enforcement in `src/main/database.js`, and absent automated tests.
 
-The repository's current direction is explicit in `README.md`: next milestones are Google Drive / OneDrive connector adapters, attachment preview and media playback, and configurable storage directories plus provider credentials in Settings. Those milestones are treated as the active product scope for this initialization.
+The clarified product direction extends that baseline substantially: the repo should become a monorepo with frontend and backend, the backend should run locally in v1, storage should remain local-first with optional Google Drive or OneDrive sync, and the app should support both recording and importing media. Transcription should be configurable so it can run locally or via the backend depending on user settings.
 
 ## Constraints
 
-- **Tech stack**: Electron 28, React 18, Vite, and `better-sqlite3` — the current application architecture is already built around these choices
-- **Brownfield architecture**: Preserve the Electron main/preload/renderer split — the existing IPC boundary is the core structural pattern in the repo
+- **Monorepo structure**: The repo must evolve into a monorepo containing the desktop frontend and backend — this is now part of the product definition
+- **Brownfield migration**: Existing Electron desktop code must be migrated into the new structure without losing current functionality — the repo already has working note and attachment flows to preserve
+- **Backend deployment**: The backend runs locally in v1 and ships with the app — hosted/cloud deployment is a later decision
 - **Local-first behavior**: User data must remain understandable and controllable on disk — this is central to the product's value proposition
+- **No auth in v1**: The first release should work without accounts or verification — keep flows single-user and direct
+- **Configurable transcription**: The system must support local or backend transcription modes through settings — exact implementation can be decided during Phase 1
 - **Reliability**: Current startup and data-integrity issues must be corrected early — existing code has blocking defects that would undermine new features
-- **Desktop focus**: New work should optimize the Electron desktop experience first — there is no server or alternate client platform in the repo today
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Initialize as a brownfield desktop app rather than a greenfield idea | Existing code and a fresh codebase map provide a concrete starting point | — Pending |
-| Treat README milestones as the active project scope | They are the only explicit next-product statements checked into the repo | — Pending |
-| Keep the product local-first and single-user in v1 | The current architecture and core value are centered on local control and desktop workflows | — Pending |
-| Prioritize foundation fixes before broader feature expansion | Startup and data-integrity bugs would invalidate work built on top of them | — Pending |
-| Scope cloud work around attachment providers, not full database sync | The current roadmap intent mentions provider-backed attachments rather than multi-device sync | — Pending |
+| Re-scope the project as a monorepo with frontend and backend | The product now explicitly requires both desktop UI and backend responsibilities in one repo | — Pending |
+| Run the backend locally in v1 | The first release should work fully on-device before deciding cloud deployment | — Pending |
+| Keep the product local-first and single-user in v1 | The app should work without authentication or verification in the first release | — Pending |
+| Support both recording and importing media | The capture workflow must handle new recordings and existing files | — Pending |
+| Support both local and backend transcription modes | Transcription should be configurable through settings instead of locked to one execution path | — Pending |
+| Scope cloud work around optional storage sync, not mandatory cloud storage | Local storage remains primary while Google Drive and OneDrive are optional destinations | — Pending |
+| Defer hosted backend deployment decisions to v2 | Deployment strategy is intentionally postponed until the local product shape is validated | — Pending |
 
 ## Evolution
 
@@ -73,4 +79,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after initialization*
+*Last updated: 2026-03-28 after scope clarification*

@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A user can capture and revisit media-backed notes locally, quickly, and without losing control of where their data lives.
-**Current focus:** Phase 1 - Foundation and Reliability
+**Current focus:** Phase 1 - Monorepo and Local Backend Foundation
 
 ## Current Position
 
-Phase: 1 of 4 (Foundation and Reliability)
+Phase: 1 of 4 (Monorepo and Local Backend Foundation)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-03-28 — Initial roadmap created and Phase 1 is ready for discussion/planning
+Last activity: 2026-03-28 — Scope clarified to monorepo, local backend, capture, transcription, and optional cloud sync
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -43,8 +43,8 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Phase 1: Prioritize startup, storage integrity, and regression coverage before feature expansion.
-- Phase 3: Add settings before cloud connectors so storage and credentials have one managed surface.
+- Phase 1: Restructure into a monorepo and ship a local backend before feature expansion.
+- Phase 3: Make transcription mode configurable and manage storage/provider settings in one surface.
 
 ### Pending Todos
 
@@ -55,9 +55,10 @@ None yet.
 - Current codebase has a known Electron startup syntax defect in `src/main/main.js`.
 - Current SQLite setup does not enforce foreign-key cascades, risking orphaned attachments.
 - Automated regression coverage is not yet present.
+- Backend implementation stack and transcription engine/provider are still open technical decisions for Phase 1.
 
 ## Session Continuity
 
 Last session: 2026-03-28 20:32
-Stopped at: Roadmap initialization completed; next action is Phase 1 planning
+Stopped at: Scope updated; next action is Phase 1 discussion/planning
 Resume file: None

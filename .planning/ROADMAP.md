@@ -2,7 +2,7 @@
 
 ## Overview
 
-This brownfield roadmap takes Privanote from an unstable but functional local-first Electron app to a reliable attachment workspace with richer media handling, managed settings, and cloud-backed attachment providers. The sequencing starts with startup, storage, deletion, security, and regression fixes so later UI and provider work builds on a trustworthy desktop foundation instead of inheriting current defects.
+This brownfield roadmap takes Privanote from a single-package Electron prototype to a local-first monorepo with a desktop frontend, local backend, media capture flows, configurable transcription, and optional cloud sync. The sequencing starts with monorepo and backend foundation work so recording, transcript, settings, and provider integrations all build on a stable local architecture.
 
 ## Phases
 
@@ -12,81 +12,83 @@ This brownfield roadmap takes Privanote from an unstable but functional local-fi
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation and Reliability** - Fix startup, storage, data-integrity, security defaults, and regression gaps in the current desktop app.
-- [ ] **Phase 2: Local Media Experience** - Add in-app preview, playback, and fallback actions for local attachments.
-- [ ] **Phase 3: Settings and Configuration** - Add a settings surface for storage location and provider credentials with validation.
-- [ ] **Phase 4: Cloud-backed Attachments** - Connect Google Drive and OneDrive and expose provider-backed attachments in the workspace.
+- [ ] **Phase 1: Monorepo and Local Backend Foundation** - Restructure the repo, ship a local backend with the app, and stabilize storage, lifecycle, and test foundations.
+- [ ] **Phase 2: Capture and Save Flows** - Add audio/video recording plus import flows and persist media through the backend.
+- [ ] **Phase 3: Transcription and Settings** - Add configurable local/backend transcription and settings for storage, transcription, and providers.
+- [ ] **Phase 4: Optional Cloud Sync** - Connect Google Drive and OneDrive and sync local-first media to optional cloud storage.
 
 ## Phase Details
 
-### Phase 1: Foundation and Reliability
-**Goal**: Stabilize the existing Electron application so startup, persistence, deletion behavior, and desktop security defaults are dependable before feature expansion.
+### Phase 1: Monorepo and Local Backend Foundation
+**Goal**: Establish the monorepo and local backend architecture while fixing startup, persistence, deletion behavior, and packaging foundations needed for the rest of v1.
 **Depends on**: Nothing (first phase)
-**Requirements**: [CORE-01, CORE-02, CORE-03, CORE-04, CORE-05, CORE-06]
+**Requirements**: [PLAT-01, PLAT-02, PLAT-03, PLAT-04, PLAT-05, PLAT-06, PLAT-07]
 **UI hint**: no
 **Success Criteria** (what must be TRUE):
-  1. User can launch the desktop app successfully in development mode and reach the existing node workspace.
-  2. User can launch the packaged desktop app and reach the existing node workspace.
-  3. User data persists in a stable app-owned directory regardless of the working directory used to launch the app.
-  4. Deleting a node removes its attachment rows without leaving orphaned data behind.
-  5. Regression coverage exists for startup, database, and attachment workflows, and the preload-based Electron window uses explicit secure defaults.
+  1. The repository is organized as a monorepo containing the desktop frontend and backend service.
+  2. User can launch the desktop app successfully in development mode with the local backend available.
+  3. User can launch the packaged desktop app with the local backend shipped as part of the product.
+  4. User data persists in a stable app-owned directory and deletion flows do not leave orphaned data behind.
+  5. The full v1 app remains usable without authentication, and regression coverage exists for critical frontend, backend, storage, and transcription workflows.
 **Plans**: TBD
 
 Plans:
-- [ ] 01-01: Repair Electron bootstrap and dev/package startup path handling
-- [ ] 01-02: Stabilize database storage location and enforce attachment cleanup guarantees
-- [ ] 01-03: Harden preload-based window defaults and add startup/database/attachment regression coverage
+- [ ] 01-01: Restructure the workspace into a monorepo and define frontend/backend contracts
+- [ ] 01-02: Ship the local backend with the desktop app and stabilize storage plus lifecycle handling
+- [ ] 01-03: Add packaging, no-auth app flow guarantees, and regression coverage for the new architecture
 
-### Phase 2: Local Media Experience
-**Goal**: Turn attachment rows into usable in-app media interactions so users can inspect and play local content without leaving Privanote.
+### Phase 2: Capture and Save Flows
+**Goal**: Let users record or import media in the desktop app and persist the result through the backend as part of the note workflow.
 **Depends on**: Phase 1
-**Requirements**: [MEDIA-01, MEDIA-02, MEDIA-03, MEDIA-04]
+**Requirements**: [CAP-01, CAP-02, CAP-03, CAP-04, CAP-05]
 **UI hint**: yes
 **Success Criteria** (what must be TRUE):
-  1. User can preview supported text and file attachments from the node details view.
-  2. User can play attached audio inside the app.
-  3. User can play attached video inside the app.
-  4. User can open unsupported attachment types from the app with a clear fallback action.
+  1. User can record audio inside the desktop app.
+  2. User can record video inside the desktop app.
+  3. User can import existing audio, video, and file attachments.
+  4. User can save recorded or imported media through the backend and see it again after relaunch.
 **Plans**: TBD
 
 Plans:
-- [ ] 02-01: Refactor the attachment details surface into preview-ready UI states
-- [ ] 02-02: Implement supported file previews plus inline audio and video playback
-- [ ] 02-03: Add unsupported-file fallback actions and media workflow regression checks
+- [ ] 02-01: Add desktop recording UX and device-access flow for audio and video capture
+- [ ] 02-02: Add import flows and backend persistence for recorded and existing media
+- [ ] 02-03: Surface saved media in the workspace and add regression checks for capture and relaunch flows
 
-### Phase 3: Settings and Configuration
-**Goal**: Give users a managed settings surface for storage and provider configuration so local and cloud attachment behavior can be controlled without manual file edits.
-**Depends on**: Phase 1
-**Requirements**: [SET-01, SET-02, SET-03]
+### Phase 3: Transcription and Settings
+**Goal**: Add configurable transcription and the settings surface needed to control storage, transcription mode, and provider credentials.
+**Depends on**: Phase 2
+**Requirements**: [TRNS-01, TRNS-02, TRNS-03, TRNS-04, SET-01, SET-02, SET-03, SET-04, SET-05]
 **UI hint**: yes
 **Success Criteria** (what must be TRUE):
-  1. User can choose the app storage directory from a settings surface.
-  2. User can enter and update provider credentials from a settings surface.
-  3. User receives validation feedback for invalid storage paths or provider configuration.
-  4. Saved settings persist across relaunch and are reused by the desktop app.
+  1. User can generate a transcript for recorded or imported audio/video.
+  2. User can choose whether transcription runs locally or through the backend from settings.
+  3. User can save and revisit transcripts alongside the related note and media.
+  4. User can configure local storage, transcription preferences, and provider credentials from settings with validation.
+  5. Settings persist across relaunch and are reused by the app and local backend.
 **Plans**: TBD
 
 Plans:
-- [ ] 03-01: Add settings navigation, renderer state, and preload/IPC configuration plumbing
-- [ ] 03-02: Implement storage directory selection, persistence, and migration-safe handling
-- [ ] 03-03: Implement provider credential forms, secure persistence, and validation feedback
+- [ ] 03-01: Add transcript data models and backend orchestration for local or backend transcription
+- [ ] 03-02: Add settings navigation and persistence for storage and transcription preferences
+- [ ] 03-03: Add provider credential forms, validation, and transcript retry/error handling
 
-### Phase 4: Cloud-backed Attachments
-**Goal**: Extend attachments beyond local files by integrating supported cloud providers and making provider-backed attachment state visible in the UI.
+### Phase 4: Optional Cloud Sync
+**Goal**: Extend the local-first workflow with optional Google Drive and OneDrive sync while preserving a local copy of recorded and imported media.
 **Depends on**: Phase 3
-**Requirements**: [CLOUD-01, CLOUD-02, CLOUD-03, CLOUD-04]
+**Requirements**: [SYNC-01, SYNC-02, SYNC-03, SYNC-04, SYNC-05]
 **UI hint**: yes
 **Success Criteria** (what must be TRUE):
-  1. User can connect a Google Drive account for cloud-backed attachments.
-  2. User can connect a OneDrive account for cloud-backed attachments.
-  3. User can attach provider-backed files to a node and persist provider metadata.
-  4. User can distinguish local and cloud-backed attachments in the UI.
+  1. User can connect a Google Drive account for optional storage sync.
+  2. User can connect a OneDrive account for optional storage sync.
+  3. User can upload or sync recorded/imported media to the selected cloud provider.
+  4. User can distinguish local-only and cloud-synced media in the UI.
+  5. User keeps a local-first copy even when cloud sync is enabled.
 **Plans**: TBD
 
 Plans:
-- [ ] 04-01: Add a shared provider abstraction and Google Drive attachment connector
-- [ ] 04-02: Add a OneDrive attachment connector and provider metadata persistence
-- [ ] 04-03: Surface cloud attachment actions, states, and local-vs-cloud distinction in the workspace
+- [ ] 04-01: Add a shared sync abstraction and Google Drive provider integration
+- [ ] 04-02: Add OneDrive provider integration and sync metadata persistence
+- [ ] 04-03: Surface sync state, upload controls, and local-first/cloud distinction in the workspace
 
 ## Progress
 
@@ -95,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Reliability | 0/TBD | Not started | - |
-| 2. Local Media Experience | 0/TBD | Not started | - |
-| 3. Settings and Configuration | 0/TBD | Not started | - |
-| 4. Cloud-backed Attachments | 0/TBD | Not started | - |
+| 1. Monorepo and Local Backend Foundation | 0/TBD | Not started | - |
+| 2. Capture and Save Flows | 0/TBD | Not started | - |
+| 3. Transcription and Settings | 0/TBD | Not started | - |
+| 4. Optional Cloud Sync | 0/TBD | Not started | - |

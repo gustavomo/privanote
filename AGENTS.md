@@ -3,17 +3,19 @@
 
 **Privanote**
 
-Privanote is a local-first Electron desktop app for managing content nodes with attached files, audio, and video. It stores note and attachment metadata in SQLite on the user's machine and uses a React renderer with a preload-backed IPC boundary for native desktop actions. The current brownfield scope extends the existing local attachment workflow toward in-app media handling and optional cloud-backed attachment providers.
+Privanote is a local-first monorepo that will contain a desktop frontend app and a backend service. The desktop app should let a single user record or import audio, video, and files, generate transcripts, and save everything locally first with optional sync to Google Drive or OneDrive. In v1 the backend ships locally with the desktop app; cloud deployment strategy is deferred to v2.
 
 **Core Value:** A user can capture and revisit media-backed notes locally, quickly, and without losing control of where their data lives.
 
 ### Constraints
 
-- **Tech stack**: Electron 28, React 18, Vite, and `better-sqlite3` — the current application architecture is already built around these choices
-- **Brownfield architecture**: Preserve the Electron main/preload/renderer split — the existing IPC boundary is the core structural pattern in the repo
+- **Monorepo structure**: The repo must evolve into a monorepo containing the desktop frontend and backend — this is now part of the product definition
+- **Brownfield migration**: Existing Electron desktop code must be migrated into the new structure without losing current functionality — the repo already has working note and attachment flows to preserve
+- **Backend deployment**: The backend runs locally in v1 and ships with the app — hosted/cloud deployment is a later decision
 - **Local-first behavior**: User data must remain understandable and controllable on disk — this is central to the product's value proposition
+- **No auth in v1**: The first release should work without accounts or verification — keep flows single-user and direct
+- **Configurable transcription**: The system must support local or backend transcription modes through settings — exact implementation can be decided during Phase 1
 - **Reliability**: Current startup and data-integrity issues must be corrected early — existing code has blocking defects that would undermine new features
-- **Desktop focus**: New work should optimize the Electron desktop experience first — there is no server or alternate client platform in the repo today
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:codebase/STACK.md -->

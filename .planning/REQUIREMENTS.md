@@ -5,49 +5,61 @@
 
 ## v1 Requirements
 
-Requirements for the current brownfield scope. These map to roadmap phases for stabilizing the existing desktop app and shipping the next attachment-focused features.
+Requirements for the clarified v1 scope. These map to roadmap phases for turning the current brownfield desktop prototype into a monorepo with a local backend, capture flows, transcription, and optional cloud sync.
 
-### Foundation
+### Platform Foundation
 
-- [ ] **CORE-01**: User can launch the desktop app successfully in development mode
-- [ ] **CORE-02**: User can launch the packaged desktop app and reach the existing node workspace
-- [ ] **CORE-03**: User data is stored in a stable app-owned directory instead of the current working directory
-- [ ] **CORE-04**: Deleting a node removes its attachment rows without leaving orphaned data
-- [ ] **CORE-05**: The Electron window and IPC boundary use explicit secure defaults appropriate for a preload-based desktop app
-- [ ] **CORE-06**: Critical startup, database, and attachment workflows are covered by automated regression tests
+- [ ] **PLAT-01**: The repository is organized as a monorepo containing the desktop frontend and backend service
+- [ ] **PLAT-02**: User can launch the desktop app successfully in development mode with the local backend available
+- [ ] **PLAT-03**: User can launch the packaged desktop app with the local backend shipped as part of the product
+- [ ] **PLAT-04**: User data is stored in a stable app-owned directory instead of the current working directory
+- [ ] **PLAT-05**: Deleting a note or media item removes related persisted data without leaving orphaned records
+- [ ] **PLAT-06**: User can use the full v1 app without creating an account or signing in
+- [ ] **PLAT-07**: Critical frontend, backend, capture, storage, and transcription workflows are covered by automated regression tests
 
-### Media Experience
+### Capture and Save
 
-- [ ] **MEDIA-01**: User can preview supported text and file attachments from the node details view
-- [ ] **MEDIA-02**: User can play attached audio inside the app
-- [ ] **MEDIA-03**: User can play attached video inside the app
-- [ ] **MEDIA-04**: User can open unsupported attachment types from the app with a clear fallback action
+- [ ] **CAP-01**: User can record audio inside the desktop app
+- [ ] **CAP-02**: User can record video inside the desktop app
+- [ ] **CAP-03**: User can import existing audio, video, and file attachments
+- [ ] **CAP-04**: User can save recorded or imported media through the backend and associate it with a note
+- [ ] **CAP-05**: User can see saved recordings and imported media in the desktop workspace after relaunch
 
-### Settings
+### Transcription
 
-- [ ] **SET-01**: User can choose the app storage directory from a settings surface
-- [ ] **SET-02**: User can enter and update provider credentials from a settings surface
-- [ ] **SET-03**: User receives validation feedback for invalid storage paths or provider configuration
+- [ ] **TRNS-01**: User can generate a transcript for recorded or imported audio/video
+- [ ] **TRNS-02**: User can choose whether transcription runs locally or through the backend from settings
+- [ ] **TRNS-03**: User can save and revisit transcripts alongside the related note and media
+- [ ] **TRNS-04**: User receives a clear retryable error state when transcription fails
 
-### Cloud Attachments
+### Settings and Storage
 
-- [ ] **CLOUD-01**: User can connect a Google Drive account for cloud-backed attachments
-- [ ] **CLOUD-02**: User can connect a OneDrive account for cloud-backed attachments
-- [ ] **CLOUD-03**: User can attach provider-backed files to a node and persist provider metadata
-- [ ] **CLOUD-04**: User can distinguish local and cloud-backed attachments in the UI
+- [ ] **SET-01**: User can choose the local storage directory from a settings surface
+- [ ] **SET-02**: User can configure storage and transcription preferences from a settings surface
+- [ ] **SET-03**: User can enter and update provider credentials from a settings surface
+- [ ] **SET-04**: User receives validation feedback for invalid storage, transcription, or provider configuration
+- [ ] **SET-05**: Settings persist across relaunch and are reused by the app and local backend
+
+### Optional Cloud Sync
+
+- [ ] **SYNC-01**: User can connect a Google Drive account for optional storage sync
+- [ ] **SYNC-02**: User can connect a OneDrive account for optional storage sync
+- [ ] **SYNC-03**: User can upload or sync recorded/imported media to the selected cloud provider
+- [ ] **SYNC-04**: User can distinguish local-only and cloud-synced media in the UI
+- [ ] **SYNC-05**: User keeps a local-first copy of media even when cloud sync is enabled
 
 ## v2 Requirements
 
-### Attachment Intelligence
+### Deployment and Identity
 
-- **MEDIA-05**: User can resume media playback from the last known position
-- **MEDIA-06**: User can view thumbnails or richer previews for more attachment types
+- **DEP-01**: The backend can be deployed outside the desktop app for cloud-hosted operation
+- **AUTH-01**: User can sign in when hosted/backend-shared operation becomes necessary
 
-### Sync and Expansion
+### Media Expansion
 
-- **CLOUD-05**: User can cache cloud attachments for offline access
-- **CLOUD-06**: User can connect additional storage providers beyond Google Drive and OneDrive
-- **ORG-01**: User can search and filter nodes by tags, title text, and attachment type
+- **MEDIA-06**: User can resume media playback from the last known position
+- **MEDIA-07**: User can view thumbnails or richer previews for more attachment types
+- **SYNC-06**: User can connect additional storage providers beyond Google Drive and OneDrive
 
 ## Out of Scope
 
@@ -55,11 +67,12 @@ Explicitly excluded from the current roadmap to keep the brownfield scope contro
 
 | Feature | Reason |
 |---------|--------|
+| User accounts or sign-in in v1 | The first release should work without authentication |
+| Hosted/cloud backend deployment in v1 | Deployment strategy is deferred to v2 |
 | Real-time collaboration | Product is currently single-user and local-first |
-| Full note database sync across devices | Current cloud scope is attachment providers only |
-| Web client | Existing architecture is Electron desktop only |
+| Web client | Current scope is a desktop frontend plus local backend |
 | Mobile app | Not aligned with the current repo architecture or near-term milestones |
-| Advanced media editing/transcoding | Preview and playback are the current usability priority |
+| Advanced media editing/transcoding | Capture, transcript, save, and sync matter before editing workflows |
 
 ## Traceability
 
@@ -67,29 +80,38 @@ Which phases cover which requirements. This will be updated during roadmap creat
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CORE-01 | Phase 1 | Pending |
-| CORE-02 | Phase 1 | Pending |
-| CORE-03 | Phase 1 | Pending |
-| CORE-04 | Phase 1 | Pending |
-| CORE-05 | Phase 1 | Pending |
-| CORE-06 | Phase 1 | Pending |
-| MEDIA-01 | Phase 2 | Pending |
-| MEDIA-02 | Phase 2 | Pending |
-| MEDIA-03 | Phase 2 | Pending |
-| MEDIA-04 | Phase 2 | Pending |
+| PLAT-01 | Phase 1 | Pending |
+| PLAT-02 | Phase 1 | Pending |
+| PLAT-03 | Phase 1 | Pending |
+| PLAT-04 | Phase 1 | Pending |
+| PLAT-05 | Phase 1 | Pending |
+| PLAT-06 | Phase 1 | Pending |
+| PLAT-07 | Phase 1 | Pending |
+| CAP-01 | Phase 2 | Pending |
+| CAP-02 | Phase 2 | Pending |
+| CAP-03 | Phase 2 | Pending |
+| CAP-04 | Phase 2 | Pending |
+| CAP-05 | Phase 2 | Pending |
+| TRNS-01 | Phase 3 | Pending |
+| TRNS-02 | Phase 3 | Pending |
+| TRNS-03 | Phase 3 | Pending |
+| TRNS-04 | Phase 3 | Pending |
 | SET-01 | Phase 3 | Pending |
 | SET-02 | Phase 3 | Pending |
 | SET-03 | Phase 3 | Pending |
-| CLOUD-01 | Phase 4 | Pending |
-| CLOUD-02 | Phase 4 | Pending |
-| CLOUD-03 | Phase 4 | Pending |
-| CLOUD-04 | Phase 4 | Pending |
+| SET-04 | Phase 3 | Pending |
+| SET-05 | Phase 3 | Pending |
+| SYNC-01 | Phase 4 | Pending |
+| SYNC-02 | Phase 4 | Pending |
+| SYNC-03 | Phase 4 | Pending |
+| SYNC-04 | Phase 4 | Pending |
+| SYNC-05 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 17 total
-- Mapped to phases: 17
+- v1 requirements: 26 total
+- Mapped to phases: 26
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after roadmap creation*
+*Last updated: 2026-03-28 after scope clarification*

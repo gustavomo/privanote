@@ -156,7 +156,7 @@ describe('capture review flow', () => {
 
     render(<App api={api} />);
 
-    expect(await screen.findAllByText('Capture Your First Note')).not.toHaveLength(0);
+    expect(await screen.findByText('Capture')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Recording' }));
 

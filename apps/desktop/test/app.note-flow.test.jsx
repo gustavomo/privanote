@@ -60,52 +60,64 @@ function createMockTransport() {
 }
 
 describe('App note workspace', () => {
-  it('renders the approved empty state before any notes exist', async () => {
+  it('renders the persistent capture panel in the sidebar before any notes exist', async () => {
     const api = createBackendClient({
       transport: createMockTransport(),
     });
 
     render(<App api={api} />);
 
-    expect(await screen.findAllByText('Capture Your First Note')).not.toHaveLength(0);
+    // Capture panel heading is always visible in the sidebar
+    expect(await screen.findByText('Capture')).toBeInTheDocument();
+    // Capture panel subline confirms capture-first flow
     expect(
-      screen.getAllByText(
-        'Start a recording or import files to create a note and keep the media stored locally.'
-      ).length
-    ).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'Create Note' })).toBeInTheDocument();
+      screen.getByText('Start a recording or import a file — a note is created automatically.')
+    ).toBeInTheDocument();
+    // Start Recording button is accessible without creating a note first
+    expect(screen.getByRole('button', { name: 'Start Recording' })).toBeInTheDocument();
+    // No Create Note button exists
+    expect(screen.queryByRole('button', { name: 'Create Note' })).not.toBeInTheDocument();
+    // Right panel empty state is shown (not the capture panel)
+    expect(screen.getByText('Select a note to view it')).toBeInTheDocument();
   });
 
-  it('creates and deletes notes through createBackendClient without auth prompts', async () => {
+  it('auto-selects a note and deletes it through createBackendClient without auth prompts', async () => {
     const transport = createMockTransport();
     const api = createBackendClient({ transport });
 
+    // Seed a node into the mock transport before render
+    await transport.request({ id: 'v1.nodes.createNode' }, {
+      title: 'Architecture note',
+      description: 'Desktop and backend communicate only through contracts.',
+      tags: 'phase-1,contracts',
+    });
+
     render(<App api={api} />);
 
-    fireEvent.change(screen.getByPlaceholderText('New note title'), {
-      target: { value: 'Architecture note' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('Description'), {
-      target: { value: 'Desktop and backend communicate only through contracts.' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('Tags'), {
-      target: { value: 'phase-1,contracts' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Create Note' }));
-
+    // Node appears in the notes list
     expect((await screen.findAllByText('Architecture note')).length).toBeGreaterThan(0);
 
+    // Select the note — detail view opens
+    fireEvent.click(screen.getByRole('button', { name: /Architecture note/i }));
+
+    // Note detail edit form is visible (D-08)
     await waitFor(() => {
-      expect(transport.request).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'v1.nodes.createNode' }),
-        expect.objectContaining({ title: 'Architecture note' })
-      );
+      expect(screen.getByRole('button', { name: 'Delete Note' })).toBeInTheDocument();
     });
 
+    // Delete the note
     fireEvent.click(screen.getByRole('button', { name: 'Delete Note' }));
 
     await waitFor(() => {
-      expect(screen.getAllByText('Capture Your First Note').length).toBeGreaterThan(0);
+      expect(transport.request).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'v1.nodes.deleteNode' }),
+        expect.anything()
+      );
+    });
+
+    // After deletion, right panel empty state is shown
+    await waitFor(() => {
+      expect(screen.getByText('Select a note to view it')).toBeInTheDocument();
     });
   });
 

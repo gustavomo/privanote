@@ -1,17 +1,42 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/renderer/App.jsx';
 
-function createMockApi() {
-  let settings = {
+function createMockApi({
+  initialSettings = {
     storageDestination: 'local',
     localMediaDirectory: '',
     transcriptionMode: 'local',
     providerKind: 'openai',
     backendApiKeyConfigured: false,
     backendApiKeyMaskedHint: '',
+  },
+  initialProviderConnections = [
+    {
+      provider: 'google-drive',
+      connectionStatus: 'disconnected',
+      accountLabel: '',
+      rootFolderId: '',
+      rootFolderUrl: '',
+      connectedAt: null,
+      lastError: '',
+    },
+    {
+      provider: 'onedrive',
+      connectionStatus: 'disconnected',
+      accountLabel: '',
+      rootFolderId: '',
+      rootFolderUrl: '',
+      connectedAt: null,
+      lastError: '',
+    },
+  ],
+} = {}) {
+  let settings = {
+    ...initialSettings,
   };
+  let providerConnections = initialProviderConnections.map((connection) => ({ ...connection }));
 
   return {
     listNodes: vi.fn(async () => []),
@@ -35,12 +60,9 @@ function createMockApi() {
     }),
     getAttachmentContentUrl: vi.fn(async () => '/preview/1'),
     openPath: vi.fn(async () => ''),
+    openExternalUrl: vi.fn(async () => true),
     getSettings: vi.fn(async () => ({ ...settings })),
     updateSettings: vi.fn(async (payload) => {
-      if (payload.backendApiKey === 'bad-key') {
-        throw new Error('OpenAI API key is invalid.');
-      }
-
       settings = {
         ...settings,
         ...payload,
@@ -57,8 +79,37 @@ function createMockApi() {
 
       return { ...settings };
     }),
+    listProviderConnections: vi.fn(async () => providerConnections.map((connection) => ({ ...connection }))),
+    beginProviderConnection: vi.fn(async (provider) => {
+      providerConnections = providerConnections.map((connection) =>
+        connection.provider === provider
+          ? {
+              ...connection,
+              connectionStatus: 'pending',
+            }
+          : connection
+      );
+      return {
+        provider,
+        connectionStatus: 'pending',
+        authorizationUrl: `https://auth.test/${provider}`,
+      };
+    }),
+    disconnectProvider: vi.fn(async (provider) => {
+      providerConnections = providerConnections.map((connection) =>
+        connection.provider === provider
+          ? {
+              ...connection,
+              connectionStatus: 'disconnected',
+              accountLabel: '',
+            }
+          : connection
+      );
+      return providerConnections.find((connection) => connection.provider === provider);
+    }),
     getNoteTranscript: vi.fn(async () => null),
     retryNoteTranscript: vi.fn(async () => null),
+    retryAttachmentSync: vi.fn(async () => null),
     getMediaAccessStatus: vi.fn(async () => 'granted'),
     requestMediaAccess: vi.fn(async () => ({ granted: true, status: 'granted' })),
     pickFile: vi.fn(async () => null),
@@ -66,83 +117,90 @@ function createMockApi() {
   };
 }
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('settings view', () => {
-  it('loads persisted settings, saves backend provider settings, and reloads masked provider state on a fresh render', async () => {
-    const api = createMockApi();
-
-    const { unmount } = render(<App api={api} />);
-
-    const settingsButton = await screen.findByRole('button', { name: 'Settings' });
-    const workspaceButton = screen.getByRole('button', { name: 'Workspace' });
-    expect(workspaceButton).toHaveAttribute('aria-pressed', 'true');
-    expect(workspaceButton).toHaveAttribute('data-state', 'active');
-    expect(settingsButton).toHaveAttribute('aria-pressed', 'false');
-    expect(settingsButton).toHaveAttribute('data-state', 'inactive');
-
-    fireEvent.click(settingsButton);
-    expect(settingsButton).toHaveAttribute('aria-pressed', 'true');
-    expect(settingsButton).toHaveAttribute('data-state', 'active');
-    expect(workspaceButton).toHaveAttribute('aria-pressed', 'false');
-    expect(workspaceButton).toHaveAttribute('data-state', 'inactive');
-
-    expect(await screen.findByRole('heading', { name: 'Storage' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Choose Folder' }));
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('/vault/settings-media')).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByLabelText('Backend'));
-    fireEvent.change(screen.getByLabelText('OpenAI API Key'), {
-      target: {
-        value: 'sk-test-1234',
-      },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Save Settings' }));
-
-    await waitFor(() => {
-      expect(api.updateSettings).toHaveBeenCalledWith({
-        storageDestination: 'local',
+  it('shows both connected providers with one default destination and supports disconnect confirmation', async () => {
+    const api = createMockApi({
+      initialSettings: {
+        storageDestination: 'google-drive',
         localMediaDirectory: '/vault/settings-media',
-        transcriptionMode: 'backend',
+        transcriptionMode: 'local',
         providerKind: 'openai',
-        backendApiKey: 'sk-test-1234',
-        clearBackendApiKey: false,
-      });
+        backendApiKeyConfigured: false,
+        backendApiKeyMaskedHint: '',
+      },
+      initialProviderConnections: [
+        {
+          provider: 'google-drive',
+          connectionStatus: 'connected',
+          accountLabel: 'google@example.com',
+          rootFolderId: 'google-root',
+          rootFolderUrl: 'https://drive.google.com/root',
+          connectedAt: '2026-03-30T00:00:00.000Z',
+          lastError: '',
+        },
+        {
+          provider: 'onedrive',
+          connectionStatus: 'connected',
+          accountLabel: 'onedrive@example.com',
+          rootFolderId: 'onedrive-root',
+          rootFolderUrl: 'https://onedrive.live.com/root',
+          connectedAt: '2026-03-30T00:00:00.000Z',
+          lastError: '',
+        },
+      ],
     });
 
-    unmount();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
     render(<App api={api} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Settings' }));
 
+    expect(await screen.findByRole('heading', { name: 'Cloud sync' })).toBeInTheDocument();
+    expect(screen.getByText('google@example.com')).toBeInTheDocument();
+    expect(screen.getByText('onedrive@example.com')).toBeInTheDocument();
+    expect(screen.getAllByText('Connected')).toHaveLength(2);
+    expect(screen.getAllByText('Default destination').length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(
+        'Future saves and older unsynced local media will queue to the selected destination. Already-synced items stay where they are.'
+      )
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect OneDrive' }));
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      'Disconnect Provider: Remove this provider connection from Privanote? Existing remote files stay in your account, and local attachments remain available here.'
+    );
     await waitFor(() => {
-      expect(screen.getByDisplayValue('/vault/settings-media')).toBeInTheDocument();
+      expect(api.disconnectProvider).toHaveBeenCalledWith('onedrive');
     });
-    expect(screen.getByLabelText('Backend')).toBeChecked();
-    expect(screen.getByText('Saved key: ••••1234')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Provider' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Workspace' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('button', { name: 'Workspace' })).toHaveAttribute('data-state', 'inactive');
-    expect(screen.getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Settings' })).toHaveAttribute('data-state', 'active');
-    expect(screen.getByRole('button', { name: 'Save Settings' })).toBeInTheDocument();
   });
 
-  it("shows the exact settings validation copy when a backend-mode save fails", async () => {
+  it('launches provider connect in the browser and blocks saving a disconnected cloud destination', async () => {
     const api = createMockApi();
 
     render(<App api={api} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Settings' }));
-    fireEvent.click(screen.getByLabelText('Backend'));
-    fireEvent.change(screen.getByLabelText('OpenAI API Key'), {
-      target: {
-        value: 'bad-key',
-      },
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Google Drive' }));
+
+    await waitFor(() => {
+      expect(api.beginProviderConnection).toHaveBeenCalledWith('google-drive');
+      expect(api.openExternalUrl).toHaveBeenCalledWith('https://auth.test/google-drive');
     });
+
+    fireEvent.click(screen.getByLabelText('OneDrive'));
     fireEvent.click(screen.getByRole('button', { name: 'Save Settings' }));
 
+    expect(api.updateSettings).not.toHaveBeenCalled();
     expect(
-      await screen.findByText("We couldn't save these settings. Fix the highlighted fields and try again.")
+      await screen.findByText('Connect OneDrive before saving it as the default destination.')
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Connect OneDrive' })).toBeInTheDocument();
   });
 });

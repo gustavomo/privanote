@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('api', {
   getAttachmentContentUrl: (attachmentId) =>
     ipcRenderer.invoke('attachments:get-content-url', attachmentId),
   openPath: (localPath) => ipcRenderer.invoke('files:open-path', localPath),
+  openExternalUrl: (url) => ipcRenderer.invoke('shell:open-external', url),
   getMediaAccessStatus: (mediaType) => ipcRenderer.invoke('media:get-access-status', mediaType),
   requestMediaAccess: (mediaType) => ipcRenderer.invoke('media:request-access', mediaType),
 });

@@ -25,9 +25,16 @@ function createBackendClient({ transport }) {
     deleteNode: (nodeId) => activeTransport.request(v1.operations.deleteNode, { nodeId }),
     getSettings: () => activeTransport.request(v1.operations.getSettings),
     updateSettings: (payload) => activeTransport.request(v1.operations.updateSettings, payload),
+    listProviderConnections: () => activeTransport.request(v1.operations.listProviderConnections),
+    beginProviderConnection: (provider) =>
+      activeTransport.request(v1.operations.beginProviderConnection, { provider }),
+    disconnectProvider: (provider) =>
+      activeTransport.request(v1.operations.disconnectProvider, { provider }),
     listAttachments: (nodeId) => activeTransport.request(v1.operations.listAttachments, { nodeId }),
     getNoteTranscript: (nodeId) => activeTransport.request(v1.operations.getNoteTranscript, { nodeId }),
     retryNoteTranscript: (nodeId) => activeTransport.request(v1.operations.retryNoteTranscript, { nodeId }),
+    retryAttachmentSync: (attachmentId) =>
+      activeTransport.request(v1.operations.retryAttachmentSync, { attachmentId }),
     addAttachment: (payload) => activeTransport.request(v1.operations.addAttachment, payload),
     deleteAttachment: (attachmentId) =>
       activeTransport.request(v1.operations.deleteAttachment, { attachmentId }),

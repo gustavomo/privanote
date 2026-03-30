@@ -23,10 +23,12 @@ function resolveDataRoot() {
 function resolveOperationPath(operation, payload = {}) {
   const nodeId = Number(payload.nodeId ?? payload.id);
   const attachmentId = Number(payload.attachmentId);
+  const provider = String(payload.provider || '').trim();
 
   return operation.path
     .replace(':nodeId', Number.isFinite(nodeId) ? String(nodeId) : ':nodeId')
-    .replace(':attachmentId', Number.isFinite(attachmentId) ? String(attachmentId) : ':attachmentId');
+    .replace(':attachmentId', Number.isFinite(attachmentId) ? String(attachmentId) : ':attachmentId')
+    .replace(':provider', provider || ':provider');
 }
 
 async function parseBackendResponse(response) {
@@ -224,6 +226,7 @@ function registerIpcHandlers() {
     })}`;
   });
   ipcMain.handle('files:open-path', (_event, localPath) => shell.openPath(String(localPath || '')));
+  ipcMain.handle('shell:open-external', (_event, url) => shell.openExternal(String(url || '')));
   ipcMain.handle('media:get-access-status', (_event, mediaType) => resolveMediaAccessStatus(mediaType));
   ipcMain.handle('media:request-access', (_event, mediaType) => requestMediaAccess(mediaType));
 

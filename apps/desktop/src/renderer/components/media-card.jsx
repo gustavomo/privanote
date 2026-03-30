@@ -18,12 +18,36 @@ function resolveMediaLabel(kind) {
   return 'File';
 }
 
+function resolveSyncBadge(attachment) {
+  const status = attachment.sync_status || 'local_only';
+  const provider = attachment.sync_provider || '';
+
+  if (status === 'failed') {
+    return 'Sync failed';
+  }
+
+  if (status === 'synced' && provider === 'google-drive') {
+    return 'Synced to Google Drive';
+  }
+
+  if (status === 'synced' && provider === 'onedrive') {
+    return 'Synced to OneDrive';
+  }
+
+  if (status === 'queued' || status === 'syncing') {
+    return 'Syncing';
+  }
+
+  return 'Local only';
+}
+
 export default function MediaCard({
   attachment,
   formatDate,
   getAttachmentContentUrl,
   onOpenFile,
   onRemove,
+  onRetrySync,
 }) {
   const [contentUrl, setContentUrl] = useState('');
   const [contentError, setContentError] = useState('');
@@ -59,6 +83,9 @@ export default function MediaCard({
   }, [attachment.id, attachment.kind, getAttachmentContentUrl]);
 
   const label = resolveMediaLabel(attachment.kind);
+  const syncBadge = resolveSyncBadge(attachment);
+  const showSyncFailure = attachment.sync_status === 'failed';
+  const showTranscriptPending = Boolean(attachment.transcript_patch_pending);
 
   return (
     <li className="grid gap-4 rounded-[24px] border bg-background p-5 shadow-sm">
@@ -69,7 +96,25 @@ export default function MediaCard({
               {label}
             </p>
             <h4 className="text-xl font-semibold leading-[1.2]">{mediaTitles[attachment.kind]}</h4>
-            <p className="text-sm text-muted-foreground">Saved {formatDate(attachment.created_at)}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">Saved {formatDate(attachment.created_at)}</p>
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${
+                  showSyncFailure
+                    ? 'bg-destructive/10 text-destructive'
+                    : syncBadge === 'Local only'
+                      ? 'bg-secondary text-foreground'
+                      : 'bg-primary/10 text-primary'
+                }`}
+              >
+                {syncBadge}
+              </span>
+            </div>
+            {showTranscriptPending ? (
+              <p className="text-sm text-muted-foreground">
+                Media uploaded. Transcript and metadata will sync when ready.
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -107,9 +152,30 @@ export default function MediaCard({
         ) : null}
 
         <p className="text-sm leading-6 text-muted-foreground">{attachment.local_path}</p>
+
+        {showSyncFailure ? (
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div>
+              Sync failed. Your local file is still available. Retry sync or reconnect this provider in
+              Settings.
+            </div>
+            {attachment.sync_error ? (
+              <div className="mt-2 text-xs text-destructive/80">{attachment.sync_error}</div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap gap-3">
+        {showSyncFailure ? (
+          <button
+            type="button"
+            onClick={onRetrySync}
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+          >
+            Retry Sync
+          </button>
+        ) : null}
         {attachment.kind === 'file' ? (
           <button
             type="button"

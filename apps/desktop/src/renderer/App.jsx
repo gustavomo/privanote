@@ -22,6 +22,11 @@ const defaultSettings = {
   localRuntimeStatus: 'not-ready',
 };
 
+const providerLabels = {
+  'google-drive': 'Google Drive',
+  onedrive: 'OneDrive',
+};
+
 const captureFailureCopy =
   'Camera or microphone access is unavailable. Check device permissions, then retry or switch to import.';
 
@@ -66,8 +71,18 @@ function createUnavailableApi() {
     updateSettings: async () => {
       throw new Error('Desktop API is unavailable.');
     },
+    listProviderConnections: async () => [],
+    beginProviderConnection: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
+    disconnectProvider: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
     getNoteTranscript: async () => null,
     retryNoteTranscript: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
+    retryAttachmentSync: async () => {
       throw new Error('Desktop API is unavailable.');
     },
     listAttachments: async () => [],
@@ -87,6 +102,9 @@ function createUnavailableApi() {
       throw new Error('Desktop API is unavailable.');
     },
     openPath: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
+    openExternalUrl: async () => {
       throw new Error('Desktop API is unavailable.');
     },
     getMediaAccessStatus: async () => 'unknown',
@@ -211,6 +229,17 @@ async function buildRecordingFile(blob, captureMode) {
   };
 }
 
+function getProviderConnection(providerConnections, provider) {
+  return (
+    providerConnections.find((connection) => connection.provider === provider) || {
+      provider,
+      connectionStatus: 'disconnected',
+      accountLabel: '',
+      lastError: '',
+    }
+  );
+}
+
 export default function App({ api }) {
   const client = {
     ...createUnavailableApi(),
@@ -232,6 +261,7 @@ export default function App({ api }) {
   const [reviewRecording, setReviewRecording] = useState(null);
   const [isSavingRecording, setIsSavingRecording] = useState(false);
   const [settingsDraft, setSettingsDraft] = useState(defaultSettings);
+  const [providerConnections, setProviderConnections] = useState([]);
   const [isSettingsLoading, setIsSettingsLoading] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -245,6 +275,8 @@ export default function App({ api }) {
   const mediaStreamRef = useRef(null);
   const captureChunksRef = useRef([]);
   const reviewUrlRef = useRef('');
+  const providerPollingRef = useRef({});
+  const selectedNodeIdRef = useRef(null);
 
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId) || null,
@@ -317,6 +349,17 @@ export default function App({ api }) {
     }
   }
 
+  async function loadProviderConnections() {
+    try {
+      const rows = await client.listProviderConnections();
+      setProviderConnections(Array.isArray(rows) ? rows : []);
+      return Array.isArray(rows) ? rows : [];
+    } catch (loadError) {
+      setSettingsError(loadError.message || "We couldn't load your cloud sync providers.");
+      return [];
+    }
+  }
+
   async function loadAttachments(nodeId) {
     if (!nodeId) {
       setAttachments([]);
@@ -350,6 +393,33 @@ export default function App({ api }) {
     } finally {
       setIsTranscriptLoading(false);
     }
+  }
+
+  function stopProviderPolling(provider) {
+    const activeTimer = providerPollingRef.current[provider];
+    if (activeTimer) {
+      clearInterval(activeTimer);
+      delete providerPollingRef.current[provider];
+    }
+  }
+
+  function startProviderPolling(provider) {
+    stopProviderPolling(provider);
+
+    providerPollingRef.current[provider] = setInterval(async () => {
+      const rows = await loadProviderConnections();
+      const connection = getProviderConnection(rows, provider);
+      if (connection.connectionStatus === 'pending') {
+        return;
+      }
+
+      stopProviderPolling(provider);
+      await loadSettings();
+
+      if (selectedNodeIdRef.current) {
+        await loadAttachments(selectedNodeIdRef.current);
+      }
+    }, 2000);
   }
 
   async function ensureCapturePermissions(mode) {
@@ -422,6 +492,19 @@ export default function App({ api }) {
   }
 
   async function handleSaveSettings() {
+    const nextProviderConnection =
+      settingsDraft.storageDestination === 'local'
+        ? null
+        : getProviderConnection(providerConnections, settingsDraft.storageDestination);
+
+    if (nextProviderConnection && nextProviderConnection.connectionStatus !== 'connected') {
+      setSettingsError(
+        `Connect ${providerLabels[settingsDraft.storageDestination]} before saving it as the default destination.`
+      );
+      setSettingsErrorDetail('');
+      return;
+    }
+
     setIsSavingSettings(true);
     setSettingsError('');
     setSettingsErrorDetail('');
@@ -442,6 +525,10 @@ export default function App({ api }) {
         backendApiKey: '',
         clearBackendApiKey: false,
       });
+      await loadProviderConnections();
+      if (selectedNodeIdRef.current) {
+        await loadAttachments(selectedNodeIdRef.current);
+      }
     } catch (saveError) {
       setSettingsError("We couldn't save these settings. Fix the highlighted fields and try again.");
       setSettingsErrorDetail(saveError.message || '');
@@ -465,6 +552,52 @@ export default function App({ api }) {
       backendApiKeyConfigured: false,
       backendApiKeyMaskedHint: '',
     });
+  }
+
+  async function handleBeginProviderConnection(provider) {
+    setSettingsError('');
+    setSettingsErrorDetail('');
+
+    try {
+      const result = await client.beginProviderConnection(provider);
+      await loadProviderConnections();
+
+      if (result?.authorizationUrl) {
+        await client.openExternalUrl(result.authorizationUrl);
+      }
+
+      startProviderPolling(provider);
+    } catch (connectError) {
+      setSettingsError(connectError.message || `Unable to connect ${providerLabels[provider]}.`);
+    }
+  }
+
+  async function handleDisconnectProvider(provider) {
+    if (
+      !confirmAction(
+        'Disconnect Provider: Remove this provider connection from Privanote? Existing remote files stay in your account, and local attachments remain available here.'
+      )
+    ) {
+      return;
+    }
+
+    setSettingsError('');
+    setSettingsErrorDetail('');
+
+    try {
+      await client.disconnectProvider(provider);
+      stopProviderPolling(provider);
+      await loadProviderConnections();
+      setSettingsDraft((current) => ({
+        ...current,
+        storageDestination: current.storageDestination === provider ? 'local' : current.storageDestination,
+      }));
+      if (selectedNodeIdRef.current) {
+        await loadAttachments(selectedNodeIdRef.current);
+      }
+    } catch (disconnectError) {
+      setSettingsError(disconnectError.message || `Unable to disconnect ${providerLabels[provider]}.`);
+    }
   }
 
   async function handleCreateNode(event) {
@@ -733,7 +866,12 @@ export default function App({ api }) {
   useEffect(() => {
     loadNodes();
     loadSettings();
+    loadProviderConnections();
   }, []);
+
+  useEffect(() => {
+    selectedNodeIdRef.current = selectedNodeId;
+  }, [selectedNodeId]);
 
   useEffect(() => {
     if (!selectedNode) {
@@ -756,6 +894,9 @@ export default function App({ api }) {
   useEffect(() => {
     return () => {
       stopMediaStream();
+      Object.keys(providerPollingRef.current).forEach((provider) => {
+        stopProviderPolling(provider);
+      });
       if (reviewUrlRef.current && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
         URL.revokeObjectURL(reviewUrlRef.current);
       }
@@ -916,6 +1057,21 @@ export default function App({ api }) {
       setTranscript(nextTranscript);
     } catch (retryError) {
       setTranscriptError(retryError.message || 'Unable to retry transcript.');
+    }
+  }
+
+  async function handleRetryAttachmentSync(attachmentId) {
+    if (!selectedNode) {
+      return;
+    }
+
+    setError('');
+
+    try {
+      await client.retryAttachmentSync(attachmentId);
+      await loadAttachments(selectedNode.id);
+    } catch (retryError) {
+      setError(retryError.message || 'Unable to retry sync.');
     }
   }
 
@@ -1098,6 +1254,7 @@ export default function App({ api }) {
                       getAttachmentContentUrl={client.getAttachmentContentUrl}
                       onOpenFile={handleOpenAttachment}
                       onRemove={() => handleDeleteAttachment(attachment.id)}
+                      onRetrySync={() => handleRetryAttachmentSync(attachment.id)}
                     />
                   ))}
                 </ul>
@@ -1167,6 +1324,7 @@ export default function App({ api }) {
         ) : (
           <SettingsView
             settings={settingsDraft}
+            providerConnections={providerConnections}
             error={settingsError}
             errorDetail={settingsErrorDetail}
             isLoading={isSettingsLoading}
@@ -1175,6 +1333,8 @@ export default function App({ api }) {
             onChooseDirectory={handleChooseDirectory}
             onClearCredential={handleClearCredential}
             onSave={handleSaveSettings}
+            onBeginProviderConnection={handleBeginProviderConnection}
+            onDisconnectProvider={handleDisconnectProvider}
           />
         )}
       </div>

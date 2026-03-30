@@ -18,6 +18,10 @@ function resolveGoogleClientId() {
   return String(process.env.PRIVANOTE_GOOGLE_CLIENT_ID || 'privanote-desktop-google-client').trim();
 }
 
+function resolveGoogleClientSecret() {
+  return String(process.env.PRIVANOTE_GOOGLE_CLIENT_SECRET || '').trim();
+}
+
 function resolveGoogleRedirectUri(baseUrl) {
   return `${String(baseUrl || '').replace(/\/+$/, '')}/api/v1/sync/providers/google-drive/callback`;
 }
@@ -87,6 +91,7 @@ async function exchangeGoogleCode({ baseUrl, code, codeVerifier }) {
     },
     body: new URLSearchParams({
       client_id: resolveGoogleClientId(),
+      client_secret: resolveGoogleClientSecret(),
       code: String(code || ''),
       code_verifier: String(codeVerifier || ''),
       grant_type: 'authorization_code',
@@ -116,6 +121,7 @@ async function refreshGoogleConnection(connection) {
     },
     body: new URLSearchParams({
       client_id: resolveGoogleClientId(),
+      client_secret: resolveGoogleClientSecret(),
       grant_type: 'refresh_token',
       refresh_token: String(connection?.refreshToken || ''),
     }),

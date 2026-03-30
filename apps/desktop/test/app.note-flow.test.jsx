@@ -108,4 +108,45 @@ describe('App note workspace', () => {
       expect(screen.getAllByText('Capture Your First Note').length).toBeGreaterThan(0);
     });
   });
+
+  it('shows the active state for capture mode and workspace navigation buttons', async () => {
+    const api = createBackendClient({
+      transport: createMockTransport(),
+    });
+
+    render(<App api={api} />);
+
+    const audioButton = await screen.findByRole('button', { name: 'Audio' });
+    const videoWithAudioButton = screen.getByRole('button', { name: 'Video + Audio' });
+    const workspaceButton = screen.getByRole('button', { name: 'Workspace' });
+    const settingsButton = screen.getByRole('button', { name: 'Settings' });
+
+    expect(audioButton.getAttribute('aria-pressed')).toBe('true');
+    expect(audioButton.getAttribute('data-state')).toBe('active');
+    expect(videoWithAudioButton.getAttribute('aria-pressed')).toBe('false');
+    expect(videoWithAudioButton.getAttribute('data-state')).toBe('inactive');
+    expect(workspaceButton.getAttribute('aria-pressed')).toBe('true');
+    expect(workspaceButton.getAttribute('data-state')).toBe('active');
+    expect(settingsButton.getAttribute('aria-pressed')).toBe('false');
+    expect(settingsButton.getAttribute('data-state')).toBe('inactive');
+
+    fireEvent.click(videoWithAudioButton);
+    expect(videoWithAudioButton.getAttribute('aria-pressed')).toBe('true');
+    expect(videoWithAudioButton.getAttribute('data-state')).toBe('active');
+    expect(audioButton.getAttribute('aria-pressed')).toBe('false');
+    expect(audioButton.getAttribute('data-state')).toBe('inactive');
+
+    fireEvent.click(settingsButton);
+    expect(settingsButton.getAttribute('aria-pressed')).toBe('true');
+    expect(settingsButton.getAttribute('aria-current')).toBe('page');
+    expect(settingsButton.getAttribute('data-state')).toBe('active');
+    expect(workspaceButton.getAttribute('aria-pressed')).toBe('false');
+    expect(workspaceButton.getAttribute('data-state')).toBe('inactive');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Workspace' }));
+    expect(screen.getByRole('button', { name: 'Workspace' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Workspace' }).getAttribute('data-state')).toBe('active');
+    expect(screen.getByRole('button', { name: 'Settings' }).getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('button', { name: 'Settings' }).getAttribute('data-state')).toBe('inactive');
+  });
 });

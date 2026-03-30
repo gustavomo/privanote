@@ -210,7 +210,23 @@ describe('capture review flow', () => {
 
     render(<App api={api} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Video + Audio' }));
+    const audioButton = screen.getByRole('button', { name: 'Audio' });
+    const videoButton = screen.getByRole('button', { name: 'Video' });
+    const videoWithAudioButton = screen.getByRole('button', { name: 'Video + Audio' });
+
+    expect(audioButton).toHaveAttribute('aria-pressed', 'true');
+    expect(audioButton).toHaveAttribute('data-state', 'active');
+    expect(videoButton).toHaveAttribute('aria-pressed', 'false');
+    expect(videoButton).toHaveAttribute('data-state', 'inactive');
+    expect(videoWithAudioButton).toHaveAttribute('aria-pressed', 'false');
+    expect(videoWithAudioButton).toHaveAttribute('data-state', 'inactive');
+
+    fireEvent.click(videoWithAudioButton);
+    expect(audioButton).toHaveAttribute('aria-pressed', 'false');
+    expect(audioButton).toHaveAttribute('data-state', 'inactive');
+    expect(videoWithAudioButton).toHaveAttribute('aria-pressed', 'true');
+    expect(videoWithAudioButton).toHaveAttribute('data-state', 'active');
+
     fireEvent.click(screen.getByRole('button', { name: 'Start Recording' }));
 
     await waitFor(() => {

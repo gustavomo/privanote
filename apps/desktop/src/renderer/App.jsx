@@ -25,6 +25,20 @@ const defaultSettings = {
 const captureFailureCopy =
   'Camera or microphone access is unavailable. Check device permissions, then retry or switch to import.';
 
+function renderToggleIndicator(isActive) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'h-2.5 w-2.5 rounded-full border transition-all',
+        isActive
+          ? 'border-primary-foreground/70 bg-primary-foreground shadow-[0_0_0_3px_rgba(255,255,255,0.16)]'
+          : 'border-border bg-transparent opacity-70'
+      )}
+    />
+  );
+}
+
 function formatDate(dateString) {
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) {
@@ -765,22 +779,29 @@ export default function App({ api }) {
         </div>
 
         <div className="inline-flex flex-wrap gap-2 rounded-2xl bg-background p-2">
-          {captureModes.map((mode) => (
-            <button
-              key={mode.value}
-              type="button"
-              onClick={() => setCaptureMode(mode.value)}
-              disabled={isRecording || isStopping || isSavingRecording}
-              className={cn(
-                'inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold transition',
-                captureMode === mode.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-transparent text-muted-foreground hover:bg-secondary'
-              )}
-            >
-              {mode.label}
-            </button>
-          ))}
+          {captureModes.map((mode) => {
+            const isActive = captureMode === mode.value;
+
+            return (
+              <button
+                key={mode.value}
+                type="button"
+                onClick={() => setCaptureMode(mode.value)}
+                aria-pressed={isActive}
+                data-state={isActive ? 'active' : 'inactive'}
+                disabled={isRecording || isStopping || isSavingRecording}
+                className={cn(
+                  'inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-all duration-200',
+                  isActive
+                    ? 'border-primary bg-primary text-primary-foreground shadow-[0_18px_42px_-22px_rgba(15,23,42,0.95)] ring-2 ring-primary/20 -translate-y-px'
+                    : 'border-transparent bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'
+                )}
+              >
+                {renderToggleIndicator(isActive)}
+                <span>{mode.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {captureError ? (
@@ -1109,20 +1130,25 @@ export default function App({ api }) {
             <div className="inline-flex rounded-2xl bg-secondary p-2">
               {['Workspace', 'Settings'].map((label) => {
                 const value = label.toLowerCase();
+                const isActive = activeView === value;
 
                 return (
                   <button
                     key={label}
                     type="button"
                     onClick={() => setActiveView(value)}
+                    aria-pressed={isActive}
+                    aria-current={isActive ? 'page' : undefined}
+                    data-state={isActive ? 'active' : 'inactive'}
                     className={cn(
-                      'inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold transition',
-                      activeView === value
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-background'
+                      'inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-all duration-200',
+                      isActive
+                        ? 'border-primary bg-primary text-primary-foreground shadow-[0_18px_42px_-22px_rgba(15,23,42,0.95)] ring-2 ring-primary/20 -translate-y-px'
+                        : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
                     )}
                   >
-                    {label}
+                    {renderToggleIndicator(isActive)}
+                    <span>{label}</span>
                   </button>
                 );
               })}

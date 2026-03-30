@@ -72,7 +72,18 @@ describe('settings view', () => {
 
     const { unmount } = render(<App api={api} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Settings' }));
+    const settingsButton = await screen.findByRole('button', { name: 'Settings' });
+    const workspaceButton = screen.getByRole('button', { name: 'Workspace' });
+    expect(workspaceButton).toHaveAttribute('aria-pressed', 'true');
+    expect(workspaceButton).toHaveAttribute('data-state', 'active');
+    expect(settingsButton).toHaveAttribute('aria-pressed', 'false');
+    expect(settingsButton).toHaveAttribute('data-state', 'inactive');
+
+    fireEvent.click(settingsButton);
+    expect(settingsButton).toHaveAttribute('aria-pressed', 'true');
+    expect(settingsButton).toHaveAttribute('data-state', 'active');
+    expect(workspaceButton).toHaveAttribute('aria-pressed', 'false');
+    expect(workspaceButton).toHaveAttribute('data-state', 'inactive');
 
     expect(await screen.findByRole('heading', { name: 'Storage' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Choose Folder' }));
@@ -109,7 +120,10 @@ describe('settings view', () => {
     expect(screen.getByLabelText('Backend')).toBeChecked();
     expect(screen.getByText('Saved key: ••••1234')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Provider' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Workspace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Workspace' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Workspace' })).toHaveAttribute('data-state', 'inactive');
+    expect(screen.getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Settings' })).toHaveAttribute('data-state', 'active');
     expect(screen.getByRole('button', { name: 'Save Settings' })).toBeInTheDocument();
   });
 

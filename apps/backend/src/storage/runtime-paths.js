@@ -27,6 +27,19 @@ function resolveManagedAttachmentsRoot() {
   return attachmentsRoot;
 }
 
+function resolveConfiguredMediaRoot(settings = {}) {
+  const storageDestination = String(settings.storageDestination || settings.storage_destination || '').trim();
+  const localMediaDirectory = String(settings.localMediaDirectory || settings.local_media_directory || '').trim();
+
+  if (storageDestination === 'local' && localMediaDirectory) {
+    const attachmentsRoot = path.resolve(localMediaDirectory, 'attachments');
+    fs.mkdirSync(attachmentsRoot, { recursive: true });
+    return attachmentsRoot;
+  }
+
+  return resolveManagedAttachmentsRoot();
+}
+
 const resolveDataRoot = resolveRuntimeRoot;
 
 module.exports = {
@@ -35,4 +48,5 @@ module.exports = {
   resolveTranscriptionAssetsRoot,
   resolveDataRoot,
   resolveManagedAttachmentsRoot,
+  resolveConfiguredMediaRoot,
 };

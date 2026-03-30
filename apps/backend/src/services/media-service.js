@@ -3,6 +3,7 @@ const { getDatabase } = require('../storage/database');
 const nodesService = require('./nodes-service');
 const { copyImportedMedia, resolveManagedMediaPath, writeUploadedMedia } = require('../storage/media-files');
 const { queueTranscriptJob } = require('./transcription-runner');
+const settingsService = require('./settings-service');
 
 const captureKinds = {
   audio: 'audio',
@@ -92,6 +93,7 @@ async function saveRecording(payload = {}) {
   const localPath = resolveManagedMediaPath({
     kind,
     originalName: payload.fileName || 'recording.webm',
+    settings: settingsService.getSettings({ includeSecrets: true }),
   });
 
   let createdNode = null;
@@ -163,7 +165,11 @@ async function importMedia(payload = {}) {
   }
 
   let createdNode = null;
-  const localPath = await copyImportedMedia(sourcePath, kind);
+  const localPath = await copyImportedMedia(
+    sourcePath,
+    kind,
+    settingsService.getSettings({ includeSecrets: true })
+  );
 
   try {
     if (!node) {

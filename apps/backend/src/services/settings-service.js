@@ -1,3 +1,4 @@
+const path = require('path');
 const { getDatabase } = require('../storage/database');
 
 const validStorageDestinations = new Set(['local', 'google-drive', 'onedrive']);
@@ -23,6 +24,10 @@ function mapSettingsRow(row) {
   };
 }
 
+function isAbsoluteDirectoryPath(value) {
+  return path.isAbsolute(String(value || '').trim());
+}
+
 function validateStorageDestination(storageDestination) {
   if (!validStorageDestinations.has(storageDestination)) {
     throw new Error('Storage destination must be local, google-drive, or onedrive');
@@ -44,6 +49,20 @@ function validateProviderKind(providerKind) {
 function validateRuntimeStatus(localRuntimeStatus) {
   if (!validRuntimeStatuses.has(localRuntimeStatus)) {
     throw new Error('Local runtime status must be not-ready, downloading, ready, or error');
+  }
+}
+
+function validateLocalMediaDirectory(storageDestination, localMediaDirectory) {
+  if (storageDestination !== 'local') {
+    return;
+  }
+
+  if (!localMediaDirectory) {
+    return;
+  }
+
+  if (!isAbsoluteDirectoryPath(localMediaDirectory)) {
+    throw new Error('Local media directory must be an absolute path');
   }
 }
 
@@ -99,6 +118,7 @@ function normalizeSettingsUpdate(partial = {}) {
   validateTranscriptionMode(next.transcriptionMode);
   validateProviderKind(next.providerKind);
   validateRuntimeStatus(next.localRuntimeStatus);
+  validateLocalMediaDirectory(next.storageDestination, next.localMediaDirectory);
 
   return next;
 }

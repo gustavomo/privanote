@@ -5,6 +5,7 @@ const { registerNodeRoutes } = require('./routes/nodes');
 const { registerAttachmentRoutes } = require('./routes/attachments');
 const { registerMediaRoutes } = require('./routes/media');
 const { registerTranscriptRoutes } = require('./routes/transcripts');
+const { registerSettingsRoutes } = require('./routes/settings');
 const { resumePendingTranscriptJobs, stopTranscriptionRunner } = require('./services/transcription-runner');
 
 async function createServer() {
@@ -27,6 +28,7 @@ async function createServer() {
   await registerAttachmentRoutes(app);
   await registerMediaRoutes(app);
   await registerTranscriptRoutes(app);
+  await registerSettingsRoutes(app);
   resumePendingTranscriptJobs();
 
   app.addHook('onClose', async () => {

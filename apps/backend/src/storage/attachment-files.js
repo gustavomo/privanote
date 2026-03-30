@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { resolveManagedAttachmentsRoot } = require('./runtime-paths');
+const { resolveConfiguredMediaRoot, resolveManagedAttachmentsRoot } = require('./runtime-paths');
 
 function isManagedAttachmentPath(localPath, managedAttachmentsRoot = resolveManagedAttachmentsRoot()) {
   if (!localPath) {
@@ -23,6 +23,7 @@ function deleteManagedAttachment(localPath, managedAttachmentsRoot = resolveMana
 }
 
 module.exports = {
+  resolveConfiguredMediaRoot,
   resolveManagedAttachmentsRoot,
   isManagedAttachmentPath,
   deleteManagedAttachment,

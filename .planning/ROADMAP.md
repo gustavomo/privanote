@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Monorepo and Local Backend Foundation** - Restructure the repo, ship a local backend with the app, and stabilize storage, lifecycle, and test foundations.
 - [x] **Phase 2: Capture and Save Flows** - Add audio/video recording plus import flows and persist media through the backend.
 - [x] **Phase 3: Transcription and Settings** - Add configurable local/backend transcription and settings for storage, transcription, and providers.
-- [ ] **Phase 4: Optional Cloud Sync** - Connect Google Drive and OneDrive and sync local-first media to optional cloud storage.
+- [x] **Phase 4: Optional Cloud Sync** - Connect Google Drive and OneDrive and sync local-first media to optional cloud storage. (completed 2026-03-30)
 
 ## Phase Details
 
@@ -83,12 +83,12 @@ Plans:
   3. User can upload or sync recorded/imported media to the selected cloud provider.
   4. User can distinguish local-only and cloud-synced media in the UI.
   5. User keeps a local-first copy even when cloud sync is enabled.
-**Plans**: 3 planned
+**Plans**: 3/3 plans complete
 
 Plans:
-- [ ] 04-01: Add a shared sync abstraction and Google Drive provider integration
-- [ ] 04-02: Add OneDrive provider integration and sync metadata persistence
-- [ ] 04-03: Surface sync state, retry controls, and local-first/cloud distinction in the workspace
+- [x] 04-01: Add a shared sync abstraction and Google Drive provider integration
+- [x] 04-02: Add OneDrive provider integration and sync metadata persistence
+- [x] 04-03: Surface sync state, retry controls, and local-first/cloud distinction in the workspace
 
 ## Progress
 
@@ -100,4 +100,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Monorepo and Local Backend Foundation | 3/3 | Complete | 2026-03-29 |
 | 2. Capture and Save Flows | 3/3 | Complete | 2026-03-30 |
 | 3. Transcription and Settings | 3/3 | Complete | 2026-03-30 |
-| 4. Optional Cloud Sync | 0/3 | Planned | - |
+| 4. Optional Cloud Sync | 3/3 | Complete    | 2026-03-30 |

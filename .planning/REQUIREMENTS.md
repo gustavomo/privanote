@@ -9,13 +9,13 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 ### Platform Foundation
 
-- [ ] **PLAT-01**: The repository is organized as a monorepo containing the desktop frontend and backend service
-- [ ] **PLAT-02**: User can launch the desktop app successfully in development mode with the local backend available
-- [ ] **PLAT-03**: User can launch the packaged desktop app with the local backend shipped as part of the product
-- [ ] **PLAT-04**: User data is stored in a stable app-owned directory instead of the current working directory
-- [ ] **PLAT-05**: Deleting a note or media item removes related persisted data without leaving orphaned records
-- [ ] **PLAT-06**: User can use the full v1 app without creating an account or signing in
-- [ ] **PLAT-07**: Critical frontend, backend, capture, storage, and transcription workflows are covered by automated regression tests
+- [x] **PLAT-01**: The repository is organized as a monorepo containing the desktop frontend and backend service
+- [x] **PLAT-02**: User can launch the desktop app successfully in development mode with the local backend available
+- [x] **PLAT-03**: User can launch the packaged desktop app with the local backend shipped as part of the product
+- [x] **PLAT-04**: User data is stored in a stable app-owned directory instead of the current working directory
+- [x] **PLAT-05**: Deleting a note or media item removes related persisted data without leaving orphaned records
+- [x] **PLAT-06**: User can use the full v1 app without creating an account or signing in
+- [x] **PLAT-07**: Critical frontend, backend, capture, storage, and transcription workflows are covered by automated regression tests
 
 ### Capture and Save
 
@@ -42,11 +42,11 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 ### Optional Cloud Sync
 
-- [ ] **SYNC-01**: User can connect a Google Drive account for optional storage sync
-- [ ] **SYNC-02**: User can connect a OneDrive account for optional storage sync
-- [ ] **SYNC-03**: User can upload or sync recorded/imported media to the selected cloud provider
-- [ ] **SYNC-04**: User can distinguish local-only and cloud-synced media in the UI
-- [ ] **SYNC-05**: User keeps a local-first copy of media even when cloud sync is enabled
+- [x] **SYNC-01**: User can connect a Google Drive account for optional storage sync
+- [x] **SYNC-02**: User can connect a OneDrive account for optional storage sync
+- [x] **SYNC-03**: User can upload or sync recorded/imported media to the selected cloud provider
+- [x] **SYNC-04**: User can distinguish local-only and cloud-synced media in the UI
+- [x] **SYNC-05**: User keeps a local-first copy of media even when cloud sync is enabled
 
 ## v2 Requirements
 
@@ -80,13 +80,13 @@ Which phases cover which requirements. This will be updated during roadmap creat
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLAT-01 | Phase 1 | Pending |
-| PLAT-02 | Phase 1 | Pending |
-| PLAT-03 | Phase 1 | Pending |
-| PLAT-04 | Phase 1 | Pending |
-| PLAT-05 | Phase 1 | Pending |
-| PLAT-06 | Phase 1 | Pending |
-| PLAT-07 | Phase 1 | Pending |
+| PLAT-01 | Phase 1 | Complete |
+| PLAT-02 | Phase 1 | Complete |
+| PLAT-03 | Phase 1 | Complete |
+| PLAT-04 | Phase 1 | Complete |
+| PLAT-05 | Phase 1 | Complete |
+| PLAT-06 | Phase 1 | Complete |
+| PLAT-07 | Phase 1 | Complete |
 | CAP-01 | Phase 2 | Complete |
 | CAP-02 | Phase 2 | Complete |
 | CAP-03 | Phase 2 | Complete |
@@ -101,11 +101,11 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | SET-03 | Phase 3 | Complete |
 | SET-04 | Phase 3 | Complete |
 | SET-05 | Phase 3 | Complete |
-| SYNC-01 | Phase 4 | Pending |
-| SYNC-02 | Phase 4 | Pending |
-| SYNC-03 | Phase 4 | Pending |
-| SYNC-04 | Phase 4 | Pending |
-| SYNC-05 | Phase 4 | Pending |
+| SYNC-01 | Phase 4 | Complete |
+| SYNC-02 | Phase 4 | Complete |
+| SYNC-03 | Phase 4 | Complete |
+| SYNC-04 | Phase 4 | Complete |
+| SYNC-05 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 26 total
@@ -114,4 +114,4 @@ Which phases cover which requirements. This will be updated during roadmap creat
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-30 after Phase 3 completion*
+*Last updated: 2026-03-30 after Phase 4 completion*

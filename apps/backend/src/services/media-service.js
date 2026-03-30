@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { getDatabase } = require('../storage/database');
 const nodesService = require('./nodes-service');
-const { resolveManagedMediaPath, writeUploadedMedia } = require('../storage/media-files');
+const { copyImportedMedia, resolveManagedMediaPath, writeUploadedMedia } = require('../storage/media-files');
 
 const captureKinds = {
   audio: 'audio',
@@ -128,6 +128,67 @@ async function saveRecording(payload = {}) {
   }
 }
 
+async function importMedia(payload = {}) {
+  const kind = String(payload.kind || '').trim();
+  if (!['audio', 'video', 'file'].includes(kind)) {
+    throw createHttpError('Attachment kind must be audio, video, or file');
+  }
+
+  const sourcePath = String(payload.sourcePath || '').trim();
+  if (!sourcePath) {
+    throw createHttpError('Source path is required');
+  }
+
+  if (!fs.existsSync(sourcePath)) {
+    throw createHttpError('Source file does not exist');
+  }
+
+  const nodeId = normalizeNodeId(payload.nodeId);
+  let node = nodeId ? findNodeById(nodeId) : null;
+  if (nodeId && !node) {
+    throw createHttpError('Node not found', 404);
+  }
+
+  const title = String(payload.title || '').trim();
+  if (!node && !title) {
+    throw createHttpError('Title is required');
+  }
+
+  let createdNode = null;
+  const localPath = await copyImportedMedia(sourcePath, kind);
+
+  try {
+    if (!node) {
+      createdNode = nodesService.createNode({
+        title,
+        description: '',
+        tags: '',
+      });
+      node = createdNode;
+    }
+
+    const attachment = createAttachmentRecord({
+      nodeId: node.id,
+      kind,
+      localPath,
+    });
+
+    return {
+      node,
+      attachment,
+    };
+  } catch (error) {
+    fs.rmSync(localPath, { force: true });
+
+    if (createdNode) {
+      nodesService.deleteNode(createdNode.id);
+    }
+
+    throw error;
+  }
+}
+
 module.exports = {
+  importMedia,
   saveRecording,
 };

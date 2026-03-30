@@ -11,6 +11,7 @@ const operations = {
   addAttachment: attachments.addAttachment,
   deleteAttachment: attachments.deleteAttachment,
   saveRecording: media.saveRecording,
+  importMedia: media.importMedia,
 };
 
 const v1 = {

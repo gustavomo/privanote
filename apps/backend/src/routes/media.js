@@ -33,6 +33,14 @@ async function registerMediaRoutes(app) {
       handleRouteError(reply, error);
     }
   });
+
+  app.post('/api/v1/media/imports', async (request, reply) => {
+    try {
+      return mediaService.importMedia(request.body);
+    } catch (error) {
+      handleRouteError(reply, error);
+    }
+  });
 }
 
 module.exports = {

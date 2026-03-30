@@ -230,8 +230,12 @@ function registerIpcHandlers() {
       properties: ['openFile'],
       filters: [
         {
-          name: 'Media and Files',
-          extensions: ['mp3', 'wav', 'm4a', 'mp4', 'mov', 'mkv', 'webm', 'txt', 'json'],
+          name: 'Media',
+          extensions: ['mp3', 'wav', 'm4a', 'mp4', 'mov', 'mkv', 'webm'],
+        },
+        {
+          name: 'All Files',
+          extensions: ['*'],
         },
       ],
     });

@@ -1,12 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from './lib/utils.js';
 
-const attachmentKinds = [
-  { value: 'audio', label: 'Audio' },
-  { value: 'video', label: 'Video' },
-  { value: 'file', label: 'File' },
-];
-
 const captureModes = [
   { value: 'audio', label: 'Audio' },
   { value: 'video', label: 'Video' },
@@ -47,6 +41,9 @@ function createUnavailableApi() {
       throw new Error('Desktop API is unavailable.');
     },
     saveRecording: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
+    importMedia: async () => {
       throw new Error('Desktop API is unavailable.');
     },
     getMediaAccessStatus: async () => 'unknown',
@@ -135,6 +132,27 @@ function createRecordingFileName(captureMode, mimeType) {
   return `${prefix}.${resolveFileExtension(mimeType || '')}`;
 }
 
+function inferImportedKind(filePath) {
+  const normalizedPath = String(filePath || '').toLowerCase();
+
+  if (/\.(mp3|wav|m4a|aac|ogg|flac)$/.test(normalizedPath)) {
+    return 'audio';
+  }
+
+  if (/\.(mp4|mov|mkv|webm|avi|m4v)$/.test(normalizedPath)) {
+    return 'video';
+  }
+
+  return 'file';
+}
+
+function createImportPlaceholderTitle(kind, createdAt = new Date()) {
+  const prefix =
+    kind === 'audio' ? 'Imported audio' : kind === 'video' ? 'Imported video' : 'Imported file';
+
+  return `${prefix} - ${createdAt.toLocaleString()}`;
+}
+
 async function buildRecordingFile(blob, captureMode) {
   const mimeType = blob.type || (captureMode === 'audio' ? 'audio/webm' : 'video/webm');
   const bytes =
@@ -160,8 +178,6 @@ export default function App({ api }) {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editTags, setEditTags] = useState('');
-  const [attachmentKind, setAttachmentKind] = useState('audio');
-  const [attachmentPath, setAttachmentPath] = useState('');
   const [captureMode, setCaptureMode] = useState('audio');
   const [captureState, setCaptureState] = useState('idle');
   const [captureError, setCaptureError] = useState('');
@@ -350,35 +366,36 @@ export default function App({ api }) {
     setError('');
 
     try {
-      const pickedPath = await client.pickFile();
-      if (pickedPath) {
-        setAttachmentPath(pickedPath);
-      }
+      return await client.pickFile();
     } catch (pickError) {
       setError(pickError.message || 'Unable to open file picker.');
+      return null;
     }
   }
 
-  async function handleAddAttachment(event) {
-    event.preventDefault();
-
-    if (!selectedNode) {
-      setError('Select a note before adding attachments.');
-      return;
-    }
-
+  async function handleImportFiles() {
     setError('');
+    setCaptureError('');
 
     try {
-      await client.addAttachment({
-        nodeId: selectedNode.id,
-        kind: attachmentKind,
-        localPath: attachmentPath,
+      const sourcePath = await handlePickFile();
+      if (!sourcePath) {
+        return;
+      }
+
+      const kind = inferImportedKind(sourcePath);
+      const result = await client.importMedia({
+        nodeId: selectedNode?.id,
+        title: createImportPlaceholderTitle(kind),
+        kind,
+        sourcePath,
       });
-      setAttachmentPath('');
-      await loadAttachments(selectedNode.id);
-    } catch (addError) {
-      setError(addError.message || 'Unable to add attachment.');
+
+      await loadNodes();
+      setSelectedNodeId(result.node.id);
+      await loadAttachments(result.node.id);
+    } catch (importError) {
+      setError(importError.message || 'Unable to import files.');
     }
   }
 
@@ -669,13 +686,22 @@ export default function App({ api }) {
                   Stop Recording
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleStartRecording}
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                >
-                  Start Recording
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={handleStartRecording}
+                    className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                  >
+                    Start Recording
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImportFiles}
+                    className="inline-flex h-11 items-center justify-center rounded-xl border bg-background px-4 text-sm font-semibold"
+                  >
+                    Import Files
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -852,49 +878,9 @@ export default function App({ api }) {
                   <div className="space-y-1">
                     <h3 className="text-xl font-semibold leading-[1.2]">Attachments</h3>
                     <p className="text-sm text-muted-foreground">
-                      Keep media and file links connected to the current note.
+                      Imported files are copied into managed local storage and linked to the current note.
                     </p>
                   </div>
-
-                  <form
-                    className="grid gap-3 lg:grid-cols-[140px_minmax(0,1fr)_auto_auto]"
-                    onSubmit={handleAddAttachment}
-                  >
-                    <select
-                      className="h-11 rounded-xl border bg-background px-3 text-sm"
-                      value={attachmentKind}
-                      onChange={(event) => setAttachmentKind(event.target.value)}
-                    >
-                      {attachmentKinds.map((kind) => (
-                        <option key={kind.value} value={kind.value}>
-                          {kind.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <input
-                      className="h-11 rounded-xl border bg-background px-3 text-sm"
-                      placeholder="Local path"
-                      required
-                      value={attachmentPath}
-                      onChange={(event) => setAttachmentPath(event.target.value)}
-                    />
-
-                    <button
-                      type="button"
-                      onClick={handlePickFile}
-                      className="inline-flex h-11 items-center justify-center rounded-xl border bg-background px-4 text-sm font-semibold"
-                    >
-                      Pick File
-                    </button>
-
-                    <button
-                      type="submit"
-                      className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                    >
-                      Add Attachment
-                    </button>
-                  </form>
 
                   {attachments.length === 0 ? (
                     <div className="rounded-2xl border border-dashed bg-background px-4 py-8 text-center text-sm text-muted-foreground">

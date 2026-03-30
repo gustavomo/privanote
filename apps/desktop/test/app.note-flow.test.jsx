@@ -9,7 +9,6 @@ const { createBackendClient } = require('../src/lib/backend-client.js');
 
 function createMockTransport() {
   let nextNodeId = 1;
-  let nextAttachmentId = 1;
   let nodes = [];
   let attachments = [];
 
@@ -50,18 +49,6 @@ function createMockTransport() {
           return true;
         case 'v1.attachments.listAttachments':
           return attachments.filter((attachment) => attachment.node_id === payload.nodeId);
-        case 'v1.attachments.addAttachment': {
-          const attachment = {
-            id: nextAttachmentId++,
-            node_id: payload.nodeId,
-            kind: payload.kind,
-            local_path: payload.localPath,
-            cloud_url: payload.cloudUrl || '',
-            created_at: '2026-03-29T00:05:00.000Z',
-          };
-          attachments = [attachment, ...attachments];
-          return attachment;
-        }
         case 'v1.attachments.deleteAttachment':
           attachments = attachments.filter((attachment) => attachment.id !== payload.attachmentId);
           return true;
@@ -89,7 +76,7 @@ describe('App note workspace', () => {
     expect(screen.getByRole('button', { name: 'Create Note' })).toBeInTheDocument();
   });
 
-  it('creates notes and attachments through createBackendClient without auth prompts', async () => {
+  it('creates and deletes notes through createBackendClient without auth prompts', async () => {
     const transport = createMockTransport();
     const api = createBackendClient({ transport });
 
@@ -113,26 +100,6 @@ describe('App note workspace', () => {
         expect.objectContaining({ id: 'v1.nodes.createNode' }),
         expect.objectContaining({ title: 'Architecture note' })
       );
-    });
-
-    fireEvent.change(screen.getByPlaceholderText('Local path'), {
-      target: { value: '/tmp/architecture-note.wav' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Add Attachment' }));
-
-    expect(await screen.findByText('/tmp/architecture-note.wav')).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(transport.request).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'v1.attachments.addAttachment' }),
-        expect.objectContaining({ localPath: '/tmp/architecture-note.wav' })
-      );
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Remove Attachment' }));
-
-    await waitFor(() => {
-      expect(screen.queryByText('/tmp/architecture-note.wav')).not.toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete Note' }));

@@ -28,6 +28,7 @@ function createBackendClient({ transport }) {
     deleteAttachment: (attachmentId) =>
       activeTransport.request(v1.operations.deleteAttachment, { attachmentId }),
     saveRecording: (payload, file) => upload(v1.media.saveRecording, payload, file),
+    importMedia: (payload) => activeTransport.request(v1.media.importMedia, payload),
   };
 }
 

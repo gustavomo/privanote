@@ -74,6 +74,49 @@ describe('database storage cleanup', () => {
     expect(fs.existsSync(managedFile)).toBe(false);
   });
 
+  it('removes attachments stored under the configured local media directory when a note is deleted', () => {
+    const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'privanote-storage-'));
+    const localMediaDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'privanote-media-'));
+    const { database } = loadStorageModules(dataRoot);
+    const { getDatabase } = database;
+    const db = getDatabase();
+
+    db.prepare(
+      `
+        UPDATE settings
+        SET storage_destination = 'local',
+            local_media_directory = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = 1
+      `
+    ).run(localMediaDirectory);
+
+    const managedFile = path.join(localMediaDirectory, 'attachments', 'audio', 'clip.wav');
+    fs.mkdirSync(path.dirname(managedFile), { recursive: true });
+    fs.writeFileSync(managedFile, 'binary');
+
+    const nodeId = db
+      .prepare(
+        `
+          INSERT INTO nodes (title, description, tags, updated_at)
+          VALUES (?, '', '', CURRENT_TIMESTAMP)
+        `
+      )
+      .run('configured media cleanup note').lastInsertRowid;
+
+    db.prepare(
+      `
+        INSERT INTO attachments (node_id, kind, local_path, cloud_url)
+        VALUES (?, ?, ?, '')
+      `
+    ).run(nodeId, 'audio', managedFile);
+
+    db.prepare('DELETE FROM nodes WHERE id = ?').run(nodeId);
+
+    expect(db.prepare('SELECT COUNT(*) FROM attachments').pluck().get()).toBe(0);
+    expect(fs.existsSync(managedFile)).toBe(false);
+  });
+
   it('keeps the storage root stable across database reopen cycles', () => {
     const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'privanote-stable-root-'));
     const firstLoad = loadStorageModules(dataRoot);

@@ -1,5 +1,6 @@
 const path = require('path');
 const { getDatabase } = require('../storage/database');
+const { rememberConfiguredManagedAttachmentRoot } = require('../storage/attachment-files');
 const { validateOpenAiKey } = require('./openai-transcription');
 
 const validStorageDestinations = new Set(['local', 'google-drive', 'onedrive']);
@@ -175,6 +176,7 @@ async function updateStoredSettings(partial = {}) {
       local_runtime_status: next.localRuntimeStatus,
     });
 
+  rememberConfiguredManagedAttachmentRoot(next);
   return getSettings();
 }
 

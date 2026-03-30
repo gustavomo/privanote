@@ -1,6 +1,12 @@
 const fs = require('fs');
 const Database = require('better-sqlite3');
-const { deleteManagedAttachment, resolveManagedAttachmentsRoot } = require('./attachment-files');
+const {
+  deleteManagedAttachment,
+  rememberConfiguredManagedAttachmentRoot,
+  rememberManagedAttachmentPath,
+  rememberManagedAttachmentRoot,
+  resolveManagedAttachmentsRoot,
+} = require('./attachment-files');
 const { resolveRuntimeDatabasePath, resolveRuntimeRoot } = require('./runtime-paths');
 
 let database = null;
@@ -16,7 +22,14 @@ function createDatabase() {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.function('delete_managed_attachment', (localPath) => {
-    deleteManagedAttachment(localPath, managedAttachmentsRoot);
+    deleteManagedAttachment(localPath);
+    return 1;
+  });
+  db.function('remember_managed_attachment_root', (storageDestination, localMediaDirectory) => {
+    rememberConfiguredManagedAttachmentRoot({
+      storage_destination: storageDestination,
+      local_media_directory: localMediaDirectory,
+    });
     return 1;
   });
 
@@ -66,6 +79,22 @@ function createDatabase() {
   `);
 
   db.exec(`
+    CREATE TRIGGER IF NOT EXISTS settings_managed_root_sync_insert
+    AFTER INSERT ON settings
+    BEGIN
+      SELECT remember_managed_attachment_root(new.storage_destination, new.local_media_directory);
+    END;
+  `);
+
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS settings_managed_root_sync_update
+    AFTER UPDATE ON settings
+    BEGIN
+      SELECT remember_managed_attachment_root(new.storage_destination, new.local_media_directory);
+    END;
+  `);
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS transcripts (
       node_id INTEGER PRIMARY KEY,
       attachment_id INTEGER NOT NULL,
@@ -97,6 +126,31 @@ function createDatabase() {
       VALUES (1, 'local', '', 'local', 'openai', '', 'not-ready')
     `
   ).run();
+
+  rememberManagedAttachmentRoot(managedAttachmentsRoot);
+  rememberConfiguredManagedAttachmentRoot(
+    db
+      .prepare(
+        `
+          SELECT storage_destination, local_media_directory
+          FROM settings
+          WHERE id = 1
+        `
+      )
+      .get()
+  );
+
+  db.prepare(
+    `
+      SELECT DISTINCT local_path
+      FROM attachments
+    `
+  )
+    .pluck()
+    .all()
+    .forEach((localPath) => {
+      rememberManagedAttachmentPath(localPath);
+    });
 
   return db;
 }

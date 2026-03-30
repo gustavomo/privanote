@@ -8,6 +8,20 @@ function createMockApi({ nodes: initialNodes = [], pickedPath }) {
   let nextNodeId = initialNodes.length + 1;
   let nodes = [...initialNodes];
   let attachments = [];
+  let pickFileCalls = 0;
+  let settings = {
+    storageDestination: 'local',
+    localMediaDirectory: '',
+    transcriptionMode: 'local',
+  };
+
+  function resolveAttachmentRoot(kind) {
+    if (settings.storageDestination === 'local' && settings.localMediaDirectory) {
+      return `${settings.localMediaDirectory}/attachments/${kind}`;
+    }
+
+    return `/managed/${kind}`;
+  }
 
   return {
     listNodes: vi.fn(async () => [...nodes]),
@@ -65,7 +79,7 @@ function createMockApi({ nodes: initialNodes = [], pickedPath }) {
         id: nextAttachmentId++,
         node_id: node.id,
         kind: payload.kind,
-        local_path: `/managed/${payload.sourcePath.split('/').pop()}`,
+        local_path: `${resolveAttachmentRoot(payload.kind)}/${payload.sourcePath.split('/').pop()}`,
         cloud_url: '',
         created_at: '2026-03-29T00:10:00.000Z',
       };
@@ -78,9 +92,26 @@ function createMockApi({ nodes: initialNodes = [], pickedPath }) {
     }),
     getAttachmentContentUrl: vi.fn(async (attachmentId) => `/preview/${attachmentId}`),
     openPath: vi.fn(async () => ''),
+    getSettings: vi.fn(async () => ({ ...settings })),
+    updateSettings: vi.fn(async (payload) => {
+      settings = {
+        ...settings,
+        ...payload,
+      };
+      return { ...settings };
+    }),
     getMediaAccessStatus: vi.fn(async () => 'granted'),
     requestMediaAccess: vi.fn(async () => ({ granted: true, status: 'granted' })),
-    pickFile: vi.fn(async () => pickedPath),
+    pickFile: vi.fn(async () => {
+      if (Array.isArray(pickedPath)) {
+        const nextPath = pickedPath[Math.min(pickFileCalls, pickedPath.length - 1)];
+        pickFileCalls += 1;
+        return nextPath;
+      }
+
+      return pickedPath;
+    }),
+    pickDirectory: vi.fn(async () => '/vault/privanote'),
   };
 }
 
@@ -115,7 +146,7 @@ describe('media import flow', () => {
       );
     });
 
-    expect(await screen.findByText('/managed/session.mp4')).toBeInTheDocument();
+    expect(await screen.findByText('/managed/video/session.mp4')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Remove Media' })).toBeInTheDocument();
   });
 
@@ -138,7 +169,51 @@ describe('media import flow', () => {
       );
     });
 
-    expect(await screen.findByText('/managed/archive.wav')).toBeInTheDocument();
+    expect(await screen.findByText('/managed/audio/archive.wav')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Remove Media' })).toBeInTheDocument();
+  });
+
+  it('uses the saved localMediaDirectory only for imports after settings are updated', async () => {
+    const api = createMockApi({
+      nodes: [
+        {
+          id: 1,
+          title: 'Existing note',
+          description: '',
+          tags: '',
+          created_at: '2026-03-29T00:00:00.000Z',
+          updated_at: '2026-03-29T00:00:00.000Z',
+        },
+      ],
+      pickedPath: ['/tmp/original.wav', '/tmp/future.wav'],
+    });
+
+    render(<App api={api} />);
+
+    await screen.findByText('Active Note');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Import Files' }));
+    expect(await screen.findByText('/managed/audio/original.wav')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Choose Folder' }));
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('/vault/privanote')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Settings' }));
+
+    await waitFor(() => {
+      expect(api.updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          localMediaDirectory: '/vault/privanote',
+        })
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Workspace' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Import Files' }));
+
+    expect(await screen.findByText('/vault/privanote/attachments/audio/future.wav')).toBeInTheDocument();
+    expect(screen.getByText('/managed/audio/original.wav')).toBeInTheDocument();
   });
 });

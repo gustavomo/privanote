@@ -12,6 +12,12 @@ describe('createBackendClient', () => {
     await client.createNode({ title: 'Contract note' });
     await client.updateNode({ id: 7, title: 'Updated contract note' });
     await client.deleteNode(7);
+    await client.getSettings();
+    await client.updateSettings({
+      storageDestination: 'local',
+      localMediaDirectory: '/tmp/notes',
+      transcriptionMode: 'local',
+    });
     await client.listAttachments(7);
     await client.addAttachment({ nodeId: 7, kind: 'audio', localPath: '/tmp/audio.wav' });
     await client.deleteAttachment(11);
@@ -27,15 +33,21 @@ describe('createBackendClient', () => {
     expect(transport.request).toHaveBeenNthCalledWith(4, v1.operations.deleteNode, {
       nodeId: 7,
     });
-    expect(transport.request).toHaveBeenNthCalledWith(5, v1.operations.listAttachments, {
+    expect(transport.request).toHaveBeenNthCalledWith(5, v1.operations.getSettings);
+    expect(transport.request).toHaveBeenNthCalledWith(6, v1.operations.updateSettings, {
+      storageDestination: 'local',
+      localMediaDirectory: '/tmp/notes',
+      transcriptionMode: 'local',
+    });
+    expect(transport.request).toHaveBeenNthCalledWith(7, v1.operations.listAttachments, {
       nodeId: 7,
     });
-    expect(transport.request).toHaveBeenNthCalledWith(6, v1.operations.addAttachment, {
+    expect(transport.request).toHaveBeenNthCalledWith(8, v1.operations.addAttachment, {
       nodeId: 7,
       kind: 'audio',
       localPath: '/tmp/audio.wav',
     });
-    expect(transport.request).toHaveBeenNthCalledWith(7, v1.operations.deleteAttachment, {
+    expect(transport.request).toHaveBeenNthCalledWith(9, v1.operations.deleteAttachment, {
       attachmentId: 11,
     });
   });

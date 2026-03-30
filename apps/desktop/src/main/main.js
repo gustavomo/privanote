@@ -1,164 +1,108 @@
 const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const path = require('path');
+const { v1 } = require('@privanote/backend/contracts');
+const { startBackendProcess, stopBackendProcess } = require('./backend-process');
 
-const OPERATION_IDS = {
-  listNodes: 'v1.nodes.listNodes',
-  createNode: 'v1.nodes.createNode',
-  updateNode: 'v1.nodes.updateNode',
-  deleteNode: 'v1.nodes.deleteNode',
-  listAttachments: 'v1.attachments.listAttachments',
-  addAttachment: 'v1.attachments.addAttachment',
-  deleteAttachment: 'v1.attachments.deleteAttachment',
-};
+const operationsById = Object.values(v1.operations).reduce((result, operation) => {
+  result[operation.id] = operation;
+  return result;
+}, {});
 
-function sanitizeNodePayload(payload = {}) {
-  const result = {
-    title: String(payload.title || '').trim(),
-    description: String(payload.description || '').trim(),
-    tags: String(payload.tags || '').trim(),
-  };
+let backendContext = null;
+let backendStartupPromise = null;
+let isQuitting = false;
 
-  if (!result.title) {
-    throw new Error('Title is required');
+function resolveOperationPath(operation, payload = {}) {
+  const nodeId = Number(payload.nodeId ?? payload.id);
+  const attachmentId = Number(payload.attachmentId);
+
+  return operation.path
+    .replace(':nodeId', Number.isFinite(nodeId) ? String(nodeId) : ':nodeId')
+    .replace(':attachmentId', Number.isFinite(attachmentId) ? String(attachmentId) : ':attachmentId');
+}
+
+async function proxyBackendRequest(request = {}) {
+  const operation = operationsById[request.operationId];
+  if (!operation) {
+    throw new Error(`Unsupported backend operation: ${request.operationId}`);
   }
 
-  return result;
-}
-
-function createMockBackendState() {
-  let nextNodeId = 1;
-  let nextAttachmentId = 1;
-  const nodes = [];
-  const attachments = [];
-
-  const listNodes = () =>
-    [...nodes].sort((left, right) => {
-      const leftTime = new Date(left.updated_at).getTime();
-      const rightTime = new Date(right.updated_at).getTime();
-      return rightTime - leftTime || right.id - left.id;
-    });
-
-  const getNode = (nodeId) => nodes.find((node) => node.id === nodeId) || null;
-
-  const operations = {
-    [OPERATION_IDS.listNodes]: () => listNodes(),
-    [OPERATION_IDS.createNode]: (payload) => {
-      const safePayload = sanitizeNodePayload(payload);
-      const now = new Date().toISOString();
-      const node = {
-        id: nextNodeId++,
-        ...safePayload,
-        created_at: now,
-        updated_at: now,
-      };
-      nodes.push(node);
-      return node;
-    },
-    [OPERATION_IDS.updateNode]: (payload) => {
-      const nodeId = Number(payload?.id);
-      if (!Number.isInteger(nodeId) || nodeId <= 0) {
-        throw new Error('A valid node id is required');
-      }
-
-      const node = getNode(nodeId);
-      if (!node) {
-        throw new Error('Node not found');
-      }
-
-      Object.assign(node, sanitizeNodePayload(payload), {
-        updated_at: new Date().toISOString(),
-      });
-      return node;
-    },
-    [OPERATION_IDS.deleteNode]: ({ nodeId }) => {
-      const safeNodeId = Number(nodeId);
-      const nodeIndex = nodes.findIndex((node) => node.id === safeNodeId);
-      if (nodeIndex === -1) {
-        return false;
-      }
-
-      nodes.splice(nodeIndex, 1);
-
-      for (let index = attachments.length - 1; index >= 0; index -= 1) {
-        if (attachments[index].node_id === safeNodeId) {
-          attachments.splice(index, 1);
-        }
-      }
-
-      return true;
-    },
-    [OPERATION_IDS.listAttachments]: ({ nodeId }) => {
-      const safeNodeId = Number(nodeId);
-      return attachments
-        .filter((attachment) => attachment.node_id === safeNodeId)
-        .sort((left, right) => {
-          const leftTime = new Date(left.created_at).getTime();
-          const rightTime = new Date(right.created_at).getTime();
-          return rightTime - leftTime || right.id - left.id;
-        });
-    },
-    [OPERATION_IDS.addAttachment]: (payload = {}) => {
-      const nodeId = Number(payload.nodeId);
-      const kind = String(payload.kind || '').trim();
-      const localPath = String(payload.localPath || '').trim();
-      const cloudUrl = String(payload.cloudUrl || '').trim();
-
-      if (!Number.isInteger(nodeId) || nodeId <= 0) {
-        throw new Error('A valid node id is required');
-      }
-
-      if (!['audio', 'video', 'file'].includes(kind)) {
-        throw new Error('Attachment kind must be audio, video, or file');
-      }
-
-      if (!localPath) {
-        throw new Error('Attachment local path is required');
-      }
-
-      if (!getNode(nodeId)) {
-        throw new Error('Node not found');
-      }
-
-      const attachment = {
-        id: nextAttachmentId++,
-        node_id: nodeId,
-        kind,
-        local_path: localPath,
-        cloud_url: cloudUrl,
-        created_at: new Date().toISOString(),
-      };
-
-      attachments.push(attachment);
-      return attachment;
-    },
-    [OPERATION_IDS.deleteAttachment]: ({ attachmentId }) => {
-      const safeAttachmentId = Number(attachmentId);
-      const index = attachments.findIndex((attachment) => attachment.id === safeAttachmentId);
-      if (index === -1) {
-        return false;
-      }
-
-      attachments.splice(index, 1);
-      return true;
+  const backend = await ensureBackendReady();
+  const url = `${backend.baseUrl}${resolveOperationPath(operation, request.payload)}`;
+  const init = {
+    method: operation.method,
+    headers: {
+      Accept: 'application/json',
     },
   };
 
-  return {
-    request(operationId, payload) {
-      const operation = operations[operationId];
-      if (!operation) {
-        throw new Error(`Unsupported contract operation: ${operationId}`);
-      }
+  if (operation.method === 'POST' || operation.method === 'PUT') {
+    init.headers['Content-Type'] = 'application/json';
+    init.body = JSON.stringify(request.payload || {});
+  }
 
-      return operation(payload);
-    },
-  };
+  const response = await fetch(url, init);
+  const contentType = response.headers.get('content-type') || '';
+  const body = contentType.includes('application/json') ? await response.json() : await response.text();
+
+  if (!response.ok) {
+    const message =
+      body && typeof body === 'object' && 'error' in body ? body.error : body || `Backend request failed: ${response.status}`;
+    throw new Error(message);
+  }
+
+  if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'deleted')) {
+    return body.deleted;
+  }
+
+  return body;
 }
 
-function registerIpcHandlers(backendState) {
-  ipcMain.handle('backend:request', (_event, request = {}) => {
-    return backendState.request(request.operationId, request.payload);
+function bindBackendExit(child) {
+  child.once('exit', (code) => {
+    backendContext = null;
+
+    if (!isQuitting && code && code !== 0) {
+      dialog.showErrorBox(
+        'Privanote backend stopped',
+        'The local backend exited unexpectedly. Restart Privanote and try again.'
+      );
+    }
   });
+}
+
+async function ensureBackendReady() {
+  if (backendContext) {
+    return backendContext;
+  }
+
+  if (!backendStartupPromise) {
+    const dataRoot = path.join(app.getPath('userData'), 'privanote');
+
+    backendStartupPromise = startBackendProcess({
+      dataRoot,
+    })
+      .then((context) => {
+        backendContext = context;
+        bindBackendExit(context.child);
+        return context;
+      })
+      .finally(() => {
+        backendStartupPromise = null;
+      });
+  }
+
+  return backendStartupPromise;
+}
+
+async function shutdownBackend() {
+  const activeContext = backendContext;
+  backendContext = null;
+  await stopBackendProcess(activeContext);
+}
+
+function registerIpcHandlers() {
+  ipcMain.handle('backend:request', (_event, request) => proxyBackendRequest(request));
 
   ipcMain.handle('files:pick', async () => {
     const result = await dialog.showOpenDialog({
@@ -180,7 +124,9 @@ function registerIpcHandlers(backendState) {
   });
 }
 
-function createWindow() {
+async function createWindow() {
+  await ensureBackendReady();
+
   const win = new BrowserWindow({
     width: 1280,
     height: 840,
@@ -203,19 +149,50 @@ function createWindow() {
   win.loadURL(url);
 }
 
-app.whenReady().then(() => {
-  registerIpcHandlers(createMockBackendState());
-  createWindow();
+app.whenReady().then(async () => {
+  registerIpcHandlers();
 
-  app.on('activate', () => {
+  try {
+    await createWindow();
+  } catch (error) {
+    dialog.showErrorBox('Privanote failed to start', error.message || 'Unable to start the local backend.');
+    await shutdownBackend();
+    app.quit();
+    return;
+  }
+
+  app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      try {
+        await createWindow();
+      } catch (error) {
+        dialog.showErrorBox('Privanote failed to reopen', error.message || 'Unable to restart the local backend.');
+      }
     }
   });
 });
 
-app.on('window-all-closed', () => {
+app.on('before-quit', () => {
+  isQuitting = true;
+});
+
+app.on('window-all-closed', async () => {
+  await shutdownBackend();
+
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+process.on('uncaughtException', async (error) => {
+  dialog.showErrorBox('Privanote crashed', error.message || 'The desktop shell hit an unexpected error.');
+  await shutdownBackend();
+  process.exit(1);
+});
+
+process.on('unhandledRejection', async (error) => {
+  const message = error instanceof Error ? error.message : 'The desktop shell hit an unexpected promise rejection.';
+  dialog.showErrorBox('Privanote backend error', message);
+  await shutdownBackend();
+  process.exit(1);
 });

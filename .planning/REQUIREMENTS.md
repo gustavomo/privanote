@@ -48,6 +48,10 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [x] **SYNC-04**: User can distinguish local-only and cloud-synced media in the UI
 - [x] **SYNC-05**: User keeps a local-first copy of media even when cloud sync is enabled
 
+### Workspace UX
+
+- [ ] **UX-01**: The capture panel (recording and import) is always visible at the top of the workspace sidebar so users can start a capture from anywhere without creating a note first. Notes are created automatically as a result of capture.
+
 ## v2 Requirements
 
 ### Deployment and Identity
@@ -106,12 +110,13 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | SYNC-03 | Phase 4 | Complete |
 | SYNC-04 | Phase 4 | Complete |
 | SYNC-05 | Phase 4 | Complete |
+| UX-01 | Phase 5 | In Progress |
 
 **Coverage:**
-- v1 requirements: 26 total
-- Mapped to phases: 26
+- v1 requirements: 27 total
+- Mapped to phases: 27
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-30 after Phase 4 completion*
+*Last updated: 2026-03-30 after Phase 5 planning*

@@ -104,10 +104,10 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 ### Phase 5: Make record or import always accessible as a persistent entry point
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Restructure the workspace UX so recording and importing are the primary entry points. The capture panel moves to a persistent top-of-sidebar position. Notes are created automatically as a result of capture; the Create Note form is removed.
+**Requirements**: [UX-01]
 **Depends on:** Phase 4
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 5 to break down)
+- [ ] 05-01-PLAN.md — Refactor App.jsx sidebar layout and update regression tests for capture-first flow

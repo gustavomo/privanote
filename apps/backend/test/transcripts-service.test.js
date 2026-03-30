@@ -62,7 +62,8 @@ describe('transcripts and settings foundations', () => {
       localMediaDirectory: '',
       transcriptionMode: 'local',
       providerKind: 'openai',
-      backendApiKey: '',
+      backendApiKeyConfigured: false,
+      backendApiKeyMaskedHint: '',
       localRuntimeStatus: 'not-ready',
     });
 

@@ -124,6 +124,13 @@ describe('transcription runner', () => {
     const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'privanote-transcription-runner-openai-'));
     const sourcePath = path.join(dataRoot, 'oversized.webm');
     fs.writeFileSync(sourcePath, 'video import bytes');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ data: [] }),
+      }))
+    );
 
     const statsSpy = vi.spyOn(fs, 'statSync').mockImplementation((targetPath) => {
       const actualStats = fs.lstatSync(targetPath);
@@ -141,7 +148,7 @@ describe('transcription runner', () => {
     app = await createServer();
 
     const settingsService = require('../src/services/settings-service.js');
-    settingsService.updateStoredSettings({
+    await settingsService.updateStoredSettings({
       transcriptionMode: 'backend',
       backendApiKey: 'sk-test-1234',
     });

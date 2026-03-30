@@ -1,31 +1,66 @@
 const path = require('path');
 const { getDatabase } = require('../storage/database');
+const { validateOpenAiKey } = require('./openai-transcription');
 
 const validStorageDestinations = new Set(['local', 'google-drive', 'onedrive']);
 const validTranscriptionModes = new Set(['local', 'backend']);
 const validProviderKinds = new Set(['openai']);
 const validRuntimeStatuses = new Set(['not-ready', 'downloading', 'ready', 'error']);
 
-function mapSettingsRow(row) {
+function maskBackendApiKey(apiKey) {
+  const safeApiKey = String(apiKey || '').trim();
+  if (!safeApiKey) {
+    return '';
+  }
+
+  const lastCharacters = safeApiKey.slice(-4);
+  return lastCharacters ? `••••${lastCharacters}` : '••••';
+}
+
+function mapSettingsRow(row, { includeSecrets = false } = {}) {
   if (!row) {
     return null;
   }
 
-  return {
+  const result = {
     id: row.id,
     storageDestination: row.storage_destination,
     localMediaDirectory: row.local_media_directory,
     transcriptionMode: row.transcription_mode,
     providerKind: row.provider_kind,
-    backendApiKey: row.backend_api_key,
     localRuntimeStatus: row.local_runtime_status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    backendApiKeyConfigured: Boolean(row.backend_api_key),
+    backendApiKeyMaskedHint: maskBackendApiKey(row.backend_api_key),
   };
+
+  if (includeSecrets) {
+    result.backendApiKey = row.backend_api_key;
+  }
+
+  return result;
 }
 
-function isAbsoluteDirectoryPath(value) {
-  return path.isAbsolute(String(value || '').trim());
+function readSettingsRow() {
+  return getDatabase()
+    .prepare(
+      `
+        SELECT
+          id,
+          storage_destination,
+          local_media_directory,
+          transcription_mode,
+          provider_kind,
+          backend_api_key,
+          local_runtime_status,
+          created_at,
+          updated_at
+        FROM settings
+        WHERE id = 1
+      `
+    )
+    .get();
 }
 
 function validateStorageDestination(storageDestination) {
@@ -61,36 +96,19 @@ function validateLocalMediaDirectory(storageDestination, localMediaDirectory) {
     return;
   }
 
-  if (!isAbsoluteDirectoryPath(localMediaDirectory)) {
+  if (!path.isAbsolute(String(localMediaDirectory || '').trim())) {
     throw new Error('Local media directory must be an absolute path');
   }
 }
 
-function getSettings() {
-  const row = getDatabase()
-    .prepare(
-      `
-        SELECT
-          id,
-          storage_destination,
-          local_media_directory,
-          transcription_mode,
-          provider_kind,
-          backend_api_key,
-          local_runtime_status,
-          created_at,
-          updated_at
-        FROM settings
-        WHERE id = 1
-      `
-    )
-    .get();
-
-  return mapSettingsRow(row);
+function getSettings(options = {}) {
+  return mapSettingsRow(readSettingsRow(), options);
 }
 
 function normalizeSettingsUpdate(partial = {}) {
-  const current = getSettings();
+  const current = getSettings({ includeSecrets: true });
+  const clearBackendApiKey = Boolean(partial.clearBackendApiKey);
+
   const next = {
     storageDestination:
       partial.storageDestination === undefined
@@ -106,12 +124,16 @@ function normalizeSettingsUpdate(partial = {}) {
         : String(partial.transcriptionMode || '').trim(),
     providerKind:
       partial.providerKind === undefined ? current.providerKind : String(partial.providerKind || '').trim(),
-    backendApiKey:
-      partial.backendApiKey === undefined ? current.backendApiKey : String(partial.backendApiKey || '').trim(),
+    backendApiKey: clearBackendApiKey
+      ? ''
+      : partial.backendApiKey === undefined
+        ? current.backendApiKey || ''
+        : String(partial.backendApiKey || '').trim(),
     localRuntimeStatus:
       partial.localRuntimeStatus === undefined
         ? current.localRuntimeStatus
         : String(partial.localRuntimeStatus || '').trim(),
+    clearBackendApiKey,
   };
 
   validateStorageDestination(next.storageDestination);
@@ -123,8 +145,12 @@ function normalizeSettingsUpdate(partial = {}) {
   return next;
 }
 
-function updateStoredSettings(partial = {}) {
+async function updateStoredSettings(partial = {}) {
   const next = normalizeSettingsUpdate(partial);
+
+  if (next.transcriptionMode === 'backend' && !next.clearBackendApiKey) {
+    await validateOpenAiKey(next.backendApiKey);
+  }
 
   getDatabase()
     .prepare(
@@ -155,11 +181,24 @@ function updateStoredSettings(partial = {}) {
 function markLocalRuntimeStatus(status) {
   const localRuntimeStatus = String(status || '').trim();
   validateRuntimeStatus(localRuntimeStatus);
-  return updateStoredSettings({ localRuntimeStatus });
+
+  getDatabase()
+    .prepare(
+      `
+        UPDATE settings
+        SET local_runtime_status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = 1
+      `
+    )
+    .run(localRuntimeStatus);
+
+  return getSettings();
 }
 
 module.exports = {
   getSettings,
   updateStoredSettings,
   markLocalRuntimeStatus,
+  maskBackendApiKey,
 };

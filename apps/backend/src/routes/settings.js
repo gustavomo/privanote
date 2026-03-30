@@ -9,6 +9,9 @@ function pickSettingsPayload(body = {}) {
     storageDestination: body.storageDestination,
     localMediaDirectory: body.localMediaDirectory,
     transcriptionMode: body.transcriptionMode,
+    providerKind: body.providerKind,
+    backendApiKey: body.backendApiKey,
+    clearBackendApiKey: body.clearBackendApiKey,
   };
 }
 
@@ -19,7 +22,7 @@ async function registerSettingsRoutes(app) {
 
   app.put('/api/v1/settings', async (request, reply) => {
     try {
-      return settingsService.updateStoredSettings(pickSettingsPayload(request.body));
+      return await settingsService.updateStoredSettings(pickSettingsPayload(request.body));
     } catch (error) {
       handleRouteError(reply, error);
     }

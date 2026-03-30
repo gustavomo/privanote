@@ -87,7 +87,13 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+6 todos captured (2026-03-30):
+- Migrate codebase to TypeScript [tooling]
+- Restructure project organization [general]
+- Rename apps folder [general]
+- Use Gherkin for tests [testing]
+- Fix UI issues [ui]
+- Make record or import always accessible [ui]
 
 ### Blockers/Concerns
 

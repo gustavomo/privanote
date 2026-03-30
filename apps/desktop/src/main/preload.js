@@ -28,6 +28,9 @@ const backendClient = createBackendClient({
 contextBridge.exposeInMainWorld('api', {
   ...backendClient,
   pickFile: () => ipcRenderer.invoke('files:pick'),
+  getAttachmentContentUrl: (attachmentId) =>
+    ipcRenderer.invoke('attachments:get-content-url', attachmentId),
+  openPath: (localPath) => ipcRenderer.invoke('files:open-path', localPath),
   getMediaAccessStatus: (mediaType) => ipcRenderer.invoke('media:get-access-status', mediaType),
   requestMediaAccess: (mediaType) => ipcRenderer.invoke('media:request-access', mediaType),
 });

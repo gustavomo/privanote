@@ -14,6 +14,11 @@ const attachments = {
     method: 'DELETE',
     path: '/api/v1/attachments/:attachmentId',
   },
+  getAttachmentContent: {
+    id: 'v1.attachments.getAttachmentContent',
+    method: 'GET',
+    path: '/api/v1/attachments/:attachmentId/content',
+  },
 };
 
 module.exports = {

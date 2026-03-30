@@ -10,6 +10,7 @@ const operations = {
   listAttachments: attachments.listAttachments,
   addAttachment: attachments.addAttachment,
   deleteAttachment: attachments.deleteAttachment,
+  getAttachmentContent: attachments.getAttachmentContent,
   saveRecording: media.saveRecording,
   importMedia: media.importMedia,
 };

@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { getDatabase } = require('../storage/database');
 
 function getNode(nodeId) {
@@ -74,6 +75,46 @@ function addAttachment(payload = {}) {
     .get(result.lastInsertRowid);
 }
 
+function createHttpError(message, statusCode = 400) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+function findAttachmentById(attachmentId) {
+  const safeAttachmentId = Number(attachmentId);
+  return getDatabase()
+    .prepare(
+      `
+        SELECT id, node_id, kind, local_path, cloud_url, created_at
+        FROM attachments
+        WHERE id = ?
+      `
+    )
+    .get(safeAttachmentId);
+}
+
+function getAttachmentContent(attachmentId) {
+  const safeAttachmentId = Number(attachmentId);
+  if (!Number.isInteger(safeAttachmentId) || safeAttachmentId <= 0) {
+    throw createHttpError('A valid attachment id is required');
+  }
+
+  const attachment = findAttachmentById(safeAttachmentId);
+  if (!attachment) {
+    throw createHttpError('Attachment not found', 404);
+  }
+
+  if (!fs.existsSync(attachment.local_path)) {
+    throw createHttpError('Attachment file not found', 404);
+  }
+
+  return {
+    attachment,
+    stream: fs.createReadStream(attachment.local_path),
+  };
+}
+
 function deleteAttachment(attachmentId) {
   const safeAttachmentId = Number(attachmentId);
   const result = getDatabase()
@@ -86,5 +127,6 @@ function deleteAttachment(attachmentId) {
 module.exports = {
   listAttachments,
   addAttachment,
+  getAttachmentContent,
   deleteAttachment,
 };

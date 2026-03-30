@@ -1,5 +1,5 @@
 const { Blob } = require('buffer');
-const { app, BrowserWindow, dialog, ipcMain, session, systemPreferences } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, session, shell, systemPreferences } = require('electron');
 const path = require('path');
 const { v1 } = require('@privanote/backend/contracts');
 const { resolveBackendErrorMessage } = require('./backend-response');
@@ -217,6 +217,13 @@ async function shutdownBackend() {
 function registerIpcHandlers() {
   ipcMain.handle('backend:request', (_event, request) => proxyBackendRequest(request));
   ipcMain.handle('backend:upload', (_event, request) => proxyBackendUpload(request));
+  ipcMain.handle('attachments:get-content-url', async (_event, attachmentId) => {
+    const backend = await ensureBackendReady();
+    return `${backend.baseUrl}${resolveOperationPath(v1.attachments.getAttachmentContent, {
+      attachmentId,
+    })}`;
+  });
+  ipcMain.handle('files:open-path', (_event, localPath) => shell.openPath(String(localPath || '')));
   ipcMain.handle('media:get-access-status', (_event, mediaType) => resolveMediaAccessStatus(mediaType));
   ipcMain.handle('media:request-access', (_event, mediaType) => requestMediaAccess(mediaType));
 

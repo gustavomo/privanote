@@ -1,12 +1,9 @@
+const mime = require('mime-types');
 const attachmentsService = require('../services/attachments-service');
 
 function handleRouteError(reply, error) {
-  if (error.message === 'Node not found') {
-    reply.code(404).send({ error: error.message });
-    return;
-  }
-
-  reply.code(400).send({ error: error.message });
+  const statusCode = Number(error.statusCode) || (error.message === 'Node not found' ? 404 : 400);
+  reply.code(statusCode).send({ error: error.message });
 }
 
 async function registerAttachmentRoutes(app) {
@@ -30,6 +27,18 @@ async function registerAttachmentRoutes(app) {
       return {
         deleted: attachmentsService.deleteAttachment(Number(request.params.attachmentId)),
       };
+    } catch (error) {
+      handleRouteError(reply, error);
+    }
+  });
+
+  app.get('/api/v1/attachments/:attachmentId/content', async (request, reply) => {
+    try {
+      const { attachment, stream } = attachmentsService.getAttachmentContent(
+        Number(request.params.attachmentId)
+      );
+      reply.type(mime.lookup(attachment.local_path) || 'application/octet-stream');
+      return reply.send(stream);
     } catch (error) {
       handleRouteError(reply, error);
     }

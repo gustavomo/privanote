@@ -61,6 +61,10 @@ The clarified product direction extends that baseline substantially: the repo sh
 | Scope cloud work around optional storage sync, not mandatory cloud storage | Local storage remains primary while Google Drive and OneDrive are optional destinations | — Pending |
 | Defer hosted backend deployment decisions to v2 | Deployment strategy is intentionally postponed until the local product shape is validated | — Pending |
 
+## Current State
+
+Phase 5 complete (2026-03-30) — capture panel is now a persistent sidebar fixture; Create Note form removed; auto-create and auto-navigate on save/import implemented; all 21 tests pass.
+
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.

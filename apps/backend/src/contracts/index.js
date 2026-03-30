@@ -3,6 +3,7 @@ const { attachments } = require('./v1/attachments');
 const { media } = require('./v1/media');
 const { transcripts } = require('./v1/transcripts');
 const { settings } = require('./v1/settings');
+const { sync } = require('./v1/sync');
 
 const operations = {
   listNodes: nodes.listNodes,
@@ -19,6 +20,10 @@ const operations = {
   retryNoteTranscript: transcripts.retryNoteTranscript,
   getSettings: settings.getSettings,
   updateSettings: settings.updateSettings,
+  listProviderConnections: sync.listProviderConnections,
+  beginProviderConnection: sync.beginProviderConnection,
+  disconnectProvider: sync.disconnectProvider,
+  retryAttachmentSync: sync.retryAttachmentSync,
 };
 
 const v1 = {
@@ -28,6 +33,7 @@ const v1 = {
   media,
   transcripts,
   settings,
+  sync,
   operations,
 };
 

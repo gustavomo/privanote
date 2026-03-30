@@ -70,7 +70,7 @@ async function runTranscriptAttempt(nodeId) {
       });
     }
 
-    return transcriptsService.markTranscriptSucceeded({
+    const transcript = transcriptsService.markTranscriptSucceeded({
       nodeId,
       attachmentId: attachment.id,
       text,
@@ -78,6 +78,21 @@ async function runTranscriptAttempt(nodeId) {
       provider,
       attemptCount: attemptCount + 1,
     });
+
+    try {
+      const syncStateService = require('./sync-state-service');
+      const attachmentSync = syncStateService.getAttachmentSync(attachment.id);
+      if (attachmentSync?.provider && ['google-drive', 'onedrive'].includes(attachmentSync.provider)) {
+        const { queueTranscriptSyncPatch } = require('./sync-runner');
+        queueTranscriptSyncPatch({
+          attachmentId: attachment.id,
+        });
+      }
+    } catch (_error) {
+      // Transcript persistence should succeed even if cloud patch scheduling misses and retries later.
+    }
+
+    return transcript;
   } catch (error) {
     const nextAttemptCount = attemptCount + 1;
 

@@ -2,6 +2,7 @@ const path = require('path');
 const { getDatabase } = require('../storage/database');
 const { rememberConfiguredManagedAttachmentRoot } = require('../storage/attachment-files');
 const { validateOpenAiKey } = require('./openai-transcription');
+const syncStateService = require('./sync-state-service');
 
 const validStorageDestinations = new Set(['local', 'google-drive', 'onedrive']);
 const validTranscriptionModes = new Set(['local', 'backend']);
@@ -147,6 +148,7 @@ function normalizeSettingsUpdate(partial = {}) {
 }
 
 async function updateStoredSettings(partial = {}) {
+  const current = getSettings({ includeSecrets: true });
   const next = normalizeSettingsUpdate(partial);
 
   if (next.transcriptionMode === 'backend' && !next.clearBackendApiKey) {
@@ -177,6 +179,28 @@ async function updateStoredSettings(partial = {}) {
     });
 
   rememberConfiguredManagedAttachmentRoot(next);
+
+  if (
+    next.storageDestination !== current.storageDestination &&
+    ['google-drive', 'onedrive'].includes(next.storageDestination)
+  ) {
+    const connection = syncStateService.getProviderConnection(next.storageDestination);
+    if (connection.connectionStatus === 'connected') {
+      const attachmentIds = syncStateService.assignUnsyncedAttachmentsToDefaultProvider(
+        next.storageDestination
+      );
+      if (attachmentIds.length > 0) {
+        const { queueAttachmentSync } = require('./sync-runner');
+        attachmentIds.forEach((attachmentId) => {
+          queueAttachmentSync({
+            attachmentId,
+            provider: next.storageDestination,
+          });
+        });
+      }
+    }
+  }
+
   return getSettings();
 }
 

@@ -4,6 +4,7 @@ const nodesService = require('./nodes-service');
 const { copyImportedMedia, resolveManagedMediaPath, writeUploadedMedia } = require('../storage/media-files');
 const { queueTranscriptJob } = require('./transcription-runner');
 const settingsService = require('./settings-service');
+const syncStateService = require('./sync-state-service');
 
 const captureKinds = {
   audio: 'audio',
@@ -68,6 +69,24 @@ function createAttachmentRecord({ nodeId, kind, localPath }) {
     .get(result.lastInsertRowid);
 }
 
+function maybeQueueAttachmentSync(attachment, settings) {
+  const storageDestination = String(settings.storageDestination || '').trim();
+  if (!['google-drive', 'onedrive'].includes(storageDestination)) {
+    return;
+  }
+
+  const connection = syncStateService.getProviderConnection(storageDestination);
+  if (connection.connectionStatus !== 'connected') {
+    return;
+  }
+
+  const { queueAttachmentSync } = require('./sync-runner');
+  queueAttachmentSync({
+    attachmentId: attachment.id,
+    provider: storageDestination,
+  });
+}
+
 async function saveRecording(payload = {}) {
   const captureMode = String(payload.captureMode || '').trim();
   const kind = captureKinds[captureMode];
@@ -97,6 +116,7 @@ async function saveRecording(payload = {}) {
   });
 
   let createdNode = null;
+  const settings = settingsService.getSettings({ includeSecrets: true });
 
   try {
     await writeUploadedMedia(payload.stream, localPath);
@@ -122,6 +142,8 @@ async function saveRecording(payload = {}) {
         attachmentId: attachment.id,
       });
     }
+
+    maybeQueueAttachmentSync(attachment, settings);
 
     return {
       node,
@@ -165,11 +187,8 @@ async function importMedia(payload = {}) {
   }
 
   let createdNode = null;
-  const localPath = await copyImportedMedia(
-    sourcePath,
-    kind,
-    settingsService.getSettings({ includeSecrets: true })
-  );
+  const settings = settingsService.getSettings({ includeSecrets: true });
+  const localPath = await copyImportedMedia(sourcePath, kind, settings);
 
   try {
     if (!node) {
@@ -193,6 +212,8 @@ async function importMedia(payload = {}) {
         attachmentId: attachment.id,
       });
     }
+
+    maybeQueueAttachmentSync(attachment, settings);
 
     return {
       node,

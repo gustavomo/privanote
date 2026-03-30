@@ -18,9 +18,26 @@ function listAttachments(nodeId) {
   return getDatabase()
     .prepare(
       `
-        SELECT id, node_id, kind, local_path, cloud_url, created_at
-        FROM attachments
-        WHERE node_id = ?
+        SELECT
+          a.id,
+          a.node_id,
+          a.kind,
+          a.local_path,
+          a.cloud_url,
+          a.created_at,
+          COALESCE(s.provider, '') AS sync_provider,
+          COALESCE(s.status, 'local_only') AS sync_status,
+          COALESCE(s.last_error, '') AS sync_error,
+          COALESCE(s.remote_item_url, a.cloud_url, '') AS sync_remote_url,
+          COALESCE(s.remote_note_folder_id, '') AS remote_note_folder_id,
+          COALESCE(s.remote_media_item_id, '') AS remote_media_item_id,
+          COALESCE(s.remote_transcript_item_id, '') AS remote_transcript_item_id,
+          COALESCE(s.remote_metadata_item_id, '') AS remote_metadata_item_id,
+          COALESCE(s.transcript_patch_pending, 0) AS transcript_patch_pending,
+          s.synced_at AS last_synced_at
+        FROM attachments a
+        LEFT JOIN attachment_syncs s ON s.attachment_id = a.id
+        WHERE a.node_id = ?
         ORDER BY datetime(created_at) DESC, id DESC
       `
     )
@@ -67,9 +84,26 @@ function addAttachment(payload = {}) {
   return db
     .prepare(
       `
-        SELECT id, node_id, kind, local_path, cloud_url, created_at
-        FROM attachments
-        WHERE id = ?
+        SELECT
+          a.id,
+          a.node_id,
+          a.kind,
+          a.local_path,
+          a.cloud_url,
+          a.created_at,
+          COALESCE(s.provider, '') AS sync_provider,
+          COALESCE(s.status, 'local_only') AS sync_status,
+          COALESCE(s.last_error, '') AS sync_error,
+          COALESCE(s.remote_item_url, a.cloud_url, '') AS sync_remote_url,
+          COALESCE(s.remote_note_folder_id, '') AS remote_note_folder_id,
+          COALESCE(s.remote_media_item_id, '') AS remote_media_item_id,
+          COALESCE(s.remote_transcript_item_id, '') AS remote_transcript_item_id,
+          COALESCE(s.remote_metadata_item_id, '') AS remote_metadata_item_id,
+          COALESCE(s.transcript_patch_pending, 0) AS transcript_patch_pending,
+          s.synced_at AS last_synced_at
+        FROM attachments a
+        LEFT JOIN attachment_syncs s ON s.attachment_id = a.id
+        WHERE a.id = ?
       `
     )
     .get(result.lastInsertRowid);
@@ -86,9 +120,26 @@ function findAttachmentById(attachmentId) {
   return getDatabase()
     .prepare(
       `
-        SELECT id, node_id, kind, local_path, cloud_url, created_at
-        FROM attachments
-        WHERE id = ?
+        SELECT
+          a.id,
+          a.node_id,
+          a.kind,
+          a.local_path,
+          a.cloud_url,
+          a.created_at,
+          COALESCE(s.provider, '') AS sync_provider,
+          COALESCE(s.status, 'local_only') AS sync_status,
+          COALESCE(s.last_error, '') AS sync_error,
+          COALESCE(s.remote_item_url, a.cloud_url, '') AS sync_remote_url,
+          COALESCE(s.remote_note_folder_id, '') AS remote_note_folder_id,
+          COALESCE(s.remote_media_item_id, '') AS remote_media_item_id,
+          COALESCE(s.remote_transcript_item_id, '') AS remote_transcript_item_id,
+          COALESCE(s.remote_metadata_item_id, '') AS remote_metadata_item_id,
+          COALESCE(s.transcript_patch_pending, 0) AS transcript_patch_pending,
+          s.synced_at AS last_synced_at
+        FROM attachments a
+        LEFT JOIN attachment_syncs s ON s.attachment_id = a.id
+        WHERE a.id = ?
       `
     )
     .get(safeAttachmentId);

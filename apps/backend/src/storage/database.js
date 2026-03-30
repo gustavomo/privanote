@@ -112,6 +112,50 @@ function createDatabase() {
     );
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS sync_provider_connections (
+      provider TEXT PRIMARY KEY CHECK(provider IN ('google-drive', 'onedrive')),
+      connection_status TEXT NOT NULL DEFAULT 'disconnected',
+      account_label TEXT NOT NULL DEFAULT '',
+      access_token TEXT NOT NULL DEFAULT '',
+      refresh_token TEXT NOT NULL DEFAULT '',
+      expires_at TEXT DEFAULT NULL,
+      scope TEXT NOT NULL DEFAULT '',
+      root_folder_id TEXT NOT NULL DEFAULT '',
+      root_folder_url TEXT NOT NULL DEFAULT '',
+      last_error TEXT NOT NULL DEFAULT '',
+      connected_at TEXT DEFAULT NULL,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS attachment_syncs (
+      attachment_id INTEGER PRIMARY KEY,
+      node_id INTEGER NOT NULL,
+      provider TEXT NOT NULL DEFAULT '' CHECK(provider IN ('', 'google-drive', 'onedrive')),
+      status TEXT NOT NULL DEFAULT 'local_only' CHECK(status IN ('local_only', 'queued', 'syncing', 'synced', 'failed')),
+      remote_note_folder_id TEXT NOT NULL DEFAULT '',
+      remote_media_item_id TEXT NOT NULL DEFAULT '',
+      remote_transcript_item_id TEXT NOT NULL DEFAULT '',
+      remote_metadata_item_id TEXT NOT NULL DEFAULT '',
+      remote_item_url TEXT NOT NULL DEFAULT '',
+      transcript_patch_pending INTEGER NOT NULL DEFAULT 0,
+      attempt_count INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT NOT NULL DEFAULT '',
+      queued_at TEXT DEFAULT NULL,
+      synced_at TEXT DEFAULT NULL,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE,
+      FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE
+    );
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_attachment_syncs_status_provider
+    ON attachment_syncs(status, provider, updated_at);
+  `);
+
   db.prepare(
     `
       INSERT OR IGNORE INTO settings (

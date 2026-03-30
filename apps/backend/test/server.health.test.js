@@ -8,8 +8,14 @@ const modulePaths = [
   require.resolve('../src/storage/database.js'),
   require.resolve('../src/services/nodes-service.js'),
   require.resolve('../src/services/attachments-service.js'),
+  require.resolve('../src/services/sync-state-service.js'),
+  require.resolve('../src/services/providers/google-drive-provider.js'),
+  require.resolve('../src/services/providers/onedrive-provider.js'),
+  require.resolve('../src/services/sync-runner.js'),
   require.resolve('../src/routes/nodes.js'),
   require.resolve('../src/routes/attachments.js'),
+  require.resolve('../src/routes/sync.js'),
+  require.resolve('../src/contracts/v1/sync.js'),
   require.resolve('../src/server.js'),
 ];
 

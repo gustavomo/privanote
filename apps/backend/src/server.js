@@ -4,6 +4,8 @@ const { closeDatabase } = require('./storage/database');
 const { registerNodeRoutes } = require('./routes/nodes');
 const { registerAttachmentRoutes } = require('./routes/attachments');
 const { registerMediaRoutes } = require('./routes/media');
+const { registerTranscriptRoutes } = require('./routes/transcripts');
+const { resumePendingTranscriptJobs, stopTranscriptionRunner } = require('./services/transcription-runner');
 
 async function createServer() {
   const app = Fastify({ logger: false });
@@ -24,8 +26,11 @@ async function createServer() {
   await registerNodeRoutes(app);
   await registerAttachmentRoutes(app);
   await registerMediaRoutes(app);
+  await registerTranscriptRoutes(app);
+  resumePendingTranscriptJobs();
 
   app.addHook('onClose', async () => {
+    stopTranscriptionRunner();
     closeDatabase();
   });
 

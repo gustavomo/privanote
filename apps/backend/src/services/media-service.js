@@ -2,6 +2,7 @@ const fs = require('fs');
 const { getDatabase } = require('../storage/database');
 const nodesService = require('./nodes-service');
 const { copyImportedMedia, resolveManagedMediaPath, writeUploadedMedia } = require('../storage/media-files');
+const { queueTranscriptJob } = require('./transcription-runner');
 
 const captureKinds = {
   audio: 'audio',
@@ -113,6 +114,13 @@ async function saveRecording(payload = {}) {
       localPath,
     });
 
+    if (['audio', 'video'].includes(attachment.kind)) {
+      queueTranscriptJob({
+        nodeId: node.id,
+        attachmentId: attachment.id,
+      });
+    }
+
     return {
       node,
       attachment,
@@ -172,6 +180,13 @@ async function importMedia(payload = {}) {
       kind,
       localPath,
     });
+
+    if (['audio', 'video'].includes(attachment.kind)) {
+      queueTranscriptJob({
+        nodeId: node.id,
+        attachmentId: attachment.id,
+      });
+    }
 
     return {
       node,

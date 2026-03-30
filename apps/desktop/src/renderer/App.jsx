@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from './lib/utils.js';
+import MediaCard from './components/media-card.jsx';
 
 const captureModes = [
   { value: 'audio', label: 'Audio' },
@@ -44,6 +45,12 @@ function createUnavailableApi() {
       throw new Error('Desktop API is unavailable.');
     },
     importMedia: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
+    getAttachmentContentUrl: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
+    openPath: async () => {
       throw new Error('Desktop API is unavailable.');
     },
     getMediaAccessStatus: async () => 'unknown',
@@ -404,7 +411,7 @@ export default function App({ api }) {
       return;
     }
 
-    if (!confirmAction('Remove this attachment from the note? This cannot be undone.')) {
+    if (!confirmAction('Remove Media: Remove this saved media from the note? This cannot be undone.')) {
       return;
     }
 
@@ -414,7 +421,20 @@ export default function App({ api }) {
       await client.deleteAttachment(attachmentId);
       await loadAttachments(selectedNode.id);
     } catch (deleteError) {
-      setError(deleteError.message || 'Unable to remove attachment.');
+      setError(deleteError.message || 'Unable to remove media.');
+    }
+  }
+
+  async function handleOpenAttachment(localPath) {
+    setError('');
+
+    try {
+      const message = await client.openPath(localPath);
+      if (message) {
+        setError(message);
+      }
+    } catch (openError) {
+      setError(openError.message || 'Unable to open saved file.');
     }
   }
 
@@ -876,37 +896,30 @@ export default function App({ api }) {
 
                 <div className="grid gap-4 rounded-[28px] bg-secondary/70 p-6">
                   <div className="space-y-1">
-                    <h3 className="text-xl font-semibold leading-[1.2]">Attachments</h3>
+                    <h3 className="text-xl font-semibold leading-[1.2]">Saved Media</h3>
                     <p className="text-sm text-muted-foreground">
-                      Imported files are copied into managed local storage and linked to the current note.
+                      Recorded and imported media stay attached to the active note and remain stored locally first.
                     </p>
                   </div>
 
                   {attachments.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed bg-background px-4 py-8 text-center text-sm text-muted-foreground">
-                      No attachments yet.
+                    <div className="rounded-2xl border border-dashed bg-background px-4 py-8 text-center">
+                      <h4 className="text-xl font-semibold leading-[1.2]">Saved media appears here</h4>
+                      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                        Start a recording or import files to keep audio, video, and files connected to this note.
+                      </p>
                     </div>
                   ) : (
-                    <ul className="grid gap-3">
+                    <ul className="grid gap-4">
                       {attachments.map((attachment) => (
-                        <li
+                        <MediaCard
                           key={attachment.id}
-                          className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-background px-4 py-4"
-                        >
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                              {attachment.kind}
-                            </p>
-                            <p className="text-sm leading-6">{attachment.local_path}</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteAttachment(attachment.id)}
-                            className="inline-flex h-10 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
-                          >
-                            Remove Attachment
-                          </button>
-                        </li>
+                          attachment={attachment}
+                          formatDate={formatDate}
+                          getAttachmentContentUrl={client.getAttachmentContentUrl}
+                          onOpenFile={handleOpenAttachment}
+                          onRemove={() => handleDeleteAttachment(attachment.id)}
+                        />
                       ))}
                     </ul>
                   )}

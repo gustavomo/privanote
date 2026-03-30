@@ -13,7 +13,7 @@ This brownfield roadmap takes Privanote from a single-package Electron prototype
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Monorepo and Local Backend Foundation** - Restructure the repo, ship a local backend with the app, and stabilize storage, lifecycle, and test foundations.
-- [ ] **Phase 2: Capture and Save Flows** - Add audio/video recording plus import flows and persist media through the backend.
+- [x] **Phase 2: Capture and Save Flows** - Add audio/video recording plus import flows and persist media through the backend.
 - [ ] **Phase 3: Transcription and Settings** - Add configurable local/backend transcription and settings for storage, transcription, and providers.
 - [ ] **Phase 4: Optional Cloud Sync** - Connect Google Drive and OneDrive and sync local-first media to optional cloud storage.
 
@@ -52,7 +52,7 @@ Plans:
 Plans:
 - [x] 02-01: Add the recording upload seam, permission handling, and review-first capture UX
 - [x] 02-02: Add import flows and shared backend-managed persistence for recorded and existing media
-- [ ] 02-03: Surface saved media as cards in the workspace and add relaunch regression coverage
+- [x] 02-03: Surface saved media as cards in the workspace and add relaunch regression coverage
 
 ### Phase 3: Transcription and Settings
 **Goal**: Add configurable transcription and the settings surface needed to control storage, transcription mode, and provider credentials.
@@ -98,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo and Local Backend Foundation | 3/3 | Complete | 2026-03-29 |
-| 2. Capture and Save Flows | 2/3 | In Progress | - |
+| 2. Capture and Save Flows | 3/3 | Complete | 2026-03-30 |
 | 3. Transcription and Settings | 0/TBD | Not started | - |
 | 4. Optional Cloud Sync | 0/TBD | Not started | - |

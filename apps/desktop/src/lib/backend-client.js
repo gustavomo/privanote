@@ -23,6 +23,8 @@ function createBackendClient({ transport }) {
     createNode: (payload) => activeTransport.request(v1.operations.createNode, payload),
     updateNode: (payload) => activeTransport.request(v1.operations.updateNode, payload),
     deleteNode: (nodeId) => activeTransport.request(v1.operations.deleteNode, { nodeId }),
+    getSettings: () => activeTransport.request(v1.operations.getSettings),
+    updateSettings: (payload) => activeTransport.request(v1.operations.updateSettings, payload),
     listAttachments: (nodeId) => activeTransport.request(v1.operations.listAttachments, { nodeId }),
     addAttachment: (payload) => activeTransport.request(v1.operations.addAttachment, payload),
     deleteAttachment: (attachmentId) =>

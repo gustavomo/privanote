@@ -1,12 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from './lib/utils.js';
 import MediaCard from './components/media-card.jsx';
+import SettingsView from './components/settings-view.jsx';
 
 const captureModes = [
   { value: 'audio', label: 'Audio' },
   { value: 'video', label: 'Video' },
   { value: 'video-with-audio', label: 'Video + Audio' },
 ];
+
+const defaultSettings = {
+  storageDestination: 'local',
+  localMediaDirectory: '',
+  transcriptionMode: 'local',
+  providerKind: 'openai',
+  backendApiKey: '',
+  localRuntimeStatus: 'not-ready',
+};
 
 const captureFailureCopy =
   'Camera or microphone access is unavailable. Check device permissions, then retry or switch to import.';
@@ -34,6 +44,10 @@ function createUnavailableApi() {
     deleteNode: async () => {
       throw new Error('Desktop API is unavailable.');
     },
+    getSettings: async () => ({ ...defaultSettings }),
+    updateSettings: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
     listAttachments: async () => [],
     addAttachment: async () => {
       throw new Error('Desktop API is unavailable.');
@@ -56,6 +70,7 @@ function createUnavailableApi() {
     getMediaAccessStatus: async () => 'unknown',
     requestMediaAccess: async () => ({ granted: false, status: 'unknown' }),
     pickFile: async () => null,
+    pickDirectory: async () => null,
   };
 }
 
@@ -175,7 +190,11 @@ async function buildRecordingFile(blob, captureMode) {
 }
 
 export default function App({ api }) {
-  const client = api || globalThis.window?.api || createUnavailableApi();
+  const client = {
+    ...createUnavailableApi(),
+    ...(api || globalThis.window?.api || {}),
+  };
+  const [activeView, setActiveView] = useState('workspace');
   const [nodes, setNodes] = useState([]);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [attachments, setAttachments] = useState([]);
@@ -190,8 +209,12 @@ export default function App({ api }) {
   const [captureError, setCaptureError] = useState('');
   const [reviewRecording, setReviewRecording] = useState(null);
   const [isSavingRecording, setIsSavingRecording] = useState(false);
+  const [settingsDraft, setSettingsDraft] = useState(defaultSettings);
+  const [isSettingsLoading, setIsSettingsLoading] = useState(true);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [settingsError, setSettingsError] = useState('');
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const captureChunksRef = useRef([]);
@@ -245,6 +268,23 @@ export default function App({ api }) {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadSettings() {
+    setIsSettingsLoading(true);
+    setSettingsError('');
+
+    try {
+      const nextSettings = await client.getSettings();
+      setSettingsDraft({
+        ...defaultSettings,
+        ...nextSettings,
+      });
+    } catch (loadError) {
+      setSettingsError(loadError.message || "We couldn't load your settings.");
+    } finally {
+      setIsSettingsLoading(false);
     }
   }
 
@@ -307,6 +347,51 @@ export default function App({ api }) {
     };
   }
 
+  function updateSettingsDraft(patch) {
+    setSettingsDraft((current) => ({
+      ...current,
+      ...patch,
+    }));
+    setSettingsError('');
+  }
+
+  async function handleChooseDirectory() {
+    setSettingsError('');
+
+    try {
+      const nextPath = await client.pickDirectory();
+      if (!nextPath) {
+        return;
+      }
+
+      updateSettingsDraft({ localMediaDirectory: nextPath });
+    } catch (pickError) {
+      setSettingsError(pickError.message || 'Unable to choose a local folder.');
+    }
+  }
+
+  async function handleSaveSettings() {
+    setIsSavingSettings(true);
+    setSettingsError('');
+
+    try {
+      const updatedSettings = await client.updateSettings({
+        storageDestination: settingsDraft.storageDestination,
+        localMediaDirectory: settingsDraft.localMediaDirectory,
+        transcriptionMode: settingsDraft.transcriptionMode,
+      });
+
+      setSettingsDraft({
+        ...defaultSettings,
+        ...updatedSettings,
+      });
+    } catch (saveError) {
+      setSettingsError(saveError.message || "We couldn't save your settings.");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  }
+
   async function handleCreateNode(event) {
     event.preventDefault();
     setError('');
@@ -353,9 +438,7 @@ export default function App({ api }) {
   }
 
   async function handleDeleteNode(nodeId) {
-    if (
-      !confirmAction('Delete Note: Delete this note and all linked media? This cannot be undone.')
-    ) {
+    if (!confirmAction('Delete Note: Delete this note and all linked media? This cannot be undone.')) {
       return;
     }
 
@@ -574,6 +657,7 @@ export default function App({ api }) {
 
   useEffect(() => {
     loadNodes();
+    loadSettings();
   }, []);
 
   useEffect(() => {
@@ -657,7 +741,12 @@ export default function App({ api }) {
             {reviewRecording.captureMode === 'audio' ? (
               <audio controls preload="metadata" src={reviewRecording.previewUrl} />
             ) : (
-              <video controls preload="metadata" src={reviewRecording.previewUrl} className="max-h-[320px] rounded-2xl bg-secondary" />
+              <video
+                controls
+                preload="metadata"
+                src={reviewRecording.previewUrl}
+                className="max-h-[320px] rounded-2xl bg-secondary"
+              />
             )}
 
             <div className="flex flex-wrap gap-3">
@@ -730,18 +819,227 @@ export default function App({ api }) {
     );
   };
 
+  const workspaceView = (
+    <section className="grid gap-8 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
+      <aside className="rounded-[28px] border bg-secondary/70 p-6 shadow-sm">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold leading-[1.2]">Notes</h2>
+            <p className="text-sm leading-5 text-muted-foreground">
+              {nodes.length} note{nodes.length === 1 ? '' : 's'} available
+            </p>
+          </div>
+        </div>
+
+        <form className="mb-6 grid gap-3" onSubmit={handleCreateNode}>
+          <input
+            className="h-11 rounded-xl border bg-background px-3 text-sm"
+            placeholder="New note title"
+            required
+            value={newNodeTitle}
+            onChange={(event) => setNewNodeTitle(event.target.value)}
+          />
+          <textarea
+            className="min-h-[88px] rounded-xl border bg-background px-3 py-3 text-sm"
+            placeholder="Description"
+            rows={3}
+            value={newNodeDescription}
+            onChange={(event) => setNewNodeDescription(event.target.value)}
+          />
+          <input
+            className="h-11 rounded-xl border bg-background px-3 text-sm"
+            placeholder="Tags"
+            value={newNodeTags}
+            onChange={(event) => setNewNodeTags(event.target.value)}
+          />
+          <button
+            type="submit"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+          >
+            Create Note
+          </button>
+        </form>
+
+        {loading ? (
+          <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center text-sm text-muted-foreground">
+            Loading notes...
+          </div>
+        ) : nodes.length === 0 ? (
+          <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center">
+            <h3 className="text-xl font-semibold">Capture Your First Note</h3>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Start a recording or import files to create a note and keep the media stored locally.
+            </p>
+          </div>
+        ) : (
+          <ul className="grid gap-3">
+            {nodes.map((node) => {
+              const isSelected = node.id === selectedNodeId;
+
+              return (
+                <li key={node.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedNodeId(node.id)}
+                    className={cn(
+                      'flex w-full flex-col gap-2 rounded-2xl border bg-background px-4 py-4 text-left transition',
+                      isSelected
+                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                        : 'border-transparent hover:border-border hover:bg-card'
+                    )}
+                  >
+                    <span className="text-base font-semibold">{node.title}</span>
+                    <span
+                      className={cn(
+                        'text-sm leading-5',
+                        isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                      )}
+                    >
+                      Updated {formatDate(node.updated_at)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </aside>
+
+      <section className="rounded-[32px] border bg-background p-6 shadow-sm">
+        {selectedNode ? (
+          <div className="grid gap-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Active Note
+                </p>
+                <h2 className="text-xl font-semibold leading-[1.2]">{selectedNode.title}</h2>
+                <p className="text-sm text-muted-foreground">
+                  Last updated {formatDate(selectedNode.updated_at)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleDeleteNode(selectedNode.id)}
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
+              >
+                Delete Note
+              </button>
+            </div>
+
+            <form className="grid gap-4" onSubmit={handleSaveNode}>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold">Title</label>
+                <input
+                  className="h-11 rounded-xl border bg-background px-3 text-sm"
+                  required
+                  value={editTitle}
+                  onChange={(event) => setEditTitle(event.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold">Description</label>
+                <textarea
+                  className="min-h-[180px] rounded-xl border bg-background px-3 py-3 text-sm"
+                  rows={8}
+                  value={editDescription}
+                  onChange={(event) => setEditDescription(event.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold">Tags</label>
+                <input
+                  className="h-11 rounded-xl border bg-background px-3 text-sm"
+                  value={editTags}
+                  onChange={(event) => setEditTags(event.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+              >
+                Save Changes
+              </button>
+            </form>
+
+            {renderCapturePanel()}
+
+            <div className="grid gap-4 rounded-[28px] bg-secondary/70 p-6">
+              <div className="space-y-1">
+                <h3 className="text-xl font-semibold leading-[1.2]">Saved Media</h3>
+                <p className="text-sm text-muted-foreground">
+                  Recorded and imported media stay attached to the active note and remain stored locally first.
+                </p>
+              </div>
+
+              {attachments.length === 0 ? (
+                <div className="rounded-2xl border border-dashed bg-background px-4 py-8 text-center">
+                  <h4 className="text-xl font-semibold leading-[1.2]">Saved media appears here</h4>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    Start a recording or import files to keep audio, video, and files connected to this note.
+                  </p>
+                </div>
+              ) : (
+                <ul className="grid gap-4">
+                  {attachments.map((attachment) => (
+                    <MediaCard
+                      key={attachment.id}
+                      attachment={attachment}
+                      formatDate={formatDate}
+                      getAttachmentContentUrl={client.getAttachmentContentUrl}
+                      onOpenFile={handleOpenAttachment}
+                      onRemove={() => handleDeleteAttachment(attachment.id)}
+                    />
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="grid min-h-[520px] content-center gap-6">{renderCapturePanel()}</div>
+        )}
+      </section>
+    </section>
+  );
+
   return (
     <main className="theme min-h-screen bg-background px-6 py-8 text-foreground">
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
-        <header className="flex flex-col gap-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Privanote
-          </p>
-          <h1 className="text-[28px] font-semibold leading-[1.1]">Local notes workspace</h1>
-          <p className="max-w-2xl text-base leading-6 text-muted-foreground">
-            Capture note details locally first while the new desktop and backend architecture settles
-            into place.
-          </p>
+        <header className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Privanote
+              </p>
+              <h1 className="text-[28px] font-semibold leading-[1.1]">Local notes workspace</h1>
+              <p className="max-w-2xl text-base leading-6 text-muted-foreground">
+                Capture note details locally first while the new desktop and backend architecture settles
+                into place.
+              </p>
+            </div>
+
+            <div className="inline-flex rounded-2xl bg-secondary p-2">
+              {['Workspace', 'Settings'].map((label) => {
+                const value = label.toLowerCase();
+
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setActiveView(value)}
+                    className={cn(
+                      'inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold transition',
+                      activeView === value
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-background'
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </header>
 
         {error ? (
@@ -750,186 +1048,19 @@ export default function App({ api }) {
           </div>
         ) : null}
 
-        <section className="grid gap-8 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
-          <aside className="rounded-[28px] border bg-secondary/70 p-6 shadow-sm">
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold leading-[1.2]">Notes</h2>
-                <p className="text-sm leading-5 text-muted-foreground">
-                  {nodes.length} note{nodes.length === 1 ? '' : 's'} available
-                </p>
-              </div>
-            </div>
-
-            <form className="mb-6 grid gap-3" onSubmit={handleCreateNode}>
-              <input
-                className="h-11 rounded-xl border bg-background px-3 text-sm"
-                placeholder="New note title"
-                required
-                value={newNodeTitle}
-                onChange={(event) => setNewNodeTitle(event.target.value)}
-              />
-              <textarea
-                className="min-h-[88px] rounded-xl border bg-background px-3 py-3 text-sm"
-                placeholder="Description"
-                rows={3}
-                value={newNodeDescription}
-                onChange={(event) => setNewNodeDescription(event.target.value)}
-              />
-              <input
-                className="h-11 rounded-xl border bg-background px-3 text-sm"
-                placeholder="Tags"
-                value={newNodeTags}
-                onChange={(event) => setNewNodeTags(event.target.value)}
-              />
-              <button
-                type="submit"
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-              >
-                Create Note
-              </button>
-            </form>
-
-            {loading ? (
-              <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center text-sm text-muted-foreground">
-                Loading notes...
-              </div>
-            ) : nodes.length === 0 ? (
-              <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center">
-                <h3 className="text-xl font-semibold">Capture Your First Note</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  Start a recording or import files to create a note and keep the media stored locally.
-                </p>
-              </div>
-            ) : (
-              <ul className="grid gap-3">
-                {nodes.map((node) => {
-                  const isSelected = node.id === selectedNodeId;
-
-                  return (
-                    <li key={node.id}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedNodeId(node.id)}
-                        className={cn(
-                          'flex w-full flex-col gap-2 rounded-2xl border bg-background px-4 py-4 text-left transition',
-                          isSelected
-                            ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                            : 'border-transparent hover:border-border hover:bg-card'
-                        )}
-                      >
-                        <span className="text-base font-semibold">{node.title}</span>
-                        <span
-                          className={cn(
-                            'text-sm leading-5',
-                            isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
-                          )}
-                        >
-                          Updated {formatDate(node.updated_at)}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </aside>
-
-          <section className="rounded-[32px] border bg-background p-6 shadow-sm">
-            {selectedNode ? (
-              <div className="grid gap-8">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Active Note
-                    </p>
-                    <h2 className="text-xl font-semibold leading-[1.2]">{selectedNode.title}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Last updated {formatDate(selectedNode.updated_at)}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteNode(selectedNode.id)}
-                    className="inline-flex h-11 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
-                  >
-                    Delete Note
-                  </button>
-                </div>
-
-                <form className="grid gap-4" onSubmit={handleSaveNode}>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-semibold">Title</label>
-                    <input
-                      className="h-11 rounded-xl border bg-background px-3 text-sm"
-                      required
-                      value={editTitle}
-                      onChange={(event) => setEditTitle(event.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-semibold">Description</label>
-                    <textarea
-                      className="min-h-[180px] rounded-xl border bg-background px-3 py-3 text-sm"
-                      rows={8}
-                      value={editDescription}
-                      onChange={(event) => setEditDescription(event.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-semibold">Tags</label>
-                    <input
-                      className="h-11 rounded-xl border bg-background px-3 text-sm"
-                      value={editTags}
-                      onChange={(event) => setEditTags(event.target.value)}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                  >
-                    Save Changes
-                  </button>
-                </form>
-
-                {renderCapturePanel()}
-
-                <div className="grid gap-4 rounded-[28px] bg-secondary/70 p-6">
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-semibold leading-[1.2]">Saved Media</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Recorded and imported media stay attached to the active note and remain stored locally first.
-                    </p>
-                  </div>
-
-                  {attachments.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed bg-background px-4 py-8 text-center">
-                      <h4 className="text-xl font-semibold leading-[1.2]">Saved media appears here</h4>
-                      <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                        Start a recording or import files to keep audio, video, and files connected to this note.
-                      </p>
-                    </div>
-                  ) : (
-                    <ul className="grid gap-4">
-                      {attachments.map((attachment) => (
-                        <MediaCard
-                          key={attachment.id}
-                          attachment={attachment}
-                          formatDate={formatDate}
-                          getAttachmentContentUrl={client.getAttachmentContentUrl}
-                          onOpenFile={handleOpenAttachment}
-                          onRemove={() => handleDeleteAttachment(attachment.id)}
-                        />
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="grid min-h-[520px] content-center gap-6">{renderCapturePanel()}</div>
-            )}
-          </section>
-        </section>
+        {activeView === 'workspace' ? (
+          workspaceView
+        ) : (
+          <SettingsView
+            settings={settingsDraft}
+            error={settingsError}
+            isLoading={isSettingsLoading}
+            isSaving={isSavingSettings}
+            onChange={updateSettingsDraft}
+            onChooseDirectory={handleChooseDirectory}
+            onSave={handleSaveSettings}
+          />
+        )}
       </div>
     </main>
   );

@@ -253,6 +253,19 @@ function registerIpcHandlers() {
 
     return result.filePaths[0];
   });
+
+  ipcMain.handle('files:pick-directory', async () => {
+    const result = await dialog.showOpenDialog({
+      title: 'Choose local media folder',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+
+    return result.filePaths[0];
+  });
 }
 
 async function createWindow() {

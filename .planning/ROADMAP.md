@@ -50,7 +50,7 @@ Plans:
 **Plans**: 3 planned
 
 Plans:
-- [ ] 02-01: Add the recording upload seam, permission handling, and review-first capture UX
+- [x] 02-01: Add the recording upload seam, permission handling, and review-first capture UX
 - [ ] 02-02: Add import flows and shared backend-managed persistence for recorded and existing media
 - [ ] 02-03: Surface saved media as cards in the workspace and add relaunch regression coverage
 
@@ -98,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo and Local Backend Foundation | 3/3 | Complete | 2026-03-29 |
-| 2. Capture and Save Flows | 0/3 | Planned | - |
+| 2. Capture and Save Flows | 1/3 | In Progress | - |
 | 3. Transcription and Settings | 0/TBD | Not started | - |
 | 4. Optional Cloud Sync | 0/TBD | Not started | - |

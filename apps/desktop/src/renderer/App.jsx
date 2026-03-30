@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from './lib/utils.js';
 import MediaCard from './components/media-card.jsx';
 import SettingsView from './components/settings-view.jsx';
+import TranscriptSection from './components/transcript-section.jsx';
 
 const captureModes = [
   { value: 'audio', label: 'Audio' },
@@ -15,6 +16,9 @@ const defaultSettings = {
   transcriptionMode: 'local',
   providerKind: 'openai',
   backendApiKey: '',
+  backendApiKeyConfigured: false,
+  backendApiKeyMaskedHint: '',
+  clearBackendApiKey: false,
   localRuntimeStatus: 'not-ready',
 };
 
@@ -46,6 +50,10 @@ function createUnavailableApi() {
     },
     getSettings: async () => ({ ...defaultSettings }),
     updateSettings: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
+    getNoteTranscript: async () => null,
+    retryNoteTranscript: async () => {
       throw new Error('Desktop API is unavailable.');
     },
     listAttachments: async () => [],
@@ -215,6 +223,10 @@ export default function App({ api }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [settingsError, setSettingsError] = useState('');
+  const [settingsErrorDetail, setSettingsErrorDetail] = useState('');
+  const [transcript, setTranscript] = useState(null);
+  const [isTranscriptLoading, setIsTranscriptLoading] = useState(false);
+  const [transcriptError, setTranscriptError] = useState('');
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const captureChunksRef = useRef([]);
@@ -274,12 +286,15 @@ export default function App({ api }) {
   async function loadSettings() {
     setIsSettingsLoading(true);
     setSettingsError('');
+    setSettingsErrorDetail('');
 
     try {
       const nextSettings = await client.getSettings();
       setSettingsDraft({
         ...defaultSettings,
         ...nextSettings,
+        backendApiKey: '',
+        clearBackendApiKey: false,
       });
     } catch (loadError) {
       setSettingsError(loadError.message || "We couldn't load your settings.");
@@ -299,6 +314,27 @@ export default function App({ api }) {
       setAttachments(rows);
     } catch (loadError) {
       setError(loadError.message || 'Unable to load attachments.');
+    }
+  }
+
+  async function loadTranscript(nodeId) {
+    if (!nodeId) {
+      setTranscript(null);
+      setTranscriptError('');
+      setIsTranscriptLoading(false);
+      return;
+    }
+
+    setIsTranscriptLoading(true);
+    setTranscriptError('');
+
+    try {
+      const nextTranscript = await client.getNoteTranscript(nodeId);
+      setTranscript(nextTranscript);
+    } catch (loadError) {
+      setTranscriptError(loadError.message || 'Unable to load transcript.');
+    } finally {
+      setIsTranscriptLoading(false);
     }
   }
 
@@ -353,6 +389,7 @@ export default function App({ api }) {
       ...patch,
     }));
     setSettingsError('');
+    setSettingsErrorDetail('');
   }
 
   async function handleChooseDirectory() {
@@ -373,23 +410,47 @@ export default function App({ api }) {
   async function handleSaveSettings() {
     setIsSavingSettings(true);
     setSettingsError('');
+    setSettingsErrorDetail('');
 
     try {
       const updatedSettings = await client.updateSettings({
         storageDestination: settingsDraft.storageDestination,
         localMediaDirectory: settingsDraft.localMediaDirectory,
         transcriptionMode: settingsDraft.transcriptionMode,
+        providerKind: settingsDraft.providerKind,
+        backendApiKey: settingsDraft.backendApiKey,
+        clearBackendApiKey: settingsDraft.clearBackendApiKey,
       });
 
       setSettingsDraft({
         ...defaultSettings,
         ...updatedSettings,
+        backendApiKey: '',
+        clearBackendApiKey: false,
       });
     } catch (saveError) {
-      setSettingsError(saveError.message || "We couldn't save your settings.");
+      setSettingsError("We couldn't save these settings. Fix the highlighted fields and try again.");
+      setSettingsErrorDetail(saveError.message || '');
     } finally {
       setIsSavingSettings(false);
     }
+  }
+
+  function handleClearCredential() {
+    if (
+      !confirmAction(
+        'Clear Credential: Remove the saved backend API key from this device? Transcript jobs in Backend mode will fail until a new key is saved.'
+      )
+    ) {
+      return;
+    }
+
+    updateSettingsDraft({
+      backendApiKey: '',
+      clearBackendApiKey: true,
+      backendApiKeyConfigured: false,
+      backendApiKeyMaskedHint: '',
+    });
   }
 
   async function handleCreateNode(event) {
@@ -666,6 +727,8 @@ export default function App({ api }) {
       setEditDescription('');
       setEditTags('');
       setAttachments([]);
+      setTranscript(null);
+      setTranscriptError('');
       return;
     }
 
@@ -673,6 +736,7 @@ export default function App({ api }) {
     setEditDescription(selectedNode.description || '');
     setEditTags(selectedNode.tags || '');
     loadAttachments(selectedNode.id);
+    loadTranscript(selectedNode.id);
   }, [selectedNode]);
 
   useEffect(() => {
@@ -819,6 +883,21 @@ export default function App({ api }) {
     );
   };
 
+  async function handleRetryTranscript() {
+    if (!selectedNode) {
+      return;
+    }
+
+    setTranscriptError('');
+
+    try {
+      const nextTranscript = await client.retryNoteTranscript(selectedNode.id);
+      setTranscript(nextTranscript);
+    } catch (retryError) {
+      setTranscriptError(retryError.message || 'Unable to retry transcript.');
+    }
+  }
+
   const workspaceView = (
     <section className="grid gap-8 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
       <aside className="rounded-[28px] border bg-secondary/70 p-6 shadow-sm">
@@ -964,6 +1043,15 @@ export default function App({ api }) {
 
             {renderCapturePanel()}
 
+            <TranscriptSection
+              noteId={selectedNode.id}
+              transcript={transcript}
+              error={transcriptError}
+              isLoading={isTranscriptLoading}
+              onRefresh={loadTranscript}
+              onRetry={handleRetryTranscript}
+            />
+
             <div className="grid gap-4 rounded-[28px] bg-secondary/70 p-6">
               <div className="space-y-1">
                 <h3 className="text-xl font-semibold leading-[1.2]">Saved Media</h3>
@@ -1054,10 +1142,12 @@ export default function App({ api }) {
           <SettingsView
             settings={settingsDraft}
             error={settingsError}
+            errorDetail={settingsErrorDetail}
             isLoading={isSettingsLoading}
             isSaving={isSavingSettings}
             onChange={updateSettingsDraft}
             onChooseDirectory={handleChooseDirectory}
+            onClearCredential={handleClearCredential}
             onSave={handleSaveSettings}
           />
         )}

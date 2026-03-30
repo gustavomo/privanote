@@ -26,6 +26,8 @@ function createBackendClient({ transport }) {
     getSettings: () => activeTransport.request(v1.operations.getSettings),
     updateSettings: (payload) => activeTransport.request(v1.operations.updateSettings, payload),
     listAttachments: (nodeId) => activeTransport.request(v1.operations.listAttachments, { nodeId }),
+    getNoteTranscript: (nodeId) => activeTransport.request(v1.operations.getNoteTranscript, { nodeId }),
+    retryNoteTranscript: (nodeId) => activeTransport.request(v1.operations.retryNoteTranscript, { nodeId }),
     addAttachment: (payload) => activeTransport.request(v1.operations.addAttachment, payload),
     deleteAttachment: (attachmentId) =>
       activeTransport.request(v1.operations.deleteAttachment, { attachmentId }),

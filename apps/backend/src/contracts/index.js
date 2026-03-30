@@ -16,6 +16,7 @@ const operations = {
   saveRecording: media.saveRecording,
   importMedia: media.importMedia,
   getNoteTranscript: transcripts.getNoteTranscript,
+  retryNoteTranscript: transcripts.retryNoteTranscript,
   getSettings: settings.getSettings,
   updateSettings: settings.updateSettings,
 };

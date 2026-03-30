@@ -14,13 +14,16 @@ const transcriptionOptions = [
 export default function SettingsView({
   settings,
   error,
+  errorDetail,
   isLoading,
   isSaving,
   onChange,
   onChooseDirectory,
+  onClearCredential,
   onSave,
 }) {
   const isLocalDestination = settings.storageDestination === 'local';
+  const isBackendMode = settings.transcriptionMode === 'backend';
 
   return (
     <section className="grid gap-8 rounded-[32px] border bg-background p-6 shadow-sm">
@@ -36,7 +39,8 @@ export default function SettingsView({
 
       {error ? (
         <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
+          <div>{error}</div>
+          {errorDetail ? <div className="mt-2 text-xs text-destructive/80">{errorDetail}</div> : null}
         </div>
       ) : null}
 
@@ -117,7 +121,59 @@ export default function SettingsView({
             </label>
           ))}
         </fieldset>
+
+        {!isBackendMode ? (
+          <div className="rounded-2xl border border-dashed bg-background px-4 py-4 text-sm text-muted-foreground">
+            Local transcription downloads its runtime once and keeps it on this device.
+          </div>
+        ) : null}
       </div>
+
+      {isBackendMode ? (
+        <div className="grid gap-6 rounded-[28px] bg-secondary/70 p-6">
+          <div className="space-y-1">
+            <h3 className="text-xl font-semibold leading-[1.2]">Provider</h3>
+            <p className="text-sm text-muted-foreground">
+              Use your OpenAI backend API key for transcript jobs in Backend mode.
+            </p>
+          </div>
+
+          <div className="grid gap-3 rounded-2xl border bg-background p-4">
+            <label className="text-sm font-semibold" htmlFor="backend-api-key">
+              OpenAI API Key
+            </label>
+            <input
+              id="backend-api-key"
+              className="h-11 rounded-xl border bg-background px-3 text-sm"
+              type="password"
+              value={settings.backendApiKey || ''}
+              placeholder={settings.backendApiKeyMaskedHint || 'Enter API key'}
+              onChange={(event) =>
+                onChange({
+                  backendApiKey: event.target.value,
+                  clearBackendApiKey: false,
+                })
+              }
+              disabled={isLoading || isSaving}
+            />
+            {settings.backendApiKeyConfigured && !settings.backendApiKey ? (
+              <p className="text-sm text-muted-foreground">
+                Saved key: {settings.backendApiKeyMaskedHint}
+              </p>
+            ) : null}
+            {settings.backendApiKeyConfigured || settings.backendApiKey ? (
+              <button
+                type="button"
+                onClick={onClearCredential}
+                disabled={isLoading || isSaving}
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
+              >
+                Clear Credential
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex justify-start">
         <button

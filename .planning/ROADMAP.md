@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can launch the packaged desktop app with the local backend shipped as part of the product.
   4. User data persists in a stable app-owned directory and deletion flows do not leave orphaned data behind.
   5. The full v1 app remains usable without authentication, and regression coverage exists for critical frontend, backend, storage, and transcription workflows.
-**Plans**: TBD
+**Plans**: 3 planned
 
 Plans:
 - [ ] 01-01: Restructure the workspace into a monorepo and define frontend/backend contracts
@@ -97,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Monorepo and Local Backend Foundation | 0/TBD | Not started | - |
+| 1. Monorepo and Local Backend Foundation | 0/3 | Planned | - |
 | 2. Capture and Save Flows | 0/TBD | Not started | - |
 | 3. Transcription and Settings | 0/TBD | Not started | - |
 | 4. Optional Cloud Sync | 0/TBD | Not started | - |

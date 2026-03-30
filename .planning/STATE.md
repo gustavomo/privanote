@@ -4,17 +4,17 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 2
 current_phase_name: Capture and Save Flows
-current_plan: 2
+current_plan: 3
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-30T04:46:00.000Z"
-last_activity: 2026-03-30 — Plan 02-01 completed with recording upload, permissions, and review-first capture
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-30T05:03:11.000Z"
+last_activity: 2026-03-30 — Plan 02-02 completed with managed imports and backend-owned media storage
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -29,33 +29,33 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 ## Current Position
 
 Phase: 02 of 4 (Capture and Save Flows)
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-30 — Plan 02-01 completed with recording upload, permissions, and review-first capture
+Last activity: 2026-03-30 — Plan 02-02 completed with managed imports and backend-owned media storage
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 4
-- Average duration: 15 min
-- Total execution time: 1.0 hours
+- Total plans completed: 5
+- Average duration: 14 min
+- Total execution time: 1.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | 43 min | 14 min |
-| 2 | 1 | 16 min | 16 min |
+| 2 | 2 | 28 min | 14 min |
 | 3 | 0 | 0 min | 0 min |
 | 4 | 0 | 0 min | 0 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 3 min, 4 min, 35 min, 16 min
-- Trend: Stabilizing after the Phase 1 packaging/debug spike
+- Last 5 plans: 3 min, 4 min, 35 min, 16 min, 12 min
+- Trend: Stable after Phase 1 packaging/debug work
 
 ## Accumulated Context
 
@@ -73,6 +73,7 @@ Recent decisions affecting current work:
 - Phase 1 packaging: `npm run dist --workspace @privanote/desktop` restores the Node build of `better-sqlite3` after packaging so local tests remain runnable.
 - Phase 2 planning: Execute in three slices covering recording upload/review UX, managed import and media persistence, and saved-media relaunch regressions.
 - Phase 2 execution: Plan 01 established the multipart recording contract, `backend:upload` bridge, and review-first capture flow.
+- Phase 2 execution: Plan 02 replaced raw-path attachment entry with backend-managed imports and shared media storage helpers.
 - Phase 3: Make transcription mode configurable and manage storage/provider settings in one surface.
 
 ### Pending Todos
@@ -81,12 +82,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- Imports still rely on the legacy raw-path attachment form until `02-02` replaces it with backend-managed copy/save flows.
 - Saved media still render as plain attachment rows until `02-03` lands content delivery and richer media cards.
+- `better-sqlite3` can still flip back to the Electron ABI after npm operations, so Node-side backend verification may require `npm run rebuild:native`.
 - Phase 1 leaves the packaged app on the default Electron icon because no product icon asset exists yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T04:46:00.000Z
-Stopped at: Completed 02-01-PLAN.md
-Resume file: .planning/phases/02-capture-and-save-flows/02-02-PLAN.md
+Last session: 2026-03-30T05:03:11.000Z
+Stopped at: Completed 02-02-PLAN.md
+Resume file: .planning/phases/02-capture-and-save-flows/02-03-PLAN.md

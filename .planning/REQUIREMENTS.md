@@ -21,7 +21,7 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 - [x] **CAP-01**: User can record audio inside the desktop app
 - [x] **CAP-02**: User can record video inside the desktop app
-- [ ] **CAP-03**: User can import existing audio, video, and file attachments
+- [x] **CAP-03**: User can import existing audio, video, and file attachments
 - [x] **CAP-04**: User can save recorded or imported media through the backend and associate it with a note
 - [ ] **CAP-05**: User can see saved recordings and imported media in the desktop workspace after relaunch
 
@@ -89,7 +89,7 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | PLAT-07 | Phase 1 | Pending |
 | CAP-01 | Phase 2 | Complete |
 | CAP-02 | Phase 2 | Complete |
-| CAP-03 | Phase 2 | Pending |
+| CAP-03 | Phase 2 | Complete |
 | CAP-04 | Phase 2 | Complete |
 | CAP-05 | Phase 2 | Pending |
 | TRNS-01 | Phase 3 | Pending |
@@ -114,4 +114,4 @@ Which phases cover which requirements. This will be updated during roadmap creat
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after scope clarification*
+*Last updated: 2026-03-30 after Phase 2 Plan 02 completion*

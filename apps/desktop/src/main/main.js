@@ -1,6 +1,8 @@
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { Blob } = require('buffer');
+const { app, BrowserWindow, dialog, ipcMain, session, systemPreferences } = require('electron');
 const path = require('path');
 const { v1 } = require('@privanote/backend/contracts');
+const { resolveBackendErrorMessage } = require('./backend-response');
 const { startBackendProcess, stopBackendProcess } = require('./backend-process');
 
 const operationsById = Object.values(v1.operations).reduce((result, operation) => {
@@ -27,6 +29,31 @@ function resolveOperationPath(operation, payload = {}) {
     .replace(':attachmentId', Number.isFinite(attachmentId) ? String(attachmentId) : ':attachmentId');
 }
 
+async function parseBackendResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  return contentType.includes('application/json') ? response.json() : response.text();
+}
+
+function normalizeUploadBytes(bytes) {
+  if (Buffer.isBuffer(bytes)) {
+    return bytes;
+  }
+
+  if (bytes instanceof ArrayBuffer) {
+    return Buffer.from(bytes);
+  }
+
+  if (ArrayBuffer.isView(bytes)) {
+    return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  }
+
+  if (Array.isArray(bytes)) {
+    return Buffer.from(bytes);
+  }
+
+  throw new Error('Recording bytes are required.');
+}
+
 async function proxyBackendRequest(request = {}) {
   const operation = operationsById[request.operationId];
   if (!operation) {
@@ -48,13 +75,10 @@ async function proxyBackendRequest(request = {}) {
   }
 
   const response = await fetch(url, init);
-  const contentType = response.headers.get('content-type') || '';
-  const body = contentType.includes('application/json') ? await response.json() : await response.text();
+  const body = await parseBackendResponse(response);
 
   if (!response.ok) {
-    const message =
-      body && typeof body === 'object' && 'error' in body ? body.error : body || `Backend request failed: ${response.status}`;
-    throw new Error(message);
+    throw new Error(resolveBackendErrorMessage(body, response.status));
   }
 
   if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'deleted')) {
@@ -62,6 +86,83 @@ async function proxyBackendRequest(request = {}) {
   }
 
   return body;
+}
+
+async function proxyBackendUpload(request = {}) {
+  const operation = operationsById[request.operationId];
+  if (!operation) {
+    throw new Error(`Unsupported backend upload operation: ${request.operationId}`);
+  }
+
+  const backend = await ensureBackendReady();
+  const formData = new FormData();
+  const payload = request.payload || {};
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') {
+      return;
+    }
+
+    formData.append(key, String(value));
+  });
+
+  formData.append(
+    'file',
+    new Blob([normalizeUploadBytes(request.bytes)], {
+      type: request.mimeType || 'application/octet-stream',
+    }),
+    request.fileName || 'recording.webm'
+  );
+
+  const response = await fetch(`${backend.baseUrl}${resolveOperationPath(operation, payload)}`, {
+    method: operation.method,
+    headers: {
+      Accept: 'application/json',
+    },
+    body: formData,
+  });
+  const body = await parseBackendResponse(response);
+
+  if (!response.ok) {
+    throw new Error(resolveBackendErrorMessage(body, response.status));
+  }
+
+  return body;
+}
+
+function resolveMediaAccessStatus(mediaType) {
+  if (!['camera', 'microphone'].includes(mediaType)) {
+    throw new Error('Media type must be camera or microphone.');
+  }
+
+  if (process.platform !== 'darwin' || typeof systemPreferences.getMediaAccessStatus !== 'function') {
+    return 'unknown';
+  }
+
+  return systemPreferences.getMediaAccessStatus(mediaType);
+}
+
+async function requestMediaAccess(mediaType) {
+  const status = resolveMediaAccessStatus(mediaType);
+  if (status === 'granted') {
+    return {
+      granted: true,
+      status,
+    };
+  }
+
+  if (process.platform !== 'darwin' || typeof systemPreferences.askForMediaAccess !== 'function') {
+    return {
+      granted: status !== 'denied',
+      status,
+    };
+  }
+
+  const granted = await systemPreferences.askForMediaAccess(mediaType);
+  return {
+    granted,
+    status: resolveMediaAccessStatus(mediaType),
+  };
 }
 
 function bindBackendExit(child) {
@@ -115,6 +216,13 @@ async function shutdownBackend() {
 
 function registerIpcHandlers() {
   ipcMain.handle('backend:request', (_event, request) => proxyBackendRequest(request));
+  ipcMain.handle('backend:upload', (_event, request) => proxyBackendUpload(request));
+  ipcMain.handle('media:get-access-status', (_event, mediaType) => resolveMediaAccessStatus(mediaType));
+  ipcMain.handle('media:request-access', (_event, mediaType) => requestMediaAccess(mediaType));
+
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === 'media');
+  });
 
   ipcMain.handle('files:pick', async () => {
     const result = await dialog.showOpenDialog({

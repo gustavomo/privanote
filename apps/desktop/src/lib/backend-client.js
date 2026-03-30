@@ -10,6 +10,13 @@ function assertTransport(transport) {
 
 function createBackendClient({ transport }) {
   const activeTransport = assertTransport(transport);
+  const upload = (operation, payload, file) => {
+    if (typeof activeTransport.upload !== 'function') {
+      throw new Error('createBackendClient transport must support upload(operation, payload, file).');
+    }
+
+    return activeTransport.upload(operation, payload, file);
+  };
 
   return {
     listNodes: () => activeTransport.request(v1.operations.listNodes),
@@ -20,6 +27,7 @@ function createBackendClient({ transport }) {
     addAttachment: (payload) => activeTransport.request(v1.operations.addAttachment, payload),
     deleteAttachment: (attachmentId) =>
       activeTransport.request(v1.operations.deleteAttachment, { attachmentId }),
+    saveRecording: (payload, file) => upload(v1.media.saveRecording, payload, file),
   };
 }
 

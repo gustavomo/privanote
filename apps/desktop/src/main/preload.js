@@ -9,6 +9,15 @@ function createIpcTransport() {
         payload,
       });
     },
+    upload(operation, payload, file) {
+      return ipcRenderer.invoke('backend:upload', {
+        operationId: operation.id,
+        payload,
+        fileName: file?.fileName,
+        mimeType: file?.mimeType,
+        bytes: file?.bytes,
+      });
+    },
   };
 }
 
@@ -19,4 +28,6 @@ const backendClient = createBackendClient({
 contextBridge.exposeInMainWorld('api', {
   ...backendClient,
   pickFile: () => ipcRenderer.invoke('files:pick'),
+  getMediaAccessStatus: (mediaType) => ipcRenderer.invoke('media:get-access-status', mediaType),
+  requestMediaAccess: (mediaType) => ipcRenderer.invoke('media:request-access', mediaType),
 });

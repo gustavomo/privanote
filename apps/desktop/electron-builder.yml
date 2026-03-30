@@ -11,3 +11,6 @@ mac:
   artifactName: ${productName}-${version}-${arch}.${ext}
   target:
     - dir
+  extendInfo:
+    NSMicrophoneUsageDescription: Privanote records audio locally so you can capture notes without sending media to the cloud.
+    NSCameraUsageDescription: Privanote records video locally so you can capture media-backed notes on your device.

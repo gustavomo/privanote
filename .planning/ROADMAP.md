@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Monorepo and Local Backend Foundation** - Restructure the repo, ship a local backend with the app, and stabilize storage, lifecycle, and test foundations.
 - [x] **Phase 2: Capture and Save Flows** - Add audio/video recording plus import flows and persist media through the backend.
-- [ ] **Phase 3: Transcription and Settings** - Add configurable local/backend transcription and settings for storage, transcription, and providers.
+- [x] **Phase 3: Transcription and Settings** - Add configurable local/backend transcription and settings for storage, transcription, and providers.
 - [ ] **Phase 4: Optional Cloud Sync** - Connect Google Drive and OneDrive and sync local-first media to optional cloud storage.
 
 ## Phase Details
@@ -68,9 +68,9 @@ Plans:
 **Plans**: 3 planned
 
 Plans:
-- [ ] 03-01: Add transcript persistence, transcriber adapters, and backend queue orchestration
-- [ ] 03-02: Add settings navigation, persisted preferences, and configurable local media destination
-- [ ] 03-03: Add provider credential validation, transcript states, and retry/error regressions
+- [x] 03-01: Add transcript persistence, transcriber adapters, and backend queue orchestration
+- [x] 03-02: Add settings navigation, persisted preferences, and configurable local media destination
+- [x] 03-03: Add provider credential validation, transcript states, and retry/error regressions
 
 ### Phase 4: Optional Cloud Sync
 **Goal**: Extend the local-first workflow with optional Google Drive and OneDrive sync while preserving a local copy of recorded and imported media.
@@ -99,5 +99,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Monorepo and Local Backend Foundation | 3/3 | Complete | 2026-03-29 |
 | 2. Capture and Save Flows | 3/3 | Complete | 2026-03-30 |
-| 3. Transcription and Settings | 0/3 | Planned | - |
+| 3. Transcription and Settings | 3/3 | Complete | 2026-03-30 |
 | 4. Optional Cloud Sync | 0/TBD | Not started | - |

@@ -27,18 +27,18 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 ### Transcription
 
-- [ ] **TRNS-01**: User can generate a transcript for recorded or imported audio/video
-- [ ] **TRNS-02**: User can choose whether transcription runs locally or through the backend from settings
-- [ ] **TRNS-03**: User can save and revisit transcripts alongside the related note and media
-- [ ] **TRNS-04**: User receives a clear retryable error state when transcription fails
+- [x] **TRNS-01**: User can generate a transcript for recorded or imported audio/video
+- [x] **TRNS-02**: User can choose whether transcription runs locally or through the backend from settings
+- [x] **TRNS-03**: User can save and revisit transcripts alongside the related note and media
+- [x] **TRNS-04**: User receives a clear retryable error state when transcription fails
 
 ### Settings and Storage
 
-- [ ] **SET-01**: User can choose the local storage directory from a settings surface
-- [ ] **SET-02**: User can configure storage and transcription preferences from a settings surface
-- [ ] **SET-03**: User can enter and update provider credentials from a settings surface
-- [ ] **SET-04**: User receives validation feedback for invalid storage, transcription, or provider configuration
-- [ ] **SET-05**: Settings persist across relaunch and are reused by the app and local backend
+- [x] **SET-01**: User can choose the local storage directory from a settings surface
+- [x] **SET-02**: User can configure storage and transcription preferences from a settings surface
+- [x] **SET-03**: User can enter and update provider credentials from a settings surface
+- [x] **SET-04**: User receives validation feedback for invalid storage, transcription, or provider configuration
+- [x] **SET-05**: Settings persist across relaunch and are reused by the app and local backend
 
 ### Optional Cloud Sync
 
@@ -92,15 +92,15 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | CAP-03 | Phase 2 | Complete |
 | CAP-04 | Phase 2 | Complete |
 | CAP-05 | Phase 2 | Complete |
-| TRNS-01 | Phase 3 | Pending |
-| TRNS-02 | Phase 3 | Pending |
-| TRNS-03 | Phase 3 | Pending |
-| TRNS-04 | Phase 3 | Pending |
-| SET-01 | Phase 3 | Pending |
-| SET-02 | Phase 3 | Pending |
-| SET-03 | Phase 3 | Pending |
-| SET-04 | Phase 3 | Pending |
-| SET-05 | Phase 3 | Pending |
+| TRNS-01 | Phase 3 | Complete |
+| TRNS-02 | Phase 3 | Complete |
+| TRNS-03 | Phase 3 | Complete |
+| TRNS-04 | Phase 3 | Complete |
+| SET-01 | Phase 3 | Complete |
+| SET-02 | Phase 3 | Complete |
+| SET-03 | Phase 3 | Complete |
+| SET-04 | Phase 3 | Complete |
+| SET-05 | Phase 3 | Complete |
 | SYNC-01 | Phase 4 | Pending |
 | SYNC-02 | Phase 4 | Pending |
 | SYNC-03 | Phase 4 | Pending |
@@ -114,4 +114,4 @@ Which phases cover which requirements. This will be updated during roadmap creat
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-30 after Phase 2 completion*
+*Last updated: 2026-03-30 after Phase 3 completion*

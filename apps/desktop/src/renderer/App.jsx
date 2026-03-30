@@ -249,9 +249,6 @@ export default function App({ api }) {
   const [nodes, setNodes] = useState([]);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [attachments, setAttachments] = useState([]);
-  const [newNodeTitle, setNewNodeTitle] = useState('');
-  const [newNodeDescription, setNewNodeDescription] = useState('');
-  const [newNodeTags, setNewNodeTags] = useState('');
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editTags, setEditTags] = useState('');
@@ -600,27 +597,6 @@ export default function App({ api }) {
     }
   }
 
-  async function handleCreateNode(event) {
-    event.preventDefault();
-    setError('');
-
-    try {
-      const node = await client.createNode({
-        title: newNodeTitle,
-        description: newNodeDescription,
-        tags: newNodeTags,
-      });
-
-      setNodes((current) => [node, ...current.filter((item) => item.id !== node.id)]);
-      setSelectedNodeId(node.id);
-      setNewNodeTitle('');
-      setNewNodeDescription('');
-      setNewNodeTags('');
-    } catch (submitError) {
-      setError(submitError.message || 'Unable to create note.');
-    }
-  }
-
   async function handleSaveNode(event) {
     event.preventDefault();
     if (!selectedNode) {
@@ -911,11 +887,9 @@ export default function App({ api }) {
     return (
       <div className="grid gap-4 rounded-[28px] bg-secondary/70 p-6">
         <div className="space-y-1">
-          <h3 className="text-xl font-semibold leading-[1.2]">
-            {selectedNode ? 'Capture and review' : 'Capture Your First Note'}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Start a recording or import files to create a note and keep the media stored locally.
+          <h3 className="text-xl font-semibold leading-[1.2]">Capture</h3>
+          <p className="text-sm leading-6 text-muted-foreground">
+            Start a recording or import a file — a note is created automatically.
           </p>
         </div>
 
@@ -1077,88 +1051,61 @@ export default function App({ api }) {
 
   const workspaceView = (
     <section className="grid gap-8 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
-      <aside className="rounded-[28px] border bg-secondary/70 p-6 shadow-sm">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold leading-[1.2]">Notes</h2>
-            <p className="text-sm leading-5 text-muted-foreground">
-              {nodes.length} note{nodes.length === 1 ? '' : 's'} available
-            </p>
-          </div>
+      <aside className="flex flex-col rounded-[28px] border bg-secondary/70 p-6 shadow-sm">
+        {renderCapturePanel()}
+
+        <div className="mb-4 mt-6">
+          <h2 className="text-xl font-semibold leading-[1.2]">Notes</h2>
+          <p className="text-sm leading-5 text-muted-foreground">
+            {nodes.length} note{nodes.length === 1 ? '' : 's'} available
+          </p>
         </div>
 
-        <form className="mb-6 grid gap-3" onSubmit={handleCreateNode}>
-          <input
-            className="h-11 rounded-xl border bg-background px-3 text-sm"
-            placeholder="New note title"
-            required
-            value={newNodeTitle}
-            onChange={(event) => setNewNodeTitle(event.target.value)}
-          />
-          <textarea
-            className="min-h-[88px] rounded-xl border bg-background px-3 py-3 text-sm"
-            placeholder="Description"
-            rows={3}
-            value={newNodeDescription}
-            onChange={(event) => setNewNodeDescription(event.target.value)}
-          />
-          <input
-            className="h-11 rounded-xl border bg-background px-3 text-sm"
-            placeholder="Tags"
-            value={newNodeTags}
-            onChange={(event) => setNewNodeTags(event.target.value)}
-          />
-          <button
-            type="submit"
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-          >
-            Create Note
-          </button>
-        </form>
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center text-sm text-muted-foreground">
+              Loading notes...
+            </div>
+          ) : nodes.length === 0 ? (
+            <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center">
+              <h3 className="text-xl font-semibold">No notes yet</h3>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Capture a recording or import a file to create your first note.
+              </p>
+            </div>
+          ) : (
+            <ul className="grid gap-3">
+              {nodes.map((node) => {
+                const isSelected = node.id === selectedNodeId;
 
-        {loading ? (
-          <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center text-sm text-muted-foreground">
-            Loading notes...
-          </div>
-        ) : nodes.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center">
-            <h3 className="text-xl font-semibold">Capture Your First Note</h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Start a recording or import files to create a note and keep the media stored locally.
-            </p>
-          </div>
-        ) : (
-          <ul className="grid gap-3">
-            {nodes.map((node) => {
-              const isSelected = node.id === selectedNodeId;
-
-              return (
-                <li key={node.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedNodeId(node.id)}
-                    className={cn(
-                      'flex w-full flex-col gap-2 rounded-2xl border bg-background px-4 py-4 text-left transition',
-                      isSelected
-                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                        : 'border-transparent hover:border-border hover:bg-card'
-                    )}
-                  >
-                    <span className="text-base font-semibold">{node.title}</span>
-                    <span
+                return (
+                  <li key={node.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedNodeId(node.id)}
                       className={cn(
-                        'text-sm leading-5',
-                        isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                        'flex w-full flex-col gap-2 rounded-2xl border bg-background px-4 py-4 text-left transition',
+                        isSelected
+                          ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                          : 'border-transparent hover:border-border hover:bg-card'
                       )}
                     >
-                      Updated {formatDate(node.updated_at)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                      <span className="text-base font-semibold">{node.title}</span>
+                      <span
+                        className={cn(
+                          'text-sm leading-5',
+                          isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                        )}
+                      >
+                        Updated {formatDate(node.updated_at)}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </aside>
 
       <section className="rounded-[32px] border bg-background p-6 shadow-sm">
@@ -1218,8 +1165,6 @@ export default function App({ api }) {
               </button>
             </form>
 
-            {renderCapturePanel()}
-
             <TranscriptSection
               noteId={selectedNode.id}
               transcript={transcript}
@@ -1262,7 +1207,12 @@ export default function App({ api }) {
             </div>
           </div>
         ) : (
-          <div className="grid min-h-[520px] content-center gap-6">{renderCapturePanel()}</div>
+          <div className="grid min-h-[520px] content-center gap-3 text-center">
+            <h2 className="text-xl font-semibold leading-[1.2]">Select a note to view it</h2>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Capture a recording or import a file from the sidebar to create your first note.
+            </p>
+          </div>
         )}
       </section>
     </section>

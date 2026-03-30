@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready
-stopped_at: Phase 3 executed
-last_updated: "2026-03-30T18:45:00.000Z"
-last_activity: 2026-03-30 -- Phase 03 execution completed
+stopped_at: Phase 4 discussed
+last_updated: "2026-03-30T19:59:37.000Z"
+last_activity: 2026-03-30 -- Phase 04 context captured
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 Phase: 04 (Optional Cloud Sync) — READY
 Plan: 0 of 3
-Status: Phase 03 complete; ready to discuss or plan Phase 04
-Last activity: 2026-03-30 -- Phase 03 execution completed
+Status: Phase 04 context captured; ready to plan
+Last activity: 2026-03-30 -- Phase 04 context captured
 
 Progress: [████████░░] 75%
 
@@ -77,6 +77,9 @@ Recent decisions affecting current work:
 - Phase 3 execution: Plan 01 added transcript persistence, local/OpenAI adapters, and a durable transcript queue with retry plus startup resume.
 - Phase 3 execution: Plan 02 added backend-owned settings contracts, a shell-level settings view, and future-local-save directory switching without migration.
 - Phase 3 execution: Plan 03 added masked provider settings, retry/regenerate transcript UI, and relaunch-safe transcript/provider regressions.
+- Phase 4 context: Users may connect both Google Drive and OneDrive, but each attachment syncs to exactly one selected provider.
+- Phase 4 context: Sync starts automatically from the selected default destination, re-queues older unsynced local attachments when the default changes, and never blocks local usability on failure.
+- Phase 4 context: Synced payloads include media, transcript text, and a metadata sidecar stored under one Privanote root folder per provider with one folder per note.
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T16:05:00.000Z
-Stopped at: Phase 3 executed
-Resume file: .planning/ROADMAP.md
+Last session: 2026-03-30T19:59:37.000Z
+Stopped at: Phase 4 discussed
+Resume file: .planning/phases/04-optional-cloud-sync/04-CONTEXT.md

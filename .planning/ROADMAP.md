@@ -47,12 +47,12 @@ Plans:
   2. User can record video inside the desktop app.
   3. User can import existing audio, video, and file attachments.
   4. User can save recorded or imported media through the backend and see it again after relaunch.
-**Plans**: TBD
+**Plans**: 3 planned
 
 Plans:
-- [ ] 02-01: Add desktop recording UX and device-access flow for audio and video capture
-- [ ] 02-02: Add import flows and backend persistence for recorded and existing media
-- [ ] 02-03: Surface saved media in the workspace and add regression checks for capture and relaunch flows
+- [ ] 02-01: Add the recording upload seam, permission handling, and review-first capture UX
+- [ ] 02-02: Add import flows and shared backend-managed persistence for recorded and existing media
+- [ ] 02-03: Surface saved media as cards in the workspace and add relaunch regression coverage
 
 ### Phase 3: Transcription and Settings
 **Goal**: Add configurable transcription and the settings surface needed to control storage, transcription mode, and provider credentials.
@@ -98,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo and Local Backend Foundation | 3/3 | Complete | 2026-03-29 |
-| 2. Capture and Save Flows | 0/TBD | Not started | - |
+| 2. Capture and Save Flows | 0/3 | Planned | - |
 | 3. Transcription and Settings | 0/TBD | Not started | - |
 | 4. Optional Cloud Sync | 0/TBD | Not started | - |

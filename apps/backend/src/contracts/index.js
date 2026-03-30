@@ -1,5 +1,6 @@
 const { nodes } = require('./v1/nodes');
 const { attachments } = require('./v1/attachments');
+const { media } = require('./v1/media');
 
 const operations = {
   listNodes: nodes.listNodes,
@@ -9,12 +10,14 @@ const operations = {
   listAttachments: attachments.listAttachments,
   addAttachment: attachments.addAttachment,
   deleteAttachment: attachments.deleteAttachment,
+  saveRecording: media.saveRecording,
 };
 
 const v1 = {
   version: 'v1',
   nodes,
   attachments,
+  media,
   operations,
 };
 

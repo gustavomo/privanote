@@ -87,7 +87,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-7 todos captured (2026-03-30):
+8 todos captured (2026-03-30):
 - Migrate codebase to TypeScript [tooling]
 - Restructure project organization [general]
 - Rename apps folder [general]
@@ -95,6 +95,7 @@ Recent decisions affecting current work:
 - Use Gherkin for tests [testing]
 - Fix UI issues [ui]
 - Make record or import always accessible [ui]
+- Patch Google Drive provider OAuth token request [api]
 
 ### Blockers/Concerns
 

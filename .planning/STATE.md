@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-03-30T20:11:37.460Z"
-last_activity: 2026-03-30 -- Phase 04 UI-SPEC approved and planning is next
+status: ready
+stopped_at: Phase 4 planned
+last_updated: "2026-03-30T20:28:39.000Z"
+last_activity: 2026-03-30 -- Phase 04 planned and execution is next
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 9
+  total_plans: 12
   completed_plans: 9
   percent: 75
 ---
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 ## Current Position
 
 Phase: 04 (Optional Cloud Sync) — READY
-Plan: 0 of 3
-Status: Phase 04 context and UI design contract captured; ready to plan
-Last activity: 2026-03-30 -- Phase 04 UI-SPEC approved and planning is next
+Plan: 3 plans ready
+Status: Ready for execution
+Last activity: 2026-03-30 -- Phase 04 planned and execution is next
 
 Progress: [████████░░] 75%
 
@@ -47,7 +47,7 @@ Progress: [████████░░] 75%
 | 1 | 3 | 43 min | 14 min |
 | 2 | 3 | 35 min | 12 min |
 | 3 | 3 | 110 min | 37 min |
-| 4 | 0 | 0 min | 0 min |
+| 4 | 3 | 0 min | 0 min |
 
 **Recent Trend:**
 
@@ -80,6 +80,7 @@ Recent decisions affecting current work:
 - Phase 4 context: Users may connect both Google Drive and OneDrive, but each attachment syncs to exactly one selected provider.
 - Phase 4 context: Sync starts automatically from the selected default destination, re-queues older unsynced local attachments when the default changes, and never blocks local usability on failure.
 - Phase 4 context: Synced payloads include media, transcript text, and a metadata sidecar stored under one Privanote root folder per provider with one folder per note.
+- Phase 4 planning: Execute in three slices covering shared sync plus Google Drive, OneDrive plus durable sync metadata/default-switch rules, and desktop sync-state surfaces with relaunch regressions.
 
 ### Pending Todos
 
@@ -87,12 +88,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 4 context and UI design contract are ready, but planning has not started yet.
+- Phase 4 planning is ready, but execution has not started yet.
 - `better-sqlite3` can still flip back to the Electron ABI after npm operations or hooks, so Node-side backend verification may require `/Users/gustavo.moreno/.nvm/versions/node/v20.19.1/bin/npm rebuild better-sqlite3`.
 - Phase 1 leaves the packaged app on the default Electron icon because no product icon asset exists yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T20:11:37.450Z
-Stopped at: Phase 4 UI-SPEC approved
-Resume file: .planning/phases/04-optional-cloud-sync/04-UI-SPEC.md
+Last session: 2026-03-30T20:28:39.000Z
+Stopped at: Phase 4 planned
+Resume file: .planning/phases/04-optional-cloud-sync/04-01-PLAN.md

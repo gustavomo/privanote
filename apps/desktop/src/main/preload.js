@@ -1,30 +1,22 @@
 const { contextBridge, ipcRenderer } = require('electron');
+const { createBackendClient } = require('../lib/backend-client');
+
+function createIpcTransport() {
+  return {
+    request(operation, payload) {
+      return ipcRenderer.invoke('backend:request', {
+        operationId: operation.id,
+        payload,
+      });
+    },
+  };
+}
+
+const backendClient = createBackendClient({
+  transport: createIpcTransport(),
+});
 
 contextBridge.exposeInMainWorld('api', {
-  listNodes: () => ipcRenderer.invoke('backend:request', { operationId: 'v1.nodes.listNodes' }),
-  createNode: (payload) =>
-    ipcRenderer.invoke('backend:request', { operationId: 'v1.nodes.createNode', payload }),
-  updateNode: (payload) =>
-    ipcRenderer.invoke('backend:request', { operationId: 'v1.nodes.updateNode', payload }),
-  deleteNode: (nodeId) =>
-    ipcRenderer.invoke('backend:request', {
-      operationId: 'v1.nodes.deleteNode',
-      payload: { nodeId },
-    }),
-  listAttachments: (nodeId) =>
-    ipcRenderer.invoke('backend:request', {
-      operationId: 'v1.attachments.listAttachments',
-      payload: { nodeId },
-    }),
-  addAttachment: (payload) =>
-    ipcRenderer.invoke('backend:request', {
-      operationId: 'v1.attachments.addAttachment',
-      payload,
-    }),
-  deleteAttachment: (attachmentId) =>
-    ipcRenderer.invoke('backend:request', {
-      operationId: 'v1.attachments.deleteAttachment',
-      payload: { attachmentId },
-    }),
+  ...backendClient,
   pickFile: () => ipcRenderer.invoke('files:pick'),
 });

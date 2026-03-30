@@ -7,10 +7,16 @@ const operationsById = Object.values(v1.operations).reduce((result, operation) =
   result[operation.id] = operation;
   return result;
 }, {});
+const isSmokeNoWindow = process.env.PRIVANOTE_SMOKE_NO_WINDOW === '1';
 
 let backendContext = null;
 let backendStartupPromise = null;
 let isQuitting = false;
+
+function resolveDataRoot() {
+  const configuredRoot = String(process.env.PRIVANOTE_DATA_DIR || '').trim();
+  return configuredRoot ? path.resolve(configuredRoot) : path.join(app.getPath('userData'), 'privanote');
+}
 
 function resolveOperationPath(operation, payload = {}) {
   const nodeId = Number(payload.nodeId ?? payload.id);
@@ -63,6 +69,11 @@ function bindBackendExit(child) {
     backendContext = null;
 
     if (!isQuitting && code && code !== 0) {
+      if (isSmokeNoWindow) {
+        process.stderr.write('The local backend exited unexpectedly.\n');
+        return;
+      }
+
       dialog.showErrorBox(
         'Privanote backend stopped',
         'The local backend exited unexpectedly. Restart Privanote and try again.'
@@ -77,10 +88,11 @@ async function ensureBackendReady() {
   }
 
   if (!backendStartupPromise) {
-    const dataRoot = path.join(app.getPath('userData'), 'privanote');
+    const dataRoot = resolveDataRoot();
 
     backendStartupPromise = startBackendProcess({
       dataRoot,
+      packaged: app.isPackaged,
     })
       .then((context) => {
         backendContext = context;
@@ -127,6 +139,10 @@ function registerIpcHandlers() {
 async function createWindow() {
   await ensureBackendReady();
 
+  if (isSmokeNoWindow) {
+    return null;
+  }
+
   const win = new BrowserWindow({
     width: 1280,
     height: 840,
@@ -155,6 +171,13 @@ app.whenReady().then(async () => {
   try {
     await createWindow();
   } catch (error) {
+    if (isSmokeNoWindow) {
+      process.stderr.write(`${error.message || 'Unable to start the local backend.'}\n`);
+      await shutdownBackend();
+      process.exit(1);
+      return;
+    }
+
     dialog.showErrorBox('Privanote failed to start', error.message || 'Unable to start the local backend.');
     await shutdownBackend();
     app.quit();
@@ -162,6 +185,10 @@ app.whenReady().then(async () => {
   }
 
   app.on('activate', async () => {
+    if (isSmokeNoWindow) {
+      return;
+    }
+
     if (BrowserWindow.getAllWindows().length === 0) {
       try {
         await createWindow();
@@ -177,6 +204,10 @@ app.on('before-quit', () => {
 });
 
 app.on('window-all-closed', async () => {
+  if (isSmokeNoWindow) {
+    return;
+  }
+
   await shutdownBackend();
 
   if (process.platform !== 'darwin') {
@@ -185,6 +216,13 @@ app.on('window-all-closed', async () => {
 });
 
 process.on('uncaughtException', async (error) => {
+  if (isSmokeNoWindow) {
+    process.stderr.write(`${error.message || 'The desktop shell hit an unexpected error.'}\n`);
+    await shutdownBackend();
+    process.exit(1);
+    return;
+  }
+
   dialog.showErrorBox('Privanote crashed', error.message || 'The desktop shell hit an unexpected error.');
   await shutdownBackend();
   process.exit(1);
@@ -192,7 +230,25 @@ process.on('uncaughtException', async (error) => {
 
 process.on('unhandledRejection', async (error) => {
   const message = error instanceof Error ? error.message : 'The desktop shell hit an unexpected promise rejection.';
+
+  if (isSmokeNoWindow) {
+    process.stderr.write(`${message}\n`);
+    await shutdownBackend();
+    process.exit(1);
+    return;
+  }
+
   dialog.showErrorBox('Privanote backend error', message);
   await shutdownBackend();
   process.exit(1);
+});
+
+process.on('SIGTERM', async () => {
+  await shutdownBackend();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  await shutdownBackend();
+  process.exit(0);
 });

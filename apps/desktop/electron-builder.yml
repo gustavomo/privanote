@@ -1,0 +1,13 @@
+appId: com.privanote.desktop
+productName: Privanote
+directories:
+  output: release
+extraResources:
+  - from: ../backend/dist
+    to: backend
+asarUnpack:
+  - node_modules/better-sqlite3/**/*
+mac:
+  artifactName: ${productName}-${version}-${arch}.${ext}
+  target:
+    - dir

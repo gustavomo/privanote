@@ -12,7 +12,7 @@ This brownfield roadmap takes Privanote from a single-package Electron prototype
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Monorepo and Local Backend Foundation** - Restructure the repo, ship a local backend with the app, and stabilize storage, lifecycle, and test foundations.
+- [x] **Phase 1: Monorepo and Local Backend Foundation** - Restructure the repo, ship a local backend with the app, and stabilize storage, lifecycle, and test foundations.
 - [ ] **Phase 2: Capture and Save Flows** - Add audio/video recording plus import flows and persist media through the backend.
 - [ ] **Phase 3: Transcription and Settings** - Add configurable local/backend transcription and settings for storage, transcription, and providers.
 - [ ] **Phase 4: Optional Cloud Sync** - Connect Google Drive and OneDrive and sync local-first media to optional cloud storage.
@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01: Restructure the workspace into a monorepo and define frontend/backend contracts
 - [x] 01-02: Ship the local backend with the desktop app and stabilize storage plus lifecycle handling
-- [ ] 01-03: Add packaging, no-auth app flow guarantees, and regression coverage for the new architecture
+- [x] 01-03: Add packaging, no-auth app flow guarantees, and regression coverage for the new architecture
 
 ### Phase 2: Capture and Save Flows
 **Goal**: Let users record or import media in the desktop app and persist the result through the backend as part of the note workflow.
@@ -97,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Monorepo and Local Backend Foundation | 2/3 | In Progress | - |
+| 1. Monorepo and Local Backend Foundation | 3/3 | Complete | 2026-03-29 |
 | 2. Capture and Save Flows | 0/TBD | Not started | - |
 | 3. Transcription and Settings | 0/TBD | Not started | - |
 | 4. Optional Cloud Sync | 0/TBD | Not started | - |

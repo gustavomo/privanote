@@ -83,12 +83,12 @@ Plans:
   3. User can upload or sync recorded/imported media to the selected cloud provider.
   4. User can distinguish local-only and cloud-synced media in the UI.
   5. User keeps a local-first copy even when cloud sync is enabled.
-**Plans**: TBD
+**Plans**: 3 planned
 
 Plans:
 - [ ] 04-01: Add a shared sync abstraction and Google Drive provider integration
 - [ ] 04-02: Add OneDrive provider integration and sync metadata persistence
-- [ ] 04-03: Surface sync state, upload controls, and local-first/cloud distinction in the workspace
+- [ ] 04-03: Surface sync state, retry controls, and local-first/cloud distinction in the workspace
 
 ## Progress
 
@@ -100,4 +100,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Monorepo and Local Backend Foundation | 3/3 | Complete | 2026-03-29 |
 | 2. Capture and Save Flows | 3/3 | Complete | 2026-03-30 |
 | 3. Transcription and Settings | 3/3 | Complete | 2026-03-30 |
-| 4. Optional Cloud Sync | 0/TBD | Not started | - |
+| 4. Optional Cloud Sync | 0/3 | Planned | - |

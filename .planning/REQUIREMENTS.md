@@ -50,7 +50,7 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 ### Workspace UX
 
-- [ ] **UX-01**: The capture panel (recording and import) is always visible at the top of the workspace sidebar so users can start a capture from anywhere without creating a note first. Notes are created automatically as a result of capture.
+- [x] **UX-01**: The capture panel (recording and import) is always visible at the top of the workspace sidebar so users can start a capture from anywhere without creating a note first. Notes are created automatically as a result of capture.
 
 ## v2 Requirements
 

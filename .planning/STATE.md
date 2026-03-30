@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-30T22:22:08.758Z"
-last_activity: 2026-03-30 -- Phase 04 execution completed
+status: verifying
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-30T23:00:39.543Z"
+last_activity: 2026-03-30
 progress:
   total_phases: 5
-  completed_phases: 4
-  total_plans: 12
-  completed_plans: 12
+  completed_phases: 5
+  total_plans: 13
+  completed_plans: 13
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A user can capture and revisit media-backed notes locally, quickly, and without losing control of where their data lives.
-**Current focus:** Milestone complete — Phase 04 Optional Cloud Sync shipped
+**Current focus:** Phase 05 — make-record-or-import-always-accessible-as-a-persistent-entry-point
 
 ## Current Position
 
-Phase: 04 (Optional Cloud Sync) — COMPLETE
-Plan: 3 of 3 complete
-Status: Milestone complete
-Last activity: 2026-03-30 -- Phase 04 execution completed
+Phase: 05 (make-record-or-import-always-accessible-as-a-persistent-entry-point) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-03-30
 
 Progress: [██████████] 100%
 
@@ -53,6 +53,8 @@ Progress: [██████████] 100%
 
 - Last 5 plans: 35 min, 41 min, 36 min, 25 min, 28 min
 - Trend: Phase 4 added provider sync plus UI feedback without regressing the earlier local-first workflows
+
+| Phase 05 P01 | 14 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -88,6 +90,8 @@ Recent decisions affecting current work:
 - Phase 4 execution: Provider connections, attachment sync ownership, and retry state now persist in backend-owned sync tables and survive relaunch.
 - Phase 4 execution: Default destination changes only queue unsynced local attachments to the newly connected provider; already-synced items stay on their original target.
 - Phase 4 execution: The desktop now shows compact sync badges, provider connection controls, and retry/local-first messaging without hiding local media actions.
+- [Phase 05]: Capture panel is now a sidebar fixture — renderCapturePanel() has exactly one call site, at the top of the aside element before the notes section header
+- [Phase 05]: Create Note form and its three state variables removed entirely — notes are a result of capture, not a prerequisite
 
 ### Pending Todos
 
@@ -108,6 +112,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-30T22:22:08.747Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-make-record-or-import-always-accessible-as-a-persistent-entry-point/05-CONTEXT.md
+Last session: 2026-03-30T23:00:39.528Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None

@@ -107,7 +107,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 **Goal:** Restructure the workspace UX so recording and importing are the primary entry points. The capture panel moves to a persistent top-of-sidebar position. Notes are created automatically as a result of capture; the Create Note form is removed.
 **Requirements**: [UX-01]
 **Depends on:** Phase 4
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 05-01-PLAN.md — Refactor App.jsx sidebar layout and update regression tests for capture-first flow
+- [x] 05-01-PLAN.md — Refactor App.jsx sidebar layout and update regression tests for capture-first flow

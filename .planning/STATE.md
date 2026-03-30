@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready
-stopped_at: Phase 4 discussed
-last_updated: "2026-03-30T19:59:37.000Z"
-last_activity: 2026-03-30 -- Phase 04 context captured
+status: planning
+stopped_at: Phase 4 UI-SPEC approved
+last_updated: "2026-03-30T20:11:37.460Z"
+last_activity: 2026-03-30 -- Phase 04 UI-SPEC approved and planning is next
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 Phase: 04 (Optional Cloud Sync) — READY
 Plan: 0 of 3
-Status: Phase 04 context captured; ready to plan
-Last activity: 2026-03-30 -- Phase 04 context captured
+Status: Phase 04 context and UI design contract captured; ready to plan
+Last activity: 2026-03-30 -- Phase 04 UI-SPEC approved and planning is next
 
 Progress: [████████░░] 75%
 
@@ -87,11 +87,12 @@ None yet.
 
 ### Blockers/Concerns
 
+- Phase 4 context and UI design contract are ready, but planning has not started yet.
 - `better-sqlite3` can still flip back to the Electron ABI after npm operations or hooks, so Node-side backend verification may require `/Users/gustavo.moreno/.nvm/versions/node/v20.19.1/bin/npm rebuild better-sqlite3`.
 - Phase 1 leaves the packaged app on the default Electron icon because no product icon asset exists yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T19:59:37.000Z
-Stopped at: Phase 4 discussed
-Resume file: .planning/phases/04-optional-cloud-sync/04-CONTEXT.md
+Last session: 2026-03-30T20:11:37.450Z
+Stopped at: Phase 4 UI-SPEC approved
+Resume file: .planning/phases/04-optional-cloud-sync/04-UI-SPEC.md

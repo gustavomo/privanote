@@ -1,9 +1,7 @@
 const fs = require('fs');
-const path = require('path');
-const { pipeline } = require('stream/promises');
 const { getDatabase } = require('../storage/database');
 const nodesService = require('./nodes-service');
-const { resolveManagedAttachmentsRoot } = require('../storage/attachment-files');
+const { resolveManagedMediaPath, writeUploadedMedia } = require('../storage/media-files');
 
 const captureKinds = {
   audio: 'audio',
@@ -28,13 +26,6 @@ function normalizeNodeId(nodeId) {
   }
 
   return safeNodeId;
-}
-
-function sanitizeFileName(fileName, fallbackExtension = '.webm') {
-  const baseName = path.basename(String(fileName || `recording${fallbackExtension}`).trim());
-  const extension = path.extname(baseName) || fallbackExtension;
-  const name = path.basename(baseName, extension).replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '');
-  return `${name || 'recording'}${extension}`;
 }
 
 function findNodeById(nodeId) {
@@ -75,12 +66,6 @@ function createAttachmentRecord({ nodeId, kind, localPath }) {
     .get(result.lastInsertRowid);
 }
 
-function resolveRecordingTargetPath(fileName) {
-  const attachmentsRoot = resolveManagedAttachmentsRoot();
-  const sanitizedFileName = sanitizeFileName(fileName);
-  return path.join(attachmentsRoot, `${Date.now()}-${sanitizedFileName}`);
-}
-
 async function saveRecording(payload = {}) {
   const captureMode = String(payload.captureMode || '').trim();
   const kind = captureKinds[captureMode];
@@ -103,13 +88,15 @@ async function saveRecording(payload = {}) {
     throw createHttpError('Node not found', 404);
   }
 
-  const localPath = resolveRecordingTargetPath(payload.fileName);
-  fs.mkdirSync(path.dirname(localPath), { recursive: true });
+  const localPath = resolveManagedMediaPath({
+    kind,
+    originalName: payload.fileName || 'recording.webm',
+  });
 
   let createdNode = null;
 
   try {
-    await pipeline(payload.stream, fs.createWriteStream(localPath));
+    await writeUploadedMedia(payload.stream, localPath);
 
     if (!node) {
       createdNode = nodesService.createNode({

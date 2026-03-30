@@ -105,6 +105,11 @@ function createMockApi() {
         attachment,
       };
     }),
+    importMedia: vi.fn(async () => {
+      throw new Error('importMedia is not used in capture review tests.');
+    }),
+    getAttachmentContentUrl: vi.fn(async (attachmentId) => `http://localhost/preview/${attachmentId}`),
+    openPath: vi.fn(async () => ''),
     getMediaAccessStatus: vi.fn(async () => 'granted'),
     requestMediaAccess: vi.fn(async () => ({
       granted: true,
@@ -191,6 +196,13 @@ describe('capture review flow', () => {
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Save Recording' })).not.toBeInTheDocument();
     });
+
+    await waitFor(() => {
+      expect(api.getAttachmentContentUrl).toHaveBeenCalledTimes(1);
+    });
+
+    expect(document.querySelector('audio')).not.toBeNull();
+    expect(await screen.findByRole('button', { name: 'Remove Media' })).toBeInTheDocument();
   });
 
   it('captures Video + Audio into review and deletes the placeholder note when discarded', async () => {

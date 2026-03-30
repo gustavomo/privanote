@@ -76,6 +76,8 @@ function createMockApi({ nodes: initialNodes = [], pickedPath }) {
         attachment,
       };
     }),
+    getAttachmentContentUrl: vi.fn(async (attachmentId) => `/preview/${attachmentId}`),
+    openPath: vi.fn(async () => ''),
     getMediaAccessStatus: vi.fn(async () => 'granted'),
     requestMediaAccess: vi.fn(async () => ({ granted: true, status: 'granted' })),
     pickFile: vi.fn(async () => pickedPath),
@@ -114,6 +116,7 @@ describe('media import flow', () => {
     });
 
     expect(await screen.findByText('/managed/session.mp4')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Remove Media' })).toBeInTheDocument();
   });
 
   it('imports files without a selected note and uses the generated placeholder title path', async () => {
@@ -136,5 +139,6 @@ describe('media import flow', () => {
     });
 
     expect(await screen.findByText('/managed/archive.wav')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Remove Media' })).toBeInTheDocument();
   });
 });

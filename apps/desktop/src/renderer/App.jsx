@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from './lib/utils.js';
 
 const attachmentKinds = [
@@ -6,6 +6,15 @@ const attachmentKinds = [
   { value: 'video', label: 'Video' },
   { value: 'file', label: 'File' },
 ];
+
+const captureModes = [
+  { value: 'audio', label: 'Audio' },
+  { value: 'video', label: 'Video' },
+  { value: 'video-with-audio', label: 'Video + Audio' },
+];
+
+const captureFailureCopy =
+  'Camera or microphone access is unavailable. Check device permissions, then retry or switch to import.';
 
 function formatDate(dateString) {
   const date = new Date(dateString);
@@ -37,6 +46,11 @@ function createUnavailableApi() {
     deleteAttachment: async () => {
       throw new Error('Desktop API is unavailable.');
     },
+    saveRecording: async () => {
+      throw new Error('Desktop API is unavailable.');
+    },
+    getMediaAccessStatus: async () => 'unknown',
+    requestMediaAccess: async () => ({ granted: false, status: 'unknown' }),
     pickFile: async () => null,
   };
 }
@@ -47,6 +61,92 @@ function confirmAction(message) {
   }
 
   return window.confirm(message);
+}
+
+function resolveCaptureConstraints(captureMode) {
+  if (captureMode === 'audio') {
+    return {
+      audio: true,
+      video: false,
+    };
+  }
+
+  if (captureMode === 'video') {
+    return {
+      audio: false,
+      video: true,
+    };
+  }
+
+  return {
+    audio: true,
+    video: true,
+  };
+}
+
+function resolveRequiredPermissions(captureMode) {
+  if (captureMode === 'audio') {
+    return ['microphone'];
+  }
+
+  if (captureMode === 'video') {
+    return ['camera'];
+  }
+
+  return ['camera', 'microphone'];
+}
+
+function resolveSupportedMimeType(captureMode) {
+  if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+    return '';
+  }
+
+  const candidates =
+    captureMode === 'audio'
+      ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg']
+      : ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+
+  return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) || '';
+}
+
+function createPlaceholderTitle(captureMode, createdAt = new Date()) {
+  const prefix = captureMode === 'audio' ? 'Audio note' : 'Video note';
+  return `${prefix} - ${createdAt.toLocaleString()}`;
+}
+
+function resolveFileExtension(mimeType) {
+  if (mimeType.includes('ogg')) {
+    return 'ogg';
+  }
+
+  if (mimeType.includes('mp4')) {
+    return 'mp4';
+  }
+
+  if (mimeType.includes('wav')) {
+    return 'wav';
+  }
+
+  return 'webm';
+}
+
+function createRecordingFileName(captureMode, mimeType) {
+  const prefix = captureMode === 'audio' ? 'audio-note' : 'video-note';
+  return `${prefix}.${resolveFileExtension(mimeType || '')}`;
+}
+
+async function buildRecordingFile(blob, captureMode) {
+  const mimeType = blob.type || (captureMode === 'audio' ? 'audio/webm' : 'video/webm');
+  const bytes =
+    typeof blob.arrayBuffer === 'function'
+      ? await blob.arrayBuffer()
+      : await new Response(blob).arrayBuffer();
+
+  return {
+    fileName: createRecordingFileName(captureMode, mimeType),
+    mimeType,
+    bytes,
+  };
 }
 
 export default function App({ api }) {
@@ -62,13 +162,41 @@ export default function App({ api }) {
   const [editTags, setEditTags] = useState('');
   const [attachmentKind, setAttachmentKind] = useState('audio');
   const [attachmentPath, setAttachmentPath] = useState('');
+  const [captureMode, setCaptureMode] = useState('audio');
+  const [captureState, setCaptureState] = useState('idle');
+  const [captureError, setCaptureError] = useState('');
+  const [reviewRecording, setReviewRecording] = useState(null);
+  const [isSavingRecording, setIsSavingRecording] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const mediaRecorderRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const captureChunksRef = useRef([]);
+  const reviewUrlRef = useRef('');
 
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId) || null,
     [nodes, selectedNodeId]
   );
+
+  function stopMediaStream() {
+    if (!mediaStreamRef.current) {
+      return;
+    }
+
+    mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+  }
+
+  function clearReviewRecording() {
+    if (reviewUrlRef.current && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+      URL.revokeObjectURL(reviewUrlRef.current);
+    }
+
+    reviewUrlRef.current = '';
+    setReviewRecording(null);
+    setCaptureState('idle');
+  }
 
   async function loadNodes() {
     setLoading(true);
@@ -111,40 +239,67 @@ export default function App({ api }) {
     }
   }
 
-  useEffect(() => {
-    loadNodes();
-  }, []);
+  async function ensureCapturePermissions(mode) {
+    const requiredPermissions = resolveRequiredPermissions(mode);
 
-  useEffect(() => {
-    if (!selectedNode) {
-      setEditTitle('');
-      setEditDescription('');
-      setEditTags('');
-      setAttachments([]);
-      return;
+    for (const permission of requiredPermissions) {
+      const status = await client.getMediaAccessStatus(permission);
+
+      if (status === 'denied' || status === 'restricted') {
+        throw new Error(captureFailureCopy);
+      }
+
+      if (status === 'not-determined') {
+        const result = await client.requestMediaAccess(permission);
+        if (!result.granted) {
+          throw new Error(captureFailureCopy);
+        }
+      }
+    }
+  }
+
+  async function ensureCaptureNode(mode) {
+    if (selectedNode) {
+      return {
+        node: selectedNode,
+        placeholderNoteId: null,
+        placeholderTitle: selectedNode.title,
+      };
     }
 
-    setEditTitle(selectedNode.title || '');
-    setEditDescription(selectedNode.description || '');
-    setEditTags(selectedNode.tags || '');
-    loadAttachments(selectedNode.id);
-  }, [selectedNode]);
+    const placeholderTitle = createPlaceholderTitle(mode);
+    const node = await client.createNode({
+      title: placeholderTitle,
+      description: '',
+      tags: '',
+    });
+
+    setNodes((current) => [node, ...current.filter((item) => item.id !== node.id)]);
+    setSelectedNodeId(node.id);
+
+    return {
+      node,
+      placeholderNoteId: node.id,
+      placeholderTitle,
+    };
+  }
 
   async function handleCreateNode(event) {
     event.preventDefault();
     setError('');
 
     try {
-      await client.createNode({
+      const node = await client.createNode({
         title: newNodeTitle,
         description: newNodeDescription,
         tags: newNodeTags,
       });
 
+      setNodes((current) => [node, ...current.filter((item) => item.id !== node.id)]);
+      setSelectedNodeId(node.id);
       setNewNodeTitle('');
       setNewNodeDescription('');
       setNewNodeTags('');
-      await loadNodes();
     } catch (submitError) {
       setError(submitError.message || 'Unable to create note.');
     }
@@ -159,14 +314,16 @@ export default function App({ api }) {
     setError('');
 
     try {
-      await client.updateNode({
+      const updatedNode = await client.updateNode({
         id: selectedNode.id,
         title: editTitle,
         description: editDescription,
         tags: editTags,
       });
 
-      await loadNodes();
+      setNodes((current) =>
+        current.map((node) => (node.id === updatedNode.id ? updatedNode : node))
+      );
     } catch (updateError) {
       setError(updateError.message || 'Unable to update note.');
     }
@@ -174,7 +331,7 @@ export default function App({ api }) {
 
   async function handleDeleteNode(nodeId) {
     if (
-      !confirmAction('Delete this note and all linked attachments? This cannot be undone.')
+      !confirmAction('Delete Note: Delete this note and all linked media? This cannot be undone.')
     ) {
       return;
     }
@@ -244,6 +401,289 @@ export default function App({ api }) {
     }
   }
 
+  async function handleStartRecording() {
+    setError('');
+    setCaptureError('');
+
+    if (
+      typeof navigator === 'undefined' ||
+      !navigator.mediaDevices ||
+      typeof navigator.mediaDevices.getUserMedia !== 'function' ||
+      typeof MediaRecorder === 'undefined'
+    ) {
+      setCaptureError(captureFailureCopy);
+      return;
+    }
+
+    try {
+      const noteContext = await ensureCaptureNode(captureMode);
+      await ensureCapturePermissions(captureMode);
+
+      const stream = await navigator.mediaDevices.getUserMedia(resolveCaptureConstraints(captureMode));
+      const mimeType = resolveSupportedMimeType(captureMode);
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+      mediaStreamRef.current = stream;
+      mediaRecorderRef.current = recorder;
+      captureChunksRef.current = [];
+
+      recorder.addEventListener('dataavailable', (event) => {
+        if (event.data && event.data.size > 0) {
+          captureChunksRef.current.push(event.data);
+        }
+      });
+
+      recorder.addEventListener('stop', async () => {
+        const blob = new Blob(captureChunksRef.current, {
+          type: recorder.mimeType || mimeType || (captureMode === 'audio' ? 'audio/webm' : 'video/webm'),
+        });
+        const previewUrl =
+          typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
+            ? URL.createObjectURL(blob)
+            : '';
+
+        stopMediaStream();
+        reviewUrlRef.current = previewUrl;
+
+        setReviewRecording({
+          captureMode,
+          file: await buildRecordingFile(blob, captureMode),
+          nodeId: noteContext.node.id,
+          placeholderNoteId: noteContext.placeholderNoteId,
+          placeholderTitle: noteContext.placeholderTitle,
+          previewUrl,
+        });
+        setCaptureState('review');
+      });
+
+      recorder.start();
+      setCaptureState('recording');
+    } catch (_captureError) {
+      stopMediaStream();
+      mediaRecorderRef.current = null;
+      setCaptureState('idle');
+      setCaptureError(captureFailureCopy);
+    }
+  }
+
+  function handleStopRecording() {
+    if (!mediaRecorderRef.current) {
+      return;
+    }
+
+    setCaptureState('stopping');
+    mediaRecorderRef.current.stop();
+    mediaRecorderRef.current = null;
+  }
+
+  async function handleSaveRecording() {
+    if (!reviewRecording) {
+      return;
+    }
+
+    setError('');
+    setCaptureError('');
+    setIsSavingRecording(true);
+
+    try {
+      const result = await client.saveRecording(
+        {
+          nodeId: reviewRecording.nodeId,
+          title: reviewRecording.placeholderTitle,
+          captureMode: reviewRecording.captureMode,
+          mimeType: reviewRecording.file.mimeType,
+          fileName: reviewRecording.file.fileName,
+        },
+        reviewRecording.file
+      );
+
+      clearReviewRecording();
+      await loadNodes();
+      setSelectedNodeId(result.node.id);
+      await loadAttachments(result.node.id);
+    } catch (saveError) {
+      setError(saveError.message || 'Unable to save recording.');
+    } finally {
+      setIsSavingRecording(false);
+    }
+  }
+
+  async function handleDiscardRecording() {
+    if (
+      !reviewRecording ||
+      !confirmAction('Discard Recording: Discard this unsaved recording? This cannot be undone.')
+    ) {
+      return;
+    }
+
+    const placeholderNoteId = reviewRecording.placeholderNoteId;
+    const placeholderTitle = reviewRecording.placeholderTitle;
+
+    clearReviewRecording();
+    setCaptureError('');
+
+    const placeholderNode = nodes.find((node) => node.id === placeholderNoteId);
+    if (!placeholderNode || placeholderNode.title !== placeholderTitle || attachments.length > 0) {
+      return;
+    }
+
+    try {
+      await client.deleteNode(placeholderNoteId);
+      await loadNodes();
+    } catch (deleteError) {
+      setError(deleteError.message || 'Unable to remove placeholder note.');
+    }
+  }
+
+  useEffect(() => {
+    loadNodes();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedNode) {
+      setEditTitle('');
+      setEditDescription('');
+      setEditTags('');
+      setAttachments([]);
+      return;
+    }
+
+    setEditTitle(selectedNode.title || '');
+    setEditDescription(selectedNode.description || '');
+    setEditTags(selectedNode.tags || '');
+    loadAttachments(selectedNode.id);
+  }, [selectedNode]);
+
+  useEffect(() => {
+    return () => {
+      stopMediaStream();
+      if (reviewUrlRef.current && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+        URL.revokeObjectURL(reviewUrlRef.current);
+      }
+    };
+  }, []);
+
+  const renderCapturePanel = () => {
+    const isReview = captureState === 'review' && reviewRecording;
+    const isRecording = captureState === 'recording';
+    const isStopping = captureState === 'stopping';
+
+    return (
+      <div className="grid gap-4 rounded-[28px] bg-secondary/70 p-6">
+        <div className="space-y-1">
+          <h3 className="text-xl font-semibold leading-[1.2]">
+            {selectedNode ? 'Capture and review' : 'Capture Your First Note'}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Start a recording or import files to create a note and keep the media stored locally.
+          </p>
+        </div>
+
+        <div className="inline-flex flex-wrap gap-2 rounded-2xl bg-background p-2">
+          {captureModes.map((mode) => (
+            <button
+              key={mode.value}
+              type="button"
+              onClick={() => setCaptureMode(mode.value)}
+              disabled={isRecording || isStopping || isSavingRecording}
+              className={cn(
+                'inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold transition',
+                captureMode === mode.value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-transparent text-muted-foreground hover:bg-secondary'
+              )}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+
+        {captureError ? (
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {captureError}
+          </div>
+        ) : null}
+
+        {isReview ? (
+          <div className="grid gap-4 rounded-[24px] border bg-background p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Recording Review
+                </p>
+                <h4 className="text-xl font-semibold leading-[1.2]">
+                  {reviewRecording.captureMode === 'audio' ? 'Audio preview' : 'Video preview'}
+                </h4>
+              </div>
+            </div>
+
+            {reviewRecording.captureMode === 'audio' ? (
+              <audio controls preload="metadata" src={reviewRecording.previewUrl} />
+            ) : (
+              <video controls preload="metadata" src={reviewRecording.previewUrl} className="max-h-[320px] rounded-2xl bg-secondary" />
+            )}
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleSaveRecording}
+                disabled={isSavingRecording}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+              >
+                Save Recording
+              </button>
+              <button
+                type="button"
+                onClick={handleDiscardRecording}
+                disabled={isSavingRecording}
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
+              >
+                Discard Recording
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-4 rounded-[24px] border bg-background p-5">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Recorder
+              </p>
+              <h4 className="text-xl font-semibold leading-[1.2]">
+                {isRecording ? 'Recording in progress' : 'Ready to capture'}
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                {isRecording || isStopping
+                  ? 'Stop the recording to review it before saving.'
+                  : 'Choose a mode, start the recorder, then review before saving.'}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              {isRecording || isStopping ? (
+                <button
+                  type="button"
+                  onClick={handleStopRecording}
+                  disabled={isStopping}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-primary/30 px-4 text-sm font-semibold text-primary"
+                >
+                  Stop Recording
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleStartRecording}
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                >
+                  Start Recording
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <main className="theme min-h-screen bg-background px-6 py-8 text-foreground">
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
@@ -310,9 +750,9 @@ export default function App({ api }) {
               </div>
             ) : nodes.length === 0 ? (
               <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center">
-                <h3 className="text-xl font-semibold">Start Your First Note</h3>
+                <h3 className="text-xl font-semibold">Capture Your First Note</h3>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  Create a note to confirm the new desktop and backend foundation is working end to end.
+                  Start a recording or import files to create a note and keep the media stored locally.
                 </p>
               </div>
             ) : (
@@ -406,6 +846,8 @@ export default function App({ api }) {
                   </button>
                 </form>
 
+                {renderCapturePanel()}
+
                 <div className="grid gap-4 rounded-[28px] bg-secondary/70 p-6">
                   <div className="space-y-1">
                     <h3 className="text-xl font-semibold leading-[1.2]">Attachments</h3>
@@ -414,7 +856,10 @@ export default function App({ api }) {
                     </p>
                   </div>
 
-                  <form className="grid gap-3 lg:grid-cols-[140px_minmax(0,1fr)_auto_auto]" onSubmit={handleAddAttachment}>
+                  <form
+                    className="grid gap-3 lg:grid-cols-[140px_minmax(0,1fr)_auto_auto]"
+                    onSubmit={handleAddAttachment}
+                  >
                     <select
                       className="h-11 rounded-xl border bg-background px-3 text-sm"
                       value={attachmentKind}
@@ -482,12 +927,7 @@ export default function App({ api }) {
                 </div>
               </div>
             ) : (
-              <div className="flex min-h-[520px] flex-col items-center justify-center rounded-[28px] bg-secondary/70 px-6 text-center">
-                <h2 className="text-xl font-semibold">Start Your First Note</h2>
-                <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-                  Create a note to confirm the new desktop and backend foundation is working end to end.
-                </p>
-              </div>
+              <div className="grid min-h-[520px] content-center gap-6">{renderCapturePanel()}</div>
             )}
           </section>
         </section>

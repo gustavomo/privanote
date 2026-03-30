@@ -80,10 +80,10 @@ describe('App note workspace', () => {
 
     render(<App api={api} />);
 
-    expect(await screen.findAllByText('Start Your First Note')).not.toHaveLength(0);
+    expect(await screen.findAllByText('Capture Your First Note')).not.toHaveLength(0);
     expect(
       screen.getAllByText(
-        'Create a note to confirm the new desktop and backend foundation is working end to end.'
+        'Start a recording or import files to create a note and keep the media stored locally.'
       ).length
     ).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Create Note' })).toBeInTheDocument();
@@ -138,7 +138,7 @@ describe('App note workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete Note' }));
 
     await waitFor(() => {
-      expect(screen.getAllByText('Start Your First Note').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Capture Your First Note').length).toBeGreaterThan(0);
     });
   });
 });

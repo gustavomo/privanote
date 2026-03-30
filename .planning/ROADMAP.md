@@ -101,3 +101,13 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. Capture and Save Flows | 3/3 | Complete | 2026-03-30 |
 | 3. Transcription and Settings | 3/3 | Complete | 2026-03-30 |
 | 4. Optional Cloud Sync | 3/3 | Complete    | 2026-03-30 |
+
+### Phase 5: Make record or import always accessible as a persistent entry point
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 4
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 5 to break down)

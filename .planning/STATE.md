@@ -56,6 +56,10 @@ Progress: [██████████] 100%
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 5 added: Make record or import always accessible as a persistent entry point
+
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.

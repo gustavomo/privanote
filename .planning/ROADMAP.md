@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 planned
 
 Plans:
-- [ ] 01-01: Restructure the workspace into a monorepo and define frontend/backend contracts
+- [x] 01-01: Restructure the workspace into a monorepo and define frontend/backend contracts
 - [ ] 01-02: Ship the local backend with the desktop app and stabilize storage plus lifecycle handling
 - [ ] 01-03: Add packaging, no-auth app flow guarantees, and regression coverage for the new architecture
 
@@ -97,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Monorepo and Local Backend Foundation | 0/3 | Planned | - |
+| 1. Monorepo and Local Backend Foundation | 1/3 | In Progress | - |
 | 2. Capture and Save Flows | 0/TBD | Not started | - |
 | 3. Transcription and Settings | 0/TBD | Not started | - |
 | 4. Optional Cloud Sync | 0/TBD | Not started | - |

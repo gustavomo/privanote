@@ -1,26 +1,26 @@
 # Privanote
 
-Privanote is an Electron + React desktop application for managing local content nodes with SQLite persistence.
+Privanote is a local-first monorepo with separate desktop and backend workspaces.
 
 ## Current status
 
-This iteration now includes:
-- Local SQLite schema for nodes and attachments.
-- Main-process IPC handlers for node CRUD and attachment CRUD.
-- Secure preload API surface for renderer access.
-- React UI for:
-  - creating, selecting, editing, and deleting nodes
-  - adding/removing attachments per node
-  - opening a native file picker to populate attachment paths
+Phase 1 is rebuilding the original Electron prototype into:
+- `apps/desktop` for the Electron shell and React workspace UI
+- `apps/backend` for the backend-owned contracts and upcoming local service runtime
+- root workspace scripts that orchestrate both packages without hiding their boundaries
 
 ## Scripts
 
-- `npm run dev` starts Vite + Electron for local development.
-- `npm run build` builds the renderer to `dist/`.
-- `npm start` launches Electron.
+- `npm run dev` runs the desktop workspace from the repo root.
+- `npm run build` orchestrates backend then desktop builds.
+- `npm start` launches the desktop workspace.
+- `npm run dev --workspace @privanote/desktop` runs the desktop package directly.
+- `npm run dev --workspace @privanote/backend` runs the backend package directly.
+- `npm run test --workspace @privanote/desktop` runs desktop checks.
+- `npm run test --workspace @privanote/backend` runs backend checks.
 
-## Next implementation milestones
+## Workspace notes
 
-1. Google Drive / OneDrive connector adapters for cloud-backed attachments.
-2. Attachment preview and media playback inside the app.
-3. Configurable storage directories and provider credentials in Settings.
+- `apps/desktop` owns Electron, preload, renderer, and local UI design-system files.
+- `apps/backend` owns versioned contracts and the local backend runtime foundation.
+- Cross-package sharing is limited to backend-owned contracts. Business logic stays out of shared packages.

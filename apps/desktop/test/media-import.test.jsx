@@ -100,6 +100,8 @@ function createMockApi({ nodes: initialNodes = [], pickedPath }) {
       };
       return { ...settings };
     }),
+    getNoteTranscript: vi.fn(async () => null),
+    retryNoteTranscript: vi.fn(async () => null),
     getMediaAccessStatus: vi.fn(async () => 'granted'),
     requestMediaAccess: vi.fn(async () => ({ granted: true, status: 'granted' })),
     pickFile: vi.fn(async () => {
@@ -206,6 +208,8 @@ describe('media import flow', () => {
       expect(api.updateSettings).toHaveBeenCalledWith(
         expect.objectContaining({
           localMediaDirectory: '/vault/privanote',
+          providerKind: 'openai',
+          clearBackendApiKey: false,
         })
       );
     });

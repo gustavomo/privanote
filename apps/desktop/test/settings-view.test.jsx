@@ -8,6 +8,9 @@ function createMockApi() {
     storageDestination: 'local',
     localMediaDirectory: '',
     transcriptionMode: 'local',
+    providerKind: 'openai',
+    backendApiKeyConfigured: false,
+    backendApiKeyMaskedHint: '',
   };
 
   return {
@@ -34,12 +37,28 @@ function createMockApi() {
     openPath: vi.fn(async () => ''),
     getSettings: vi.fn(async () => ({ ...settings })),
     updateSettings: vi.fn(async (payload) => {
+      if (payload.backendApiKey === 'bad-key') {
+        throw new Error('OpenAI API key is invalid.');
+      }
+
       settings = {
         ...settings,
         ...payload,
+        backendApiKeyConfigured: Boolean(payload.backendApiKey) || settings.backendApiKeyConfigured,
+        backendApiKeyMaskedHint: payload.backendApiKey
+          ? `••••${payload.backendApiKey.slice(-4)}`
+          : settings.backendApiKeyMaskedHint,
       };
+
+      if (payload.clearBackendApiKey) {
+        settings.backendApiKeyConfigured = false;
+        settings.backendApiKeyMaskedHint = '';
+      }
+
       return { ...settings };
     }),
+    getNoteTranscript: vi.fn(async () => null),
+    retryNoteTranscript: vi.fn(async () => null),
     getMediaAccessStatus: vi.fn(async () => 'granted'),
     requestMediaAccess: vi.fn(async () => ({ granted: true, status: 'granted' })),
     pickFile: vi.fn(async () => null),
@@ -48,7 +67,7 @@ function createMockApi() {
 }
 
 describe('settings view', () => {
-  it('loads persisted settings, saves storage and transcription changes, and reloads them on a fresh render', async () => {
+  it('loads persisted settings, saves backend provider settings, and reloads masked provider state on a fresh render', async () => {
     const api = createMockApi();
 
     const { unmount } = render(<App api={api} />);
@@ -61,6 +80,11 @@ describe('settings view', () => {
       expect(screen.getByDisplayValue('/vault/settings-media')).toBeInTheDocument();
     });
     fireEvent.click(screen.getByLabelText('Backend'));
+    fireEvent.change(screen.getByLabelText('OpenAI API Key'), {
+      target: {
+        value: 'sk-test-1234',
+      },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Save Settings' }));
 
     await waitFor(() => {
@@ -68,6 +92,9 @@ describe('settings view', () => {
         storageDestination: 'local',
         localMediaDirectory: '/vault/settings-media',
         transcriptionMode: 'backend',
+        providerKind: 'openai',
+        backendApiKey: 'sk-test-1234',
+        clearBackendApiKey: false,
       });
     });
 
@@ -80,7 +107,28 @@ describe('settings view', () => {
       expect(screen.getByDisplayValue('/vault/settings-media')).toBeInTheDocument();
     });
     expect(screen.getByLabelText('Backend')).toBeChecked();
+    expect(screen.getByText('Saved key: ••••1234')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Provider' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Workspace' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save Settings' })).toBeInTheDocument();
+  });
+
+  it("shows the exact settings validation copy when a backend-mode save fails", async () => {
+    const api = createMockApi();
+
+    render(<App api={api} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByLabelText('Backend'));
+    fireEvent.change(screen.getByLabelText('OpenAI API Key'), {
+      target: {
+        value: 'bad-key',
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Settings' }));
+
+    expect(
+      await screen.findByText("We couldn't save these settings. Fix the highlighted fields and try again.")
+    ).toBeInTheDocument();
   });
 });

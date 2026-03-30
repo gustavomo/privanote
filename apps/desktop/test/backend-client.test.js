@@ -18,6 +18,8 @@ describe('createBackendClient', () => {
       localMediaDirectory: '/tmp/notes',
       transcriptionMode: 'local',
     });
+    await client.getNoteTranscript(7);
+    await client.retryNoteTranscript(7);
     await client.listAttachments(7);
     await client.addAttachment({ nodeId: 7, kind: 'audio', localPath: '/tmp/audio.wav' });
     await client.deleteAttachment(11);
@@ -39,15 +41,21 @@ describe('createBackendClient', () => {
       localMediaDirectory: '/tmp/notes',
       transcriptionMode: 'local',
     });
-    expect(transport.request).toHaveBeenNthCalledWith(7, v1.operations.listAttachments, {
+    expect(transport.request).toHaveBeenNthCalledWith(7, v1.operations.getNoteTranscript, {
       nodeId: 7,
     });
-    expect(transport.request).toHaveBeenNthCalledWith(8, v1.operations.addAttachment, {
+    expect(transport.request).toHaveBeenNthCalledWith(8, v1.operations.retryNoteTranscript, {
+      nodeId: 7,
+    });
+    expect(transport.request).toHaveBeenNthCalledWith(9, v1.operations.listAttachments, {
+      nodeId: 7,
+    });
+    expect(transport.request).toHaveBeenNthCalledWith(10, v1.operations.addAttachment, {
       nodeId: 7,
       kind: 'audio',
       localPath: '/tmp/audio.wav',
     });
-    expect(transport.request).toHaveBeenNthCalledWith(9, v1.operations.deleteAttachment, {
+    expect(transport.request).toHaveBeenNthCalledWith(11, v1.operations.deleteAttachment, {
       attachmentId: 11,
     });
   });

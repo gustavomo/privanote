@@ -1,17 +1,16 @@
 const fs = require('fs');
-const path = require('path');
 const Database = require('better-sqlite3');
 const { deleteManagedAttachment, resolveManagedAttachmentsRoot } = require('./attachment-files');
-const { resolveDataRoot } = require('./runtime-paths');
+const { resolveRuntimeDatabasePath, resolveRuntimeRoot } = require('./runtime-paths');
 
 let database = null;
 
 function createDatabase() {
-  const dataDir = resolveDataRoot();
-  const dbPath = path.join(dataDir, 'privanote.db');
+  const runtimeRoot = resolveRuntimeRoot();
+  const dbPath = resolveRuntimeDatabasePath();
   const managedAttachmentsRoot = resolveManagedAttachmentsRoot();
 
-  fs.mkdirSync(dataDir, { recursive: true });
+  fs.mkdirSync(runtimeRoot, { recursive: true });
 
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
@@ -51,6 +50,53 @@ function createDatabase() {
       SELECT delete_managed_attachment(old.local_path);
     END;
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY CHECK(id = 1),
+      storage_destination TEXT NOT NULL DEFAULT 'local',
+      local_media_directory TEXT NOT NULL DEFAULT '',
+      transcription_mode TEXT NOT NULL DEFAULT 'local',
+      provider_kind TEXT NOT NULL DEFAULT 'openai',
+      backend_api_key TEXT NOT NULL DEFAULT '',
+      local_runtime_status TEXT NOT NULL DEFAULT 'not-ready',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS transcripts (
+      node_id INTEGER PRIMARY KEY,
+      attachment_id INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN ('queued', 'processing', 'succeeded', 'failed')),
+      text TEXT NOT NULL DEFAULT '',
+      mode TEXT NOT NULL DEFAULT 'local' CHECK(mode IN ('local', 'backend')),
+      provider TEXT NOT NULL DEFAULT '',
+      attempt_count INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      completed_at TEXT DEFAULT NULL,
+      FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+      FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE
+    );
+  `);
+
+  db.prepare(
+    `
+      INSERT OR IGNORE INTO settings (
+        id,
+        storage_destination,
+        local_media_directory,
+        transcription_mode,
+        provider_kind,
+        backend_api_key,
+        local_runtime_status
+      )
+      VALUES (1, 'local', '', 'local', 'openai', '', 'not-ready')
+    `
+  ).run();
 
   return db;
 }

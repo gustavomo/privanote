@@ -22,6 +22,49 @@ function resolveBackendEntryPoint(packaged = false) {
   return candidate;
 }
 
+function resolveBackendCommand(packaged = false) {
+  if (packaged) {
+    return process.execPath;
+  }
+
+  return process.env.npm_node_execpath || 'node';
+}
+
+function createBackendEnv({ dataRoot, port, packaged }) {
+  const env = {
+    ...process.env,
+    PORT: String(port),
+    PRIVANOTE_DATA_DIR: dataRoot,
+  };
+
+  if (packaged) {
+    env.ELECTRON_RUN_AS_NODE = '1';
+    env.PRIVANOTE_RESOURCES_PATH = process.resourcesPath || '';
+    return env;
+  }
+
+  delete env.ELECTRON_RUN_AS_NODE;
+  delete env.PRIVANOTE_RESOURCES_PATH;
+  return env;
+}
+
+function formatBackendStartupError(error, detail = '') {
+  const normalizedDetail = String(detail || '').trim();
+
+  if (
+    normalizedDetail.includes('better_sqlite3.node') &&
+    normalizedDetail.includes('NODE_MODULE_VERSION')
+  ) {
+    return [
+      'better-sqlite3 is out of sync with the Node runtime used for the local backend.',
+      'Run `npm run rebuild:native` from the repo root, then restart Privanote.',
+      normalizedDetail,
+    ].join('\n');
+  }
+
+  return normalizedDetail ? `${error.message}\n${normalizedDetail}` : error.message;
+}
+
 async function waitForBackendHealth(baseUrl, timeoutMs = 10000) {
   const deadline = Date.now() + timeoutMs;
 
@@ -42,17 +85,12 @@ async function waitForBackendHealth(baseUrl, timeoutMs = 10000) {
 }
 
 async function startBackendProcess({ dataRoot, port = DEFAULT_BACKEND_PORT, packaged = false } = {}) {
+  const backendCommand = resolveBackendCommand(packaged);
   const backendEntryPoint = resolveBackendEntryPoint(packaged);
   const baseUrl = `http://127.0.0.1:${port}`;
   let stderrOutput = '';
-  const child = spawn(process.execPath, [backendEntryPoint], {
-    env: {
-      ...process.env,
-      ELECTRON_RUN_AS_NODE: '1',
-      PORT: String(port),
-      PRIVANOTE_DATA_DIR: dataRoot,
-      PRIVANOTE_RESOURCES_PATH: process.resourcesPath || '',
-    },
+  const child = spawn(backendCommand, [backendEntryPoint], {
+    env: createBackendEnv({ dataRoot, port, packaged }),
     stdio: ['ignore', 'ignore', 'pipe'],
   });
 
@@ -69,7 +107,7 @@ async function startBackendProcess({ dataRoot, port = DEFAULT_BACKEND_PORT, pack
   } catch (error) {
     await stopBackendProcess({ child });
     const detail = stderrOutput.trim();
-    throw new Error(detail ? `${error.message}\n${detail}` : error.message);
+    throw new Error(formatBackendStartupError(error, detail));
   }
 
   return {
@@ -98,6 +136,7 @@ async function stopBackendProcess(context) {
 
 module.exports = {
   DEFAULT_BACKEND_PORT,
+  formatBackendStartupError,
   startBackendProcess,
   stopBackendProcess,
   waitForBackendHealth,

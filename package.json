@@ -10,6 +10,7 @@
     "build": "npm run build --workspace @privanote/backend && npm run build --workspace @privanote/desktop",
     "build:desktop": "npm run build --workspace @privanote/desktop",
     "build:backend": "npm run build --workspace @privanote/backend",
+    "rebuild:native": "npm rebuild better-sqlite3",
     "start": "npm run start --workspace @privanote/desktop",
     "test": "npm run test --workspace @privanote/backend && npm run test --workspace @privanote/desktop"
   },

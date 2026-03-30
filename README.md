@@ -14,6 +14,7 @@ Phase 1 is rebuilding the original Electron prototype into:
 - `npm run dev` runs the desktop workspace from the repo root.
 - `npm run build` orchestrates backend then desktop builds.
 - `npm run dist --workspace @privanote/desktop` builds a packaged desktop directory with the local backend included.
+- `npm run rebuild:native` rebuilds `better-sqlite3` for the current local Node version after a Node upgrade or ABI mismatch.
 - `npm start` launches the desktop workspace.
 - `npm run dev --workspace @privanote/desktop` runs the desktop package directly.
 - `npm run dev --workspace @privanote/backend` runs the backend package directly.

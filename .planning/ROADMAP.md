@@ -111,3 +111,13 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 Plans:
 - [x] 05-01-PLAN.md — Refactor App.jsx sidebar layout and update regression tests for capture-first flow
+
+### Phase 6: Always-on-top floating capture button for external app screen capture
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 6 to break down)

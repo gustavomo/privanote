@@ -281,18 +281,17 @@ async function toggleCaptureSession() {
   }
 
   const screenStatus = checkScreenPermission();
-  if (screenStatus === 'not-determined') {
-    // Trigger the OS screen recording permission prompt by requesting sources once.
-    // After the user grants, the next click will proceed normally.
-    const { desktopCapturer } = require('electron');
-    desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } }).catch(() => {});
-    return;
-  }
   if (screenStatus !== 'granted') {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('capture:permission-missing', {
-        screen: screenStatus,
-      });
+    const { response } = await dialog.showMessageBox({
+      type: 'info',
+      title: 'Screen Recording Permission',
+      message: 'Privanote needs Screen Recording permission to capture screenshots.',
+      detail: 'Open System Settings → Privacy & Security → Screen Recording, then enable Privanote.',
+      buttons: ['Open System Settings', 'Cancel'],
+      defaultId: 0,
+    });
+    if (response === 0) {
+      shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
     }
     return;
   }

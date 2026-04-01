@@ -11,24 +11,24 @@
       overflow: hidden;
       -webkit-user-select: none;
       user-select: none;
-      width: 64px;
+      width: 48px;
       height: 72px;
       transition: height 200ms ease-out;
     }
     .container {
-      width: 64px;
+      width: 48px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 4px;
       -webkit-app-region: drag;
       transition: height 200ms ease-out;
     }
     .btn {
       -webkit-app-region: no-drag;
-      width: 56px;
-      height: 56px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       border: none;
       cursor: pointer;
@@ -39,70 +39,40 @@
       position: relative;
       z-index: 1;
       background: oklch(0.214 0.009 43.1);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.24);
     }
     .btn:hover { background: oklch(0.35 0.012 43.1); transform: scale(1.06); }
-    .btn.recording { background: oklch(0.577 0.245 27.325); box-shadow: 0 2px 12px rgba(220,50,50,0.35); }
+    .btn.recording { background: oklch(0.65 0.15 195); box-shadow: 0 1px 8px oklch(0.65 0.15 195 / 0.35); }
     .btn.finalizing { background: oklch(0.547 0.021 43.1); cursor: default; }
     .btn svg {
-      width: 24px; height: 24px;
+      width: 18px; height: 18px;
       fill: none;
       stroke: oklch(0.986 0.002 67.8);
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
-    .btn.recording svg { width: 20px; height: 20px; stroke: white; }
+    .btn.recording svg { width: 15px; height: 15px; stroke: white; }
     .btn.finalizing svg { stroke: white; }
-    .pulse {
-      animation: pulse 1.5s ease-out infinite;
-      background: oklch(0.577 0.245 27.325);
-      border-radius: 50%;
-      position: absolute;
-      inset: -4px;
-      pointer-events: none;
-      z-index: 0;
-      display: none;
-    }
-    .recording .pulse { display: block; }
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 0.4; }
-      100% { transform: scale(1.3); opacity: 0; }
-    }
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner { animation: spin 1s linear infinite; }
-    .btn.monitoring { background: oklch(0.488 0.243 264.376); box-shadow: 0 2px 12px rgba(50,80,220,0.35); }
-    .btn.monitoring svg { width: 20px; height: 20px; stroke: white; }
+    .btn.monitoring { background: oklch(0.65 0.15 195); box-shadow: 0 1px 8px oklch(0.65 0.15 195 / 0.35); }
+    .btn.monitoring svg { width: 15px; height: 15px; stroke: white; }
     .btn.clip-finalizing { background: oklch(0.547 0.021 43.1); cursor: default; }
     .btn.clip-finalizing svg { stroke: white; }
-    .clipboard-pulse {
-      animation: clipboard-pulse 1.5s ease-out infinite;
-      background: oklch(0.488 0.243 264.376);
-      border-radius: 50%;
-      position: absolute;
-      inset: -4px;
-      pointer-events: none;
-      z-index: 0;
-      display: none;
-    }
-    .monitoring .clipboard-pulse { display: block; }
-    @keyframes clipboard-pulse {
-      0% { transform: scale(1); opacity: 0.4; }
-      100% { transform: scale(1.3); opacity: 0; }
-    }
     .badge {
       position: absolute;
-      top: -4px;
-      right: -4px;
-      width: 20px;
-      height: 20px;
+      top: -2px;
+      right: -2px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
-      background: oklch(0.488 0.243 264.376);
+      background: oklch(0.65 0.15 195);
       color: white;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 600;
-      line-height: 20px;
+      line-height: 16px;
       text-align: center;
       display: none;
       z-index: 2;
@@ -110,29 +80,12 @@
     }
 
     /* Call recording button states */
-    .btn.call-recording { background: oklch(0.55 0.20 145); box-shadow: 0 2px 12px rgba(50,180,50,0.35); }
-    .btn.call-recording svg { width: 20px; height: 20px; stroke: white; }
-    .btn.call-amber { background: oklch(0.75 0.18 85); box-shadow: 0 2px 12px rgba(200,160,50,0.35); }
-    .btn.call-amber svg { width: 20px; height: 20px; stroke: white; }
+    .btn.call-recording { background: oklch(0.65 0.15 195); box-shadow: 0 1px 8px oklch(0.65 0.15 195 / 0.35); }
+    .btn.call-recording svg { width: 15px; height: 15px; stroke: white; }
+    .btn.call-amber { background: oklch(0.75 0.18 85); box-shadow: 0 1px 8px oklch(0.75 0.18 85 / 0.35); }
+    .btn.call-amber svg { width: 15px; height: 15px; stroke: white; }
     .btn.call-finalizing { background: oklch(0.547 0.021 43.1); cursor: default; }
     .btn.call-finalizing svg { stroke: white; }
-
-    .call-pulse {
-      animation: call-pulse 1.5s ease-out infinite;
-      background: oklch(0.55 0.20 145);
-      border-radius: 50%;
-      position: absolute;
-      inset: -4px;
-      pointer-events: none;
-      z-index: 0;
-      display: none;
-    }
-    .call-recording .call-pulse { display: block; }
-    .call-amber .call-pulse { display: block; background: oklch(0.75 0.18 85); }
-    @keyframes call-pulse {
-      0% { transform: scale(1); opacity: 0.4; }
-      100% { transform: scale(1.3); opacity: 0; }
-    }
 
     /* Mutual exclusion disabled state */
     .btn.disabled { opacity: 0.35; pointer-events: none; cursor: default; }
@@ -148,21 +101,21 @@
     .mode-picker.visible { display: flex; }
     .mode-btn {
       -webkit-app-region: no-drag;
-      width: 48px;
-      height: 48px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: oklch(0.55 0.20 145);
-      box-shadow: 0 2px 8px rgba(50,180,50,0.3);
+      background: oklch(0.65 0.15 195);
+      box-shadow: 0 1px 6px oklch(0.65 0.15 195 / 0.3);
       transition: transform 150ms ease, background-color 150ms ease;
     }
-    .mode-btn:hover { transform: scale(1.08); background: oklch(0.60 0.22 145); }
+    .mode-btn:hover { transform: scale(1.08); background: oklch(0.70 0.15 195); }
     .mode-btn svg {
-      width: 20px; height: 20px;
+      width: 15px; height: 15px;
       fill: none;
       stroke: white;
       stroke-width: 2;
@@ -174,7 +127,6 @@
 <body>
   <div class="container">
     <button class="btn" id="clipBtn" title="Start clipboard monitoring" aria-label="Start clipboard monitoring">
-      <div class="clipboard-pulse"></div>
       <span class="badge" id="badge" aria-live="polite"></span>
       <svg id="clipIcon" viewBox="0 0 24 24">
         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
@@ -182,19 +134,20 @@
       </svg>
     </button>
     <button class="btn" id="btn" title="Start screen capture" aria-label="Start screen capture">
-      <div class="pulse"></div>
       <svg id="icon" viewBox="0 0 24 24">
-        <!-- eye icon (idle) -->
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-        <circle cx="12" cy="12" r="3"/>
+        <!-- eye-closed icon (idle) -->
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
       </svg>
     </button>
     <button class="btn" id="callBtn" title="Record call" aria-label="Record call">
-      <div class="call-pulse"></div>
       <svg id="callIcon" viewBox="0 0 24 24">
-        <!-- headphones icon (idle) -->
+        <!-- headphones-off icon (idle) -->
         <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
         <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
       </svg>
     </button>
     <div class="mode-picker" id="modePicker">
@@ -225,14 +178,14 @@
       let count = 1;
       if (captureVisible) count++;
       if (callVisible) count++;
-      let height = count * 64 + 8; // 56px button + 8px gap per button, plus 8px padding
-      // Mode picker adds 2 small buttons (48px each + 6px gap + 6px spacing)
-      if (modePickerVisible) height += 108;
+      let height = count * 44 + 4; // 40px button + 4px gap per button, plus 4px padding
+      // Mode picker adds 2 small buttons (34px each + 6px gap + 4px spacing)
+      if (modePickerVisible) height += 78;
       document.body.style.height = height + 'px';
       container.style.height = height + 'px';
       // Notify main process to resize the window
       if (window.captureApi && window.captureApi.resizeOverlay) {
-        window.captureApi.resizeOverlay(64, height);
+        window.captureApi.resizeOverlay(48, height);
       }
     }
 
@@ -253,8 +206,8 @@
 
     // --- Screen capture button ---
     const ICONS = {
-      idle: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
-      recording: `<rect x="6" y="6" width="12" height="12" rx="1" fill="white" stroke="none"/>`,
+      idle: `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`,
+      recording: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
       finalizing: `<path class="spinner" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>`,
     };
 
@@ -322,7 +275,7 @@
 
     const CLIP_ICONS = {
       idle: `<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>`,
-      monitoring: `<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>`,
+      monitoring: `<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="13" y2="14"/>`,
       finalizing: `<path class="spinner" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>`,
     };
 
@@ -381,8 +334,8 @@
     let callRecState = 'idle'; // idle, recording, amber, finalizing
 
     const CALL_ICONS = {
-      idle: `<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>`,
-      recording: `<rect x="6" y="6" width="12" height="12" rx="1" fill="white" stroke="none"/>`,
+      idle: `<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/><line x1="1" y1="1" x2="23" y2="23"/>`,
+      recording: `<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>`,
       finalizing: `<path class="spinner" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>`,
     };
 

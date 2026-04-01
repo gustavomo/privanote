@@ -32,8 +32,8 @@ Declared values (must be multiples of 4):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, inline padding |
-| sm | 8px | Compact element spacing, gap between toggle and label |
-| md | 16px | Default element spacing |
+| sm | 8px | Compact element spacing, gap between toggle and label, app row inline gaps, app row vertical padding |
+| md | 16px | Default element spacing, app list row gap, horizontal row padding |
 | lg | 24px | Section padding within settings cards |
 | xl | 32px | Layout gaps between settings sections |
 | 2xl | 48px | Major section breaks |
@@ -69,6 +69,12 @@ Accent reserved for: toggle switch on-state track, Save Settings button backgrou
 
 ---
 
+## Focal Point
+
+The toggle switches on each app row are the primary interaction focal point. They are right-aligned within each row, providing a consistent vertical axis for the user's eye to scan. The accent color on the toggle on-state draws attention to enabled apps.
+
+---
+
 ## Component Inventory
 
 This phase adds one new settings section and modifies overlay visibility logic. No new standalone components are created.
@@ -85,7 +91,7 @@ Location: Inside existing `SettingsView` component, after the Transcription sect
     <h3>Capture apps</h3>
     <p>description</p>
   </div>
-  <div class="grid gap-3">                                      <!-- app list -->
+  <div class="grid gap-4">                                      <!-- app list: 16px between rows -->
     <!-- 5 app rows, one per preset -->
   </div>
 </div>
@@ -96,14 +102,16 @@ Location: Inside existing `SettingsView` component, after the Transcription sect
 Each of the 5 preset apps renders as a row:
 
 ```
-<label class="flex items-center justify-between gap-3 rounded-2xl border bg-background px-4 py-3">
-  <div class="flex items-center gap-3">
+<label class="flex items-center justify-between gap-2 rounded-2xl border bg-background px-4 py-2">
+  <div class="flex items-center gap-2">
     <span class="text-sm font-semibold">{App Name}</span>
     <span class="text-sm text-muted-foreground">{detection hint}</span>
   </div>
   <toggle />   <!-- shadcn Switch or native checkbox styled as toggle -->
 </label>
 ```
+
+Spacing rationale: `gap-2` (8px) for inline element spacing within a row, `py-2` (8px) for compact vertical padding, `px-4` (16px) for horizontal padding, `gap-4` (16px) for spacing between rows in the app list. All values are from the declared spacing scale.
 
 | App | Label | Detection Hint |
 |-----|-------|----------------|

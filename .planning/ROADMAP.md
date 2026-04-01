@@ -154,5 +154,5 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — Build ClipboardSession class, extend IPC bridge, and wire clipboard lifecycle into main.js
-- [ ] 09-02-PLAN.md — Expand overlay UI with clipboard button, badge counter, and end-to-end verification
+- [x] 09-01-PLAN.md — Build ClipboardSession class, extend IPC bridge, and wire clipboard lifecycle into main.js
+- [x] 09-02-PLAN.md — Expand overlay UI with clipboard button, badge counter, and end-to-end verification

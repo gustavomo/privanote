@@ -74,7 +74,7 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 - [x] **CLIP-01**: User can start and stop clipboard text monitoring from the floating overlay or via keyboard shortcut (Cmd+Shift+C), independently of screen capture sessions
 - [x] **CLIP-02**: Copied text is captured with source app name and timestamp metadata, deduplicated globally, filtered by minimum length, and concealed clipboard entries are skipped
-- [ ] **CLIP-03**: A clipboard toggle button with badge counter appears on the floating overlay with blue active state distinct from the red capture state
+- [x] **CLIP-03**: A clipboard toggle button with badge counter appears on the floating overlay with blue active state distinct from the red capture state
 - [x] **CLIP-04**: A structured note is automatically created when clipboard monitoring stops, with entries grouped by source app
 
 ## v2 Requirements

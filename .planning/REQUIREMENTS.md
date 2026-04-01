@@ -70,6 +70,13 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [x] **APPVIS-05**: User can toggle which of the 5 preset apps (Slack, Gmail, Notion, Jira, GitHub) trigger the overlay from a settings section
 - [x] **APPVIS-06**: The capture apps whitelist persists across app relaunch
 
+### Clipboard Text Capture
+
+- [ ] **CLIP-01**: User can start and stop clipboard text monitoring from the floating overlay or via keyboard shortcut (Cmd+Shift+C), independently of screen capture sessions
+- [ ] **CLIP-02**: Copied text is captured with source app name and timestamp metadata, deduplicated globally, filtered by minimum length, and concealed clipboard entries are skipped
+- [ ] **CLIP-03**: A clipboard toggle button with badge counter appears on the floating overlay with blue active state distinct from the red capture state
+- [ ] **CLIP-04**: A structured note is automatically created when clipboard monitoring stops, with entries grouped by source app
+
 ## v2 Requirements
 
 ### Deployment and Identity
@@ -141,12 +148,16 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | APPVIS-04 | Phase 8 | Planned |
 | APPVIS-05 | Phase 8 | Planned |
 | APPVIS-06 | Phase 8 | Planned |
+| CLIP-01 | Phase 9 | Planned |
+| CLIP-02 | Phase 9 | Planned |
+| CLIP-03 | Phase 9 | Planned |
+| CLIP-04 | Phase 9 | Planned |
 
 **Coverage:**
-- v1 requirements: 39 total
-- Mapped to phases: 39
+- v1 requirements: 43 total
+- Mapped to phases: 43
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-01 after Phase 8 planning*
+*Last updated: 2026-04-01 after Phase 9 planning*

@@ -148,10 +148,11 @@ Plans:
 
 ### Phase 9: Toggle button for clipboard text capture
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Add a clipboard monitoring toggle to the floating overlay that polls for text changes, captures entries with source app metadata, deduplicates, filters concealed entries, and creates a grouped note on stop.
+**Requirements**: [CLIP-01, CLIP-02, CLIP-03, CLIP-04]
 **Depends on:** Phase 8
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 9 to break down)
+- [ ] 09-01-PLAN.md — Build ClipboardSession class, extend IPC bridge, and wire clipboard lifecycle into main.js
+- [ ] 09-02-PLAN.md — Expand overlay UI with clipboard button, badge counter, and end-to-end verification

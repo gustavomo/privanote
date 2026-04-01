@@ -239,9 +239,9 @@ function createCaptureOverlay() {
   const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
 
   captureOverlay = new BrowserWindow({
-    width: 64,
-    height: 72,
-    x: screenWidth - 80,
+    width: 48,
+    height: 48,
+    x: screenWidth - 64,
     y: 80,
     alwaysOnTop: true,
     frame: false,

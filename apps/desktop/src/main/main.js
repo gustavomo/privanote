@@ -1,5 +1,5 @@
 const { Blob } = require('buffer');
-const { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeImage, screen, session, shell, systemPreferences, Tray } = require('electron');
+const { app, BrowserWindow, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, screen, session, shell, systemPreferences, Tray } = require('electron');
 const path = require('path');
 const { v1 } = require('@privanote/backend/contracts');
 const { resolveBackendErrorMessage } = require('./backend-response');
@@ -8,6 +8,8 @@ const { CaptureSession } = require('./capture-session');
 const { ClipboardSession } = require('./clipboard-session');
 const { checkScreenPermission } = require('./screen-capture');
 const { PRESET_APPS, shouldShowOverlay } = require('./app-detector');
+
+app.commandLine.appendSwitch('enable-features', 'MacSckSystemAudioLoopbackOverride');
 
 const operationsById = Object.values(v1.operations).reduce((result, operation) => {
   result[operation.id] = operation;
@@ -527,6 +529,23 @@ function saveWhitelist(whitelist) {
   require('fs').writeFileSync(getWhitelistPath(), JSON.stringify(whitelist, null, 2));
 }
 
+function getScreenDenialPath() {
+  return path.join(app.getPath('userData'), 'screen-denial.json');
+}
+
+function loadScreenDenialCount() {
+  try {
+    const data = JSON.parse(require('fs').readFileSync(getScreenDenialPath(), 'utf8'));
+    return typeof data.count === 'number' ? data.count : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveScreenDenialCount(count) {
+  require('fs').writeFileSync(getScreenDenialPath(), JSON.stringify({ count }, null, 2));
+}
+
 function startAppDetection() {
   if (appDetectionTimer) return;
   const { getActiveWindowInfo } = require('./screen-capture');
@@ -583,6 +602,20 @@ function registerIpcHandlers() {
   ipcMain.handle('shell:open-external', (_event, url) => shell.openExternal(String(url || '')));
   ipcMain.handle('media:get-access-status', (_event, mediaType) => resolveMediaAccessStatus(mediaType));
   ipcMain.handle('media:request-access', (_event, mediaType) => requestMediaAccess(mediaType));
+
+  ipcMain.handle('media:get-screen-status', () => {
+    return {
+      status: checkScreenPermission(),
+      denialCount: loadScreenDenialCount(),
+    };
+  });
+
+  ipcMain.handle('media:record-screen-denial', () => {
+    const current = loadScreenDenialCount();
+    const next = current + 1;
+    saveScreenDenialCount(next);
+    return { denialCount: next };
+  });
 
   ipcMain.handle('capture:start-session', async () => {
     await toggleCaptureSession();
@@ -715,6 +748,18 @@ app.whenReady().then(async () => {
   }
 
   registerIpcHandlers();
+
+  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+    desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
+      if (sources.length === 0) {
+        callback(null);
+        return;
+      }
+      callback({ video: sources[0], audio: 'loopback' });
+    }).catch(() => {
+      callback(null);
+    });
+  });
 
   try {
     await createWindow();

@@ -6,6 +6,7 @@ const { resolveBackendErrorMessage } = require('./backend-response');
 const { startBackendProcess, stopBackendProcess } = require('./backend-process');
 const { CaptureSession } = require('./capture-session');
 const { checkScreenPermission } = require('./screen-capture');
+const { PRESET_APPS, shouldShowOverlay } = require('./app-detector');
 
 const operationsById = Object.values(v1.operations).reduce((result, operation) => {
   result[operation.id] = operation;
@@ -20,6 +21,7 @@ let captureOverlay = null;
 let captureSession = null;
 let mainWindow = null;
 let tray = null;
+let appDetectionTimer = null;
 
 function resolveDataRoot() {
   const configuredRoot = String(process.env.PRIVANOTE_DATA_DIR || '').trim();
@@ -431,6 +433,64 @@ function buildSessionDescription(sessionResult) {
   return lines.join('\n');
 }
 
+function getWhitelistPath() {
+  return path.join(app.getPath('userData'), 'capture-apps.json');
+}
+
+function loadWhitelist() {
+  try {
+    const data = JSON.parse(require('fs').readFileSync(getWhitelistPath(), 'utf8'));
+    // Only return keys that are valid preset app IDs
+    const result = {};
+    for (const key of Object.keys(PRESET_APPS)) {
+      result[key] = Boolean(data[key]);
+    }
+    return result;
+  } catch {
+    return {}; // Empty by default (D-01)
+  }
+}
+
+function saveWhitelist(whitelist) {
+  require('fs').writeFileSync(getWhitelistPath(), JSON.stringify(whitelist, null, 2));
+}
+
+function startAppDetection() {
+  if (appDetectionTimer) return;
+  const { getActiveWindowInfo } = require('./screen-capture');
+
+  appDetectionTimer = setInterval(async () => {
+    // Always show overlay during active capture session (Pitfall 4)
+    if (captureSession && captureSession.state === 'capturing') {
+      if (captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
+        captureOverlay.show();
+      }
+      return;
+    }
+
+    try {
+      const windowInfo = await getActiveWindowInfo();
+      const whitelist = loadWhitelist();
+      const shouldShow = await shouldShowOverlay(windowInfo, whitelist);
+
+      if (shouldShow && captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
+        captureOverlay.show();
+      } else if (!shouldShow && captureOverlay && !captureOverlay.isDestroyed() && captureOverlay.isVisible()) {
+        captureOverlay.hide();
+      }
+    } catch {
+      // Silently skip failed detection cycles
+    }
+  }, 500); // 500ms polling interval
+}
+
+function stopAppDetection() {
+  if (appDetectionTimer) {
+    clearInterval(appDetectionTimer);
+    appDetectionTimer = null;
+  }
+}
+
 function registerIpcHandlers() {
   ipcMain.handle('backend:request', (_event, request) => proxyBackendRequest(request));
   ipcMain.handle('backend:upload', (_event, request) => proxyBackendUpload(request));
@@ -457,6 +517,30 @@ function registerIpcHandlers() {
 
   ipcMain.handle('capture:get-state', () => {
     return captureSession ? captureSession.state : 'idle';
+  });
+
+  ipcMain.handle('capture-apps:get-presets', () => {
+    return Object.values(PRESET_APPS).map(a => ({
+      id: a.id,
+      label: a.label,
+      description: a.description,
+    }));
+  });
+
+  ipcMain.handle('capture-apps:get', () => loadWhitelist());
+
+  ipcMain.handle('capture-apps:update', (_event, whitelist) => {
+    saveWhitelist(whitelist);
+    const hasEnabled = Object.values(whitelist).some(Boolean);
+    if (hasEnabled) {
+      startAppDetection();
+    } else {
+      stopAppDetection();
+      if (captureOverlay && !captureOverlay.isDestroyed() && captureOverlay.isVisible()) {
+        captureOverlay.hide();
+      }
+    }
+    return whitelist;
   });
 
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
@@ -545,6 +629,18 @@ app.whenReady().then(async () => {
     createCaptureOverlay();
     setupTray();
 
+    // Hide overlay by default until whitelist match (D-01, Pitfall 6)
+    if (captureOverlay && !captureOverlay.isDestroyed()) {
+      captureOverlay.hide();
+    }
+
+    // Start app detection polling if any apps are whitelisted
+    const initialWhitelist = loadWhitelist();
+    const hasEnabledApps = Object.values(initialWhitelist).some(Boolean);
+    if (hasEnabledApps) {
+      startAppDetection();
+    }
+
     globalShortcut.register('CommandOrControl+Shift+R', () => {
       toggleCaptureSession();
     });
@@ -579,6 +675,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  stopAppDetection();
   if (captureSession) {
     captureSession.destroy();
     captureSession = null;
@@ -590,6 +687,7 @@ app.on('window-all-closed', async () => {
     return;
   }
 
+  stopAppDetection();
   if (captureSession) {
     captureSession.destroy();
     captureSession = null;

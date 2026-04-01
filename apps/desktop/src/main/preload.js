@@ -40,4 +40,7 @@ contextBridge.exposeInMainWorld('api', {
   openExternalUrl: (url) => ipcRenderer.invoke('shell:open-external', url),
   getMediaAccessStatus: (mediaType) => ipcRenderer.invoke('media:get-access-status', mediaType),
   requestMediaAccess: (mediaType) => ipcRenderer.invoke('media:request-access', mediaType),
+  getCaptureAppPresets: () => ipcRenderer.invoke('capture-apps:get-presets'),
+  getCaptureApps: () => ipcRenderer.invoke('capture-apps:get'),
+  updateCaptureApps: (whitelist) => ipcRenderer.invoke('capture-apps:update', whitelist),
 });

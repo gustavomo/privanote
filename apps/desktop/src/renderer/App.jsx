@@ -27,6 +27,15 @@ const providerLabels = {
   onedrive: 'OneDrive',
 };
 
+const screenPermissionNotDetermined =
+  'Screen recording permission is required to capture system audio. Click Record to allow access.';
+
+const screenPermissionDenied =
+  'Screen recording was not granted. Click Record to try again, or enable it in System Settings > Privacy & Security > Screen Recording.';
+
+const screenPermissionBlocked =
+  'Screen recording permission is required. Open System Settings > Privacy & Security > Screen Recording and enable access for Privanote, then try again.';
+
 const captureFailureCopy =
   'Camera or microphone access is unavailable. Check device permissions, then retry or switch to import.';
 
@@ -109,6 +118,8 @@ function createUnavailableApi() {
     },
     getMediaAccessStatus: async () => 'unknown',
     requestMediaAccess: async () => ({ granted: false, status: 'unknown' }),
+    getScreenPermissionStatus: async () => ({ status: 'unknown', denialCount: 0 }),
+    recordScreenDenial: async () => ({ denialCount: 0 }),
     pickFile: async () => null,
     pickDirectory: async () => null,
   };
@@ -122,37 +133,16 @@ function confirmAction(message) {
   return window.confirm(message);
 }
 
-function resolveCaptureConstraints(captureMode) {
-  if (captureMode === 'audio') {
-    return {
-      audio: true,
-      video: false,
-    };
-  }
-
-  if (captureMode === 'video') {
-    return {
-      audio: false,
-      video: true,
-    };
-  }
-
-  return {
-    audio: true,
-    video: true,
-  };
-}
-
 function resolveRequiredPermissions(captureMode) {
   if (captureMode === 'audio') {
-    return ['microphone'];
+    return ['microphone', 'screen'];
   }
 
   if (captureMode === 'video') {
     return ['camera'];
   }
 
-  return ['camera', 'microphone'];
+  return ['camera', 'microphone', 'screen'];
 }
 
 function resolveSupportedMimeType(captureMode) {
@@ -274,6 +264,8 @@ export default function App({ api }) {
   const mediaStreamRef = useRef(null);
   const captureChunksRef = useRef([]);
   const reviewUrlRef = useRef('');
+  const displayStreamRef = useRef(null);
+  const audioContextRef = useRef(null);
   const providerPollingRef = useRef({});
   const selectedNodeIdRef = useRef(null);
 
@@ -283,6 +275,16 @@ export default function App({ api }) {
   );
 
   function stopMediaStream() {
+    if (displayStreamRef.current) {
+      displayStreamRef.current.getTracks().forEach((track) => track.stop());
+      displayStreamRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+
     if (!mediaStreamRef.current) {
       return;
     }
@@ -425,13 +427,30 @@ export default function App({ api }) {
     const requiredPermissions = resolveRequiredPermissions(mode);
 
     for (const permission of requiredPermissions) {
-      const status = await client.getMediaAccessStatus(permission);
+      if (permission === 'screen') {
+        const { status, denialCount } = await client.getScreenPermissionStatus();
 
-      if (status === 'denied' || status === 'restricted') {
+        if (denialCount >= 2) {
+          throw new Error(screenPermissionBlocked);
+        }
+
+        if (status === 'denied' || status === 'restricted') {
+          await client.recordScreenDenial();
+          throw new Error(screenPermissionDenied);
+        }
+
+        // If 'not-determined', getDisplayMedia will trigger the macOS prompt
+        // in handleStartRecording. We only gate on known denials here.
+        continue;
+      }
+
+      const mediaStatus = await client.getMediaAccessStatus(permission);
+
+      if (mediaStatus === 'denied' || mediaStatus === 'restricted') {
         throw new Error(captureFailureCopy);
       }
 
-      if (status === 'not-determined') {
+      if (mediaStatus === 'not-determined') {
         const result = await client.requestMediaAccess(permission);
         if (!result.granted) {
           throw new Error(captureFailureCopy);
@@ -725,11 +744,75 @@ export default function App({ api }) {
       const noteContext = await ensureCaptureNode(captureMode);
       await ensureCapturePermissions(captureMode);
 
-      const stream = await navigator.mediaDevices.getUserMedia(resolveCaptureConstraints(captureMode));
       const mimeType = resolveSupportedMimeType(captureMode);
-      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      const needsAudio = captureMode === 'audio' || captureMode === 'video-with-audio';
+      const needsVideo = captureMode === 'video' || captureMode === 'video-with-audio';
+      let finalStream;
 
-      mediaStreamRef.current = stream;
+      if (needsAudio) {
+        // 1. Get system audio via getDisplayMedia (triggers setDisplayMediaRequestHandler in main)
+        let displayStream;
+        try {
+          displayStream = await navigator.mediaDevices.getDisplayMedia({
+            audio: true,
+            video: { width: 1, height: 1 },
+          });
+        } catch (displayError) {
+          // Permission denied by user at the macOS prompt
+          await client.recordScreenDenial().catch(() => {});
+          const { denialCount } = await client.getScreenPermissionStatus().catch(() => ({ denialCount: 0 }));
+          if (denialCount >= 2) {
+            throw new Error(screenPermissionBlocked);
+          }
+          throw new Error(screenPermissionDenied);
+        }
+
+        displayStreamRef.current = displayStream;
+
+        // Discard the minimal video track from getDisplayMedia -- we only want its audio
+        displayStream.getVideoTracks().forEach((track) => track.stop());
+
+        // 2. Get microphone (and camera if video mode)
+        const micConstraints = needsVideo ? { audio: true, video: true } : { audio: true, video: false };
+        const micStream = await navigator.mediaDevices.getUserMedia(micConstraints);
+        mediaStreamRef.current = micStream;
+
+        // 3. Mix system audio + microphone via Web Audio API
+        const audioCtx = new AudioContext();
+        audioContextRef.current = audioCtx;
+
+        const systemSource = audioCtx.createMediaStreamSource(
+          new MediaStream(displayStream.getAudioTracks())
+        );
+        const micSource = audioCtx.createMediaStreamSource(
+          new MediaStream(micStream.getAudioTracks())
+        );
+        const dest = audioCtx.createMediaStreamDestination();
+        systemSource.connect(dest);
+        micSource.connect(dest);
+
+        // 4. Build final stream
+        if (needsVideo) {
+          // Video + mixed audio
+          finalStream = new MediaStream([
+            ...micStream.getVideoTracks(),
+            ...dest.stream.getAudioTracks(),
+          ]);
+        } else {
+          // Audio-only: just the mixed audio
+          finalStream = dest.stream;
+        }
+      } else {
+        // Video-only mode (no audio, no system audio needed)
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+        mediaStreamRef.current = stream;
+        finalStream = stream;
+      }
+
+      const recorder = mimeType
+        ? new MediaRecorder(finalStream, { mimeType })
+        : new MediaRecorder(finalStream);
+
       mediaRecorderRef.current = recorder;
       captureChunksRef.current = [];
 
@@ -764,11 +847,22 @@ export default function App({ api }) {
 
       recorder.start();
       setCaptureState('recording');
-    } catch (_captureError) {
+    } catch (recordingError) {
       stopMediaStream();
       mediaRecorderRef.current = null;
       setCaptureState('idle');
-      setCaptureError(captureFailureCopy);
+
+      // Use the specific error message if it's one of our permission messages
+      const message = recordingError?.message || '';
+      if (
+        message === screenPermissionBlocked ||
+        message === screenPermissionDenied ||
+        message === screenPermissionNotDetermined
+      ) {
+        setCaptureError(message);
+      } else {
+        setCaptureError(captureFailureCopy);
+      }
     }
   }
 

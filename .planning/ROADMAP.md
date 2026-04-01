@@ -175,8 +175,8 @@ Plans:
 **Goal:** Resize overlay buttons to 40px with new idle/active icon pairs (eye-closed/open, clipboard-closed/open, headphones-off/on), unify all active states to teal accent, remove pulse animations, replace emoji tray with monochrome template icon, and add minimize-to-tray behavior on window close.
 **Requirements**: [UIPOL-01, UIPOL-02, UIPOL-03, UIPOL-04, UIPOL-05, UIPOL-06, UIPOL-07]
 **Depends on:** Phase 10
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 11-01-PLAN.md — Restyle overlay buttons (40px), replace icon SVGs, unify teal active color, remove pulse animations
+- [x] 11-01-PLAN.md — Restyle overlay buttons (40px), replace icon SVGs, unify teal active color, remove pulse animations
 - [ ] 11-02-PLAN.md — Replace emoji tray with monochrome template icon and add minimize-to-tray lifecycle

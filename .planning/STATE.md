@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 11 UI-SPEC approved
-last_updated: "2026-04-01T19:25:48.542Z"
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-04-01T19:50:22.729Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 11
   completed_phases: 10
-  total_plans: 26
-  completed_plans: 26
+  total_plans: 28
+  completed_plans: 27
   percent: 100
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A user can capture and revisit media-backed notes locally, quickly, and without losing control of where their data lives.
-**Current focus:** Phase 10 — detect-active-media-microphone-camera-usage-via-system-apis-and-show-a-floating-recording-button-that-integrates-with-the-existing-note-capture-flow
+**Current focus:** Phase 11 — ui-polish-button-icon-states-active-colors-and-persistent-custom-menu-bar-icon
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 11 (ui-polish-button-icon-states-active-colors-and-persistent-custom-menu-bar-icon) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
 Last activity: 2026-04-01
 
@@ -65,6 +65,7 @@ Progress: [██████████] 100%
 | Phase 07 P02 | 3min | 1 tasks | 1 files |
 | Phase 10 P01 | 2 | 2 tasks | 4 files |
 | Phase 10 P02 | 3 | 3 tasks | 3 files |
+| Phase 11 P01 | 4 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,8 @@ Recent decisions affecting current work:
 - [Phase 07]: Removed resolveCaptureConstraints as dead code; screen permission uses three-state error copy from UI-SPEC
 - [Phase 10]: Used same native binary + Node wrapper pattern established by ax_walker in Phase 6 for media detection
 - [Phase 10]: Media detection piggybacks on existing 500ms polling with 5-cycle throttle (~2.5s); overlay auto-shows on media detection independent of app whitelist
+- [Phase 11]: All active overlay states unified to teal oklch(0.65 0.15 195); icon design differentiates features, color signals activity
+- [Phase 11]: Stop-square icons removed; toggle state shown via icon pairs (eye-closed/open, clipboard-closed/open, headphones-off/on) plus teal color
 
 ### Pending Todos
 
@@ -145,6 +148,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-01T19:25:48.534Z
-Stopped at: Phase 11 UI-SPEC approved
-Resume file: .planning/phases/11-ui-polish-button-icon-states-active-colors-and-persistent-custom-menu-bar-icon/11-UI-SPEC.md
+Last session: 2026-04-01T19:50:22.725Z
+Stopped at: Completed 11-01-PLAN.md
+Resume file: None

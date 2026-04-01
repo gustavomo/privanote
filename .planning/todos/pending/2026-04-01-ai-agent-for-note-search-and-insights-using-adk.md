@@ -11,14 +11,23 @@ Users accumulate many notes over time (recordings, transcriptions, screen captur
 
 ## Solution
 
-Build an AI-powered agent (potentially using ADK — Agent Development Kit) that:
-1. Indexes all generated notes (descriptions, transcriptions, capture text, metadata)
-2. Provides a query interface where users can ask natural language questions across their notes
-3. Returns relevant insights, summaries, and references to specific notes
-4. Supports search patterns like: keyword search, semantic search, date-range queries, topic summaries
-5. Runs locally to maintain the privacy-first approach (or uses the already-configured OpenAI provider)
+Two-layer system: semantic search + RAG-powered insights.
 
-Consider:
-- Embedding-based semantic search for note content
+### Layer 1 — Search (no LLM needed at query time)
+- Index all notes (descriptions, transcriptions, capture text, metadata) as embeddings in sqlite-vec (extends existing better-sqlite3)
+- Keyword search + vector similarity search
+- Date-range and metadata filtering
+- Returns ranked note references the user can browse
+
+### Layer 2 — RAG Insights (LLM at query time)
+- Retrieve relevant note chunks via Layer 1
+- Feed retrieved context to LLM (OpenAI provider already configured)
+- Generate answers to questions like "what did we discuss about X?" or "summarize my meetings from last week"
 - Conversational agent interface (chat-style) within the app
-- ADK or similar agent framework for orchestrating search + summarization
+- Cross-note synthesis: summaries, comparisons, timelines
+
+### Architecture
+- Embeddings: OpenAI embeddings API (or local model for privacy)
+- Vector storage: sqlite-vec extension on existing SQLite DB
+- Agent framework: ADK or similar for orchestrating retrieval + generation
+- Index updates: re-embed on note creation/edit/capture completion

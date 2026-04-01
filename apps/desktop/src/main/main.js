@@ -26,6 +26,9 @@ let clipboardSession = null;
 let mainWindow = null;
 let tray = null;
 let appDetectionTimer = null;
+let mediaDetectionState = { active: false, appName: null, bundleId: null };
+let callRecordingActive = false;  // Tracks if a call recording is in progress
+let mediaDetectionCounter = 0;    // Counter to throttle media detection to every ~2.5s
 
 function resolveDataRoot() {
   const configuredRoot = String(process.env.PRIVANOTE_DATA_DIR || '').trim();
@@ -285,6 +288,44 @@ function broadcastClipboardCount(count) {
   if (captureOverlay && !captureOverlay.isDestroyed()) {
     captureOverlay.webContents.send('clipboard:count-changed', count);
   }
+}
+
+function updateOverlayForMedia(mediaActive) {
+  if (!captureOverlay || captureOverlay.isDestroyed()) return;
+  const height = mediaActive ? 208 : 136;
+  // Preserve x,y position when resizing
+  const bounds = captureOverlay.getBounds();
+  captureOverlay.setBounds({ x: bounds.x, y: bounds.y, width: 64, height });
+  if (mediaActive) {
+    captureOverlay.webContents.send('media:detected', {
+      appName: mediaDetectionState.appName,
+      bundleId: mediaDetectionState.bundleId,
+    });
+    // Ensure overlay is visible when media is detected
+    if (!captureOverlay.isVisible()) {
+      captureOverlay.showInactive();
+    }
+  } else {
+    captureOverlay.webContents.send('media:ended');
+  }
+}
+
+function broadcastCallEnded() {
+  if (!captureOverlay || captureOverlay.isDestroyed()) return;
+  captureOverlay.webContents.send('media:call-ended');
+}
+
+function broadcastMediaUpdate() {
+  if (!captureOverlay || captureOverlay.isDestroyed()) return;
+  captureOverlay.webContents.send('media:detected', {
+    appName: mediaDetectionState.appName,
+    bundleId: mediaDetectionState.bundleId,
+  });
+}
+
+function broadcastCallRecordingState(state) {
+  if (!captureOverlay || captureOverlay.isDestroyed()) return;
+  captureOverlay.webContents.send('call-recording:state-changed', state);
 }
 
 function createEmptyTrayImage() {
@@ -551,33 +592,72 @@ function startAppDetection() {
   const { getActiveWindowInfo } = require('./screen-capture');
 
   appDetectionTimer = setInterval(async () => {
-    // Always show overlay during active capture or clipboard session
+    // Always show overlay during active capture, clipboard session, or call recording
     if ((captureSession && captureSession.state === 'capturing') ||
-        (clipboardSession && clipboardSession.state === 'monitoring')) {
+        (clipboardSession && clipboardSession.state === 'monitoring') ||
+        callRecordingActive) {
       if (captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
         captureOverlay.showInactive();
       }
-      return;
+      // Still run media detection even during active sessions so we can detect call end
+    } else {
+      try {
+        const windowInfo = await getActiveWindowInfo();
+
+        // Skip detection when Privanote itself is focused — keep overlay as-is
+        if (windowInfo.bundleId === 'com.privanote.desktop' || windowInfo.appName === 'Electron') {
+          // Still run media detection below
+        } else {
+          const whitelist = loadWhitelist();
+          const shouldShow = await shouldShowOverlay(windowInfo, whitelist);
+
+          if (shouldShow && captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
+            captureOverlay.showInactive();
+            // Re-broadcast media state when overlay becomes visible
+            if (mediaDetectionState.active) {
+              updateOverlayForMedia(true);
+            }
+          } else if (!shouldShow && !mediaDetectionState.active && !callRecordingActive && captureOverlay && !captureOverlay.isDestroyed() && captureOverlay.isVisible()) {
+            captureOverlay.hide();
+          }
+        }
+      } catch {
+        // Silently skip failed detection cycles
+      }
     }
 
-    try {
-      const windowInfo = await getActiveWindowInfo();
+    // Media detection — runs every 5th cycle (~2.5 seconds)
+    mediaDetectionCounter++;
+    if (mediaDetectionCounter >= 5) {
+      mediaDetectionCounter = 0;
+      try {
+        const { detectActiveMedia } = require('./media-detector');
+        const mediaResult = await detectActiveMedia();
+        const wasActive = mediaDetectionState.active;
+        const isNowActive = mediaResult.active;
 
-      // Skip detection when Privanote itself is focused — keep overlay as-is
-      if (windowInfo.bundleId === 'com.privanote.desktop' || windowInfo.appName === 'Electron') {
-        return;
+        if (isNowActive && !wasActive) {
+          // Media just became active
+          mediaDetectionState = { active: true, appName: mediaResult.appName || 'Unknown', bundleId: mediaResult.bundleId || '' };
+          updateOverlayForMedia(true);
+        } else if (!isNowActive && wasActive) {
+          // Media just ended
+          mediaDetectionState = { active: false, appName: null, bundleId: null };
+          if (!callRecordingActive) {
+            updateOverlayForMedia(false);
+          } else {
+            // Call ended while recording — notify overlay of amber state (per D-07)
+            broadcastCallEnded();
+          }
+        } else if (isNowActive && wasActive && mediaResult.appName !== mediaDetectionState.appName) {
+          // App changed while media still active
+          mediaDetectionState.appName = mediaResult.appName || 'Unknown';
+          mediaDetectionState.bundleId = mediaResult.bundleId || '';
+          broadcastMediaUpdate();
+        }
+      } catch {
+        // Silently skip failed media detection cycles
       }
-
-      const whitelist = loadWhitelist();
-      const shouldShow = await shouldShowOverlay(windowInfo, whitelist);
-
-      if (shouldShow && captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
-        captureOverlay.showInactive();
-      } else if (!shouldShow && captureOverlay && !captureOverlay.isDestroyed() && captureOverlay.isVisible()) {
-        captureOverlay.hide();
-      }
-    } catch {
-      // Silently skip failed detection cycles
     }
   }, 500); // 500ms polling interval
 }
@@ -642,6 +722,23 @@ function registerIpcHandlers() {
 
   ipcMain.handle('clipboard:get-state', () => {
     return clipboardSession ? clipboardSession.state : 'idle';
+  });
+
+  ipcMain.handle('media:get-detection-state', () => ({
+    active: mediaDetectionState.active,
+    appName: mediaDetectionState.appName,
+    bundleId: mediaDetectionState.bundleId,
+    callRecordingActive,
+  }));
+
+  ipcMain.handle('call-recording:start', async () => {
+    // Placeholder -- actual recording wiring in Plan 03
+    return { success: false, error: 'Not yet implemented' };
+  });
+
+  ipcMain.handle('call-recording:stop', async () => {
+    // Placeholder -- actual recording wiring in Plan 03
+    return { success: false, error: 'Not yet implemented' };
   });
 
   ipcMain.handle('capture-apps:get-presets', () => {

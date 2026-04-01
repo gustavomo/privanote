@@ -52,6 +52,15 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 - [x] **UX-01**: The capture panel (recording and import) is always visible at the top of the workspace sidebar so users can start a capture from anywhere without creating a note first. Notes are created automatically as a result of capture.
 
+### External App Screen Capture
+
+- [ ] **EXT-01**: User can see and interact with a floating capture button that stays on top of all other apps
+- [ ] **EXT-02**: User can start and stop a screen capture session from the floating button or via keyboard shortcut (Cmd+Shift+R)
+- [ ] **EXT-03**: Screenshots of the active external app are captured automatically during a session, tagged with app name and timestamp
+- [ ] **EXT-04**: Text is extracted from captured screenshots using OCR
+- [ ] **EXT-05**: A structured note is automatically created when the capture session ends, grouping content by source app
+- [ ] **EXT-06**: Text is extracted from the active app's accessibility tree when available, falling back to OCR
+
 ## v2 Requirements
 
 ### Deployment and Identity
@@ -111,12 +120,18 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | SYNC-04 | Phase 4 | Complete |
 | SYNC-05 | Phase 4 | Complete |
 | UX-01 | Phase 5 | In Progress |
+| EXT-01 | Phase 6 | Planned |
+| EXT-02 | Phase 6 | Planned |
+| EXT-03 | Phase 6 | Planned |
+| EXT-04 | Phase 6 | Planned |
+| EXT-05 | Phase 6 | Planned |
+| EXT-06 | Phase 6 | Planned |
 
 **Coverage:**
-- v1 requirements: 27 total
-- Mapped to phases: 27
-- Unmapped: 0 ✓
+- v1 requirements: 33 total
+- Mapped to phases: 33
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-30 after Phase 5 planning*
+*Last updated: 2026-03-31 after Phase 6 planning*

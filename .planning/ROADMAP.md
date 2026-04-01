@@ -114,13 +114,16 @@ Plans:
 
 ### Phase 6: Always-on-top floating capture button for external app screen capture
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Add a floating always-on-top button that lets users capture screenshots and extract text from any active external app, automatically creating structured notes grouped by source app when the session ends.
+**Requirements**: [EXT-01, EXT-02, EXT-03, EXT-04, EXT-05, EXT-06]
 **Depends on:** Phase 5
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 6 to break down)
+- [ ] 06-01-PLAN.md — Create floating overlay window, preload IPC bridge, and CaptureOverlay React component
+- [ ] 06-02-PLAN.md — Build capture session state machine, screenshot engine, and OCR text extraction
+- [ ] 06-03-PLAN.md — Wire overlay, capture session, and note creation into main.js with global shortcut
+- [ ] 06-04-PLAN.md — Add macOS Accessibility tree text extraction as primary method with OCR fallback
 
 ### Phase 7: Fix screen capture to record system audio instead of microphone
 

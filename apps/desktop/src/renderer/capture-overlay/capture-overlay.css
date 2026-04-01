@@ -1,0 +1,102 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: transparent;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.capture-overlay-root {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capture-button-container {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  -webkit-app-region: drag;
+}
+
+.capture-button {
+  -webkit-app-region: no-drag;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 150ms ease, transform 150ms ease;
+  position: relative;
+  z-index: 1;
+}
+
+.capture-button--idle {
+  background: oklch(0.214 0.009 43.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+}
+
+.capture-button--idle:hover {
+  background: oklch(0.35 0.012 43.1);
+  transform: scale(1.06);
+}
+
+.capture-button--recording {
+  background: oklch(0.577 0.245 27.325);
+  box-shadow: 0 2px 12px rgba(220, 50, 50, 0.35);
+}
+
+.capture-button--finalizing {
+  background: oklch(0.547 0.021 43.1);
+  cursor: default;
+}
+
+.capture-button svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: oklch(0.986 0.002 67.8);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.capture-button--recording svg,
+.capture-button--finalizing svg {
+  stroke: oklch(1 0 0);
+}
+
+.capture-button--recording svg {
+  width: 20px;
+  height: 20px;
+}
+
+.capture-pulse-ring {
+  animation: capture-pulse 1.5s ease-out infinite;
+  background: oklch(0.577 0.245 27.325);
+  border-radius: 50%;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes capture-pulse {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.29); opacity: 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.capture-spinner {
+  animation: spin 1s linear infinite;
+}

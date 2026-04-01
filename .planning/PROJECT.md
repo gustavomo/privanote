@@ -63,7 +63,7 @@ The clarified product direction extends that baseline substantially: the repo sh
 
 ## Current State
 
-Phase 9 complete (2026-04-01) — clipboard text capture added to floating overlay with polling, dedup, concealed filtering, source app detection, badge counter, and grouped note creation. Phase 7 complete (2026-04-01) — screen capture now records system audio mixed with microphone via Chromium loopback + Web Audio API, with screen recording permission gating and denial tracking. All milestone phases complete.
+Phase 11 complete (2026-04-01) — overlay buttons polished to 40px with teal active color, idle/active icon state pairs (eye, clipboard, headphones), pulse animations removed, emoji tray replaced with monochrome macOS template icon (P lettermark with recording red dot), and minimize-to-tray behavior added. All milestone phases complete.
 
 ## Evolution
 

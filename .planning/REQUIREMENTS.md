@@ -91,9 +91,9 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [x] **UIPOL-02**: Each overlay button has distinct idle/active icon pairs (eye-closed/open, clipboard-closed/open, headphones-off/on) that communicate feature state through icon shape
 - [x] **UIPOL-03**: All active overlay buttons share a unified teal accent color instead of per-feature red/blue/green, creating a cohesive visual language
 - [x] **UIPOL-04**: Pulse ring animations are removed from all overlay buttons, relying on color change alone for active state indication
-- [ ] **UIPOL-05**: The macOS menu bar shows a monochrome template icon (P lettermark) that adapts to light/dark mode, replacing emoji text
-- [ ] **UIPOL-06**: The tray icon shows a red dot badge variant when any recording is active
-- [ ] **UIPOL-07**: Closing the main window minimizes to tray (app stays alive), clicking the tray reopens, and Cmd+Q fully quits
+- [x] **UIPOL-05**: The macOS menu bar shows a monochrome template icon (P lettermark) that adapts to light/dark mode, replacing emoji text
+- [x] **UIPOL-06**: The tray icon shows a red dot badge variant when any recording is active
+- [x] **UIPOL-07**: Closing the main window minimizes to tray (app stays alive), clicking the tray reopens, and Cmd+Q fully quits
 
 ## v2 Requirements
 

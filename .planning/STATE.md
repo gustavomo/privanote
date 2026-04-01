@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-04-01T19:50:22.729Z"
+status: verifying
+stopped_at: Completed 11-02-PLAN.md
+last_updated: "2026-04-01T19:57:19.610Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 11
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 28
-  completed_plans: 27
+  completed_plans: 28
   percent: 100
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 Phase: 11 (ui-polish-button-icon-states-active-colors-and-persistent-custom-menu-bar-icon) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
 Progress: [██████████] 100%
@@ -66,6 +66,7 @@ Progress: [██████████] 100%
 | Phase 10 P01 | 2 | 2 tasks | 4 files |
 | Phase 10 P02 | 3 | 3 tasks | 3 files |
 | Phase 11 P01 | 4 | 2 tasks | 2 files |
+| Phase 11 P02 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,8 @@ Recent decisions affecting current work:
 - [Phase 10]: Media detection piggybacks on existing 500ms polling with 5-cycle throttle (~2.5s); overlay auto-shows on media detection independent of app whitelist
 - [Phase 11]: All active overlay states unified to teal oklch(0.65 0.15 195); icon design differentiates features, color signals activity
 - [Phase 11]: Stop-square icons removed; toggle state shown via icon pairs (eye-closed/open, clipboard-closed/open, headphones-off/on) plus teal color
+- [Phase 11]: Used nativeImage.createFromPath with Template filename suffix for automatic template image and @2x detection
+- [Phase 11]: Minimize-to-tray with isQuitting guard: close hides window, Cmd+Q sets flag to allow actual quit
 
 ### Pending Todos
 
@@ -148,6 +151,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-01T19:50:22.725Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-04-01T19:57:19.606Z
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None

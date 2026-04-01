@@ -32,6 +32,22 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('capture:note-created', handler);
     return () => ipcRenderer.removeListener('capture:note-created', handler);
   },
+  onCallRecordingStart: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('call-recording:trigger-start', handler);
+    return () => ipcRenderer.removeListener('call-recording:trigger-start', handler);
+  },
+  onCallRecordingStop: (callback) => {
+    const handler = (_event) => callback();
+    ipcRenderer.on('call-recording:trigger-stop', handler);
+    return () => ipcRenderer.removeListener('call-recording:trigger-stop', handler);
+  },
+  sendCallRecordingCompleted: (result) => {
+    ipcRenderer.send('call-recording:completed', result);
+  },
+  saveTempBlob: (data, filename) => {
+    return ipcRenderer.invoke('call-recording:save-temp', { data: Array.from(data), filename });
+  },
   pickFile: () => ipcRenderer.invoke('files:pick'),
   pickDirectory: () => ipcRenderer.invoke('files:pick-directory'),
   getAttachmentContentUrl: (attachmentId) =>

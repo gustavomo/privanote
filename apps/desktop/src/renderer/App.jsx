@@ -268,6 +268,10 @@ export default function App({ api }) {
   const audioContextRef = useRef(null);
   const providerPollingRef = useRef({});
   const selectedNodeIdRef = useRef(null);
+  const [isCallRecording, setIsCallRecording] = useState(false);
+  const callRecordingStreamRef = useRef(null);
+  const callRecordingRecorderRef = useRef(null);
+  const callRecordingChunksRef = useRef([]);
 
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId) || null,
@@ -302,6 +306,131 @@ export default function App({ api }) {
     setReviewRecording(null);
     setCaptureState('idle');
   }
+
+  function cleanupCallRecording() {
+    const streams = callRecordingStreamRef.current;
+    if (streams) {
+      if (streams.displayStream) streams.displayStream.getTracks().forEach(t => t.stop());
+      if (streams.micStream) streams.micStream.getTracks().forEach(t => t.stop());
+      if (streams.audioCtx) streams.audioCtx.close().catch(() => {});
+    }
+    callRecordingStreamRef.current = null;
+    callRecordingRecorderRef.current = null;
+    callRecordingChunksRef.current = [];
+    setIsCallRecording(false);
+  }
+
+  // Call recording trigger handlers from main process
+  useEffect(() => {
+    if (!client.onCallRecordingStart || !client.onCallRecordingStop) return;
+
+    const removeStartListener = client.onCallRecordingStart(async (data) => {
+      if (captureState === 'recording' || isCallRecording) return; // Already recording
+
+      setIsCallRecording(true);
+      try {
+        // Same mixed audio flow as handleStartRecording but audio-only
+        let displayStream;
+        try {
+          displayStream = await navigator.mediaDevices.getDisplayMedia({
+            audio: true,
+            video: { width: 1, height: 1 },
+          });
+        } catch (displayError) {
+          client.sendCallRecordingCompleted({
+            success: false,
+            error: 'Screen permission denied',
+          });
+          setIsCallRecording(false);
+          return;
+        }
+
+        // Discard video track -- audio only for call recording
+        displayStream.getVideoTracks().forEach((track) => track.stop());
+
+        // Get microphone
+        const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+        // Mix system audio + microphone via Web Audio API
+        const audioCtx = new AudioContext();
+        const systemSource = audioCtx.createMediaStreamSource(
+          new MediaStream(displayStream.getAudioTracks())
+        );
+        const micSource = audioCtx.createMediaStreamSource(
+          new MediaStream(micStream.getAudioTracks())
+        );
+        const dest = audioCtx.createMediaStreamDestination();
+        systemSource.connect(dest);
+        micSource.connect(dest);
+
+        const finalStream = dest.stream;
+        callRecordingStreamRef.current = { displayStream, micStream, audioCtx, finalStream };
+
+        // Resolve MIME type
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : undefined;
+
+        const recorder = mimeType
+          ? new MediaRecorder(finalStream, { mimeType })
+          : new MediaRecorder(finalStream);
+
+        callRecordingRecorderRef.current = recorder;
+        callRecordingChunksRef.current = [];
+
+        recorder.addEventListener('dataavailable', (event) => {
+          if (event.data.size > 0) {
+            callRecordingChunksRef.current.push(event.data);
+          }
+        });
+
+        recorder.addEventListener('stop', async () => {
+          // Assemble blob and save to temp file
+          const ext = (recorder.mimeType || '').includes('webm') ? 'webm' : 'ogg';
+          const blob = new Blob(callRecordingChunksRef.current, { type: recorder.mimeType });
+          const arrayBuffer = await blob.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+
+          // Save to temp file via IPC
+          const tempPath = await client.saveTempBlob(uint8Array, `call-recording.${ext}`);
+
+          client.sendCallRecordingCompleted({
+            success: true,
+            blob: {
+              path: tempPath,
+              mimeType: recorder.mimeType || 'audio/webm',
+              size: blob.size,
+            },
+          });
+
+          // Cleanup
+          cleanupCallRecording();
+        });
+
+        recorder.start(1000); // Collect data every 1 second
+      } catch (err) {
+        client.sendCallRecordingCompleted({
+          success: false,
+          error: err.message || 'Recording failed',
+        });
+        setIsCallRecording(false);
+        cleanupCallRecording();
+      }
+    });
+
+    const removeStopListener = client.onCallRecordingStop(() => {
+      if (callRecordingRecorderRef.current && callRecordingRecorderRef.current.state === 'recording') {
+        callRecordingRecorderRef.current.stop();
+      }
+    });
+
+    return () => {
+      removeStartListener();
+      removeStopListener();
+    };
+  }, [captureState, isCallRecording]);
 
   async function loadNodes() {
     setLoading(true);
@@ -727,6 +856,11 @@ export default function App({ api }) {
   }
 
   async function handleStartRecording() {
+    if (isCallRecording) {
+      setCaptureError('Cannot start recording while a call recording is active.');
+      return;
+    }
+
     setError('');
     setCaptureError('');
 

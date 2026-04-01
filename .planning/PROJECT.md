@@ -63,7 +63,7 @@ The clarified product direction extends that baseline substantially: the repo sh
 
 ## Current State
 
-Phase 9 complete (2026-04-01) — clipboard text capture added to floating overlay with polling, dedup, concealed filtering, source app detection, badge counter, and grouped note creation. All milestone phases complete.
+Phase 9 complete (2026-04-01) — clipboard text capture added to floating overlay with polling, dedup, concealed filtering, source app detection, badge counter, and grouped note creation. Phase 7 complete (2026-04-01) — screen capture now records system audio mixed with microphone via Chromium loopback + Web Audio API, with screen recording permission gating and denial tracking. All milestone phases complete.
 
 ## Evolution
 
@@ -83,4 +83,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after scope clarification*
+*Last updated: 2026-04-01 after Phase 7 completion*

@@ -137,6 +137,9 @@
     body { transition: height 200ms ease-out; }
     .container { transition: height 200ms ease-out; }
 
+    /* Mutual exclusion disabled state */
+    .btn.disabled { opacity: 0.35; pointer-events: none; cursor: default; }
+
     /* Call button entrance */
     #callBtn { display: none; }
     #callBtn.visible { display: flex; }
@@ -174,6 +177,25 @@
     const btn = document.getElementById('btn');
     const icon = document.getElementById('icon');
 
+    // Mutual exclusion state tracking
+    let screenCaptureActive = false;
+    let callRecActive = false;
+
+    function updateMutualExclusion() {
+      // Disable screen capture button when call recording is active
+      if (callRecActive && !screenCaptureActive) {
+        btn.classList.add('disabled');
+      } else {
+        btn.classList.remove('disabled');
+      }
+      // Disable call button when screen capture is active
+      if (screenCaptureActive && !callRecActive && callBtn.classList.contains('visible')) {
+        callBtn.classList.add('disabled');
+      } else {
+        callBtn.classList.remove('disabled');
+      }
+    }
+
     const ICONS = {
       idle: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
       recording: `<rect x="6" y="6" width="12" height="12" rx="1" fill="white" stroke="none"/>`,
@@ -193,6 +215,8 @@
       icon.innerHTML = ICONS[state] || ICONS.idle;
       btn.title = TITLES[state] || TITLES.idle;
       btn.setAttribute('aria-label', btn.title);
+      screenCaptureActive = (state === 'recording' || state === 'finalizing');
+      updateMutualExclusion();
     }
 
     // Listen for state changes from main process
@@ -289,6 +313,7 @@
 
     function setCallState(state, appName) {
       callRecState = state;
+      callRecActive = (state === 'recording' || state === 'amber' || state === 'finalizing');
       const label = appName || 'call';
       if (state === 'idle') {
         callBtn.className = 'btn visible';
@@ -311,6 +336,7 @@
         callBtn.title = 'Creating note...';
         callBtn.setAttribute('aria-label', 'Creating note...');
       }
+      updateMutualExclusion();
     }
 
     let currentAppName = '';

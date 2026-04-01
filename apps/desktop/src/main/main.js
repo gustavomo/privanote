@@ -269,29 +269,19 @@ function broadcastCaptureState(state) {
   updateTray(state);
 }
 
-function createTrayIcon() {
-  // 22x22 template image for macOS menu bar (drawn as a simple eye)
-  const canvas = 22;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}" viewBox="0 0 22 22">
-    <path d="M1 11s4-6 10-6 10 6 10 6-4 6-10 6S1 11 1 11z" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="11" cy="11" r="2.5" fill="none" stroke="black" stroke-width="1.5"/>
-  </svg>`;
-  const img = nativeImage.createFromBuffer(Buffer.from(svg));
+function createEmptyTrayImage() {
+  // Minimal 1x1 transparent PNG — macOS menu bar text via setTitle does the visual work
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64'
+  );
+  const img = nativeImage.createFromBuffer(png, { width: 1, height: 1 });
   img.setTemplateImage(true);
   return img;
 }
 
-function createTrayIconRecording() {
-  const canvas = 22;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}" viewBox="0 0 22 22">
-    <circle cx="11" cy="11" r="6" fill="#E53935"/>
-    <circle cx="11" cy="11" r="3" fill="white"/>
-  </svg>`;
-  return nativeImage.createFromBuffer(Buffer.from(svg));
-}
-
 function setupTray() {
-  tray = new Tray(createTrayIcon());
+  tray = new Tray(createEmptyTrayImage());
   tray.setToolTip('Privanote Capture');
   updateTray('idle');
 }
@@ -300,7 +290,7 @@ function updateTray(state) {
   if (!tray) return;
 
   if (state === 'capturing' || state === 'recording') {
-    tray.setImage(createTrayIconRecording());
+    tray.setTitle('🔴 REC');
     tray.setToolTip('Privanote — Recording...');
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: '● Recording...', enabled: false },
@@ -309,7 +299,7 @@ function updateTray(state) {
       { label: 'Show Privanote', click: () => { if (mainWindow) mainWindow.show(); } },
     ]));
   } else {
-    tray.setImage(createTrayIcon());
+    tray.setTitle('👁');
     tray.setToolTip('Privanote Capture');
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: 'Start Capture', click: () => toggleCaptureSession() },
@@ -338,12 +328,13 @@ async function toggleCaptureSession() {
     const { desktopCapturer } = require('electron');
     await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } }).catch(() => {});
 
-    const appLabel = app.isPackaged ? 'Privanote' : 'Electron';
     const { response } = await dialog.showMessageBox({
       type: 'info',
       title: 'Screen Recording Permission',
       message: 'Screen Recording permission is required to capture screenshots.',
-      detail: `Open System Settings → Privacy & Security → Screen Recording, then enable "${appLabel}". You may need to restart the app after granting permission.`,
+      detail: app.isPackaged
+        ? 'Open System Settings → Privacy & Security → Screen Recording, then enable "Privanote". You may need to restart the app after granting permission.'
+        : 'Since you are running in development mode, enable "Visual Studio Code" (or your terminal app) in System Settings → Privacy & Security → Screen Recording. Restart the dev server after granting.',
       buttons: ['Open System Settings', 'Cancel'],
       defaultId: 0,
     });

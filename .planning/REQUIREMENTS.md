@@ -95,6 +95,14 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [x] **UIPOL-06**: The tray icon shows a red dot badge variant when any recording is active
 - [x] **UIPOL-07**: Closing the main window minimizes to tray (app stays alive), clicking the tray reopens, and Cmd+Q fully quits
 
+### UI Audit and Component Migration
+
+- [ ] **UIAUD-01**: All main window form controls use shadcn/ui components (Button, Checkbox, RadioGroup, Input, Textarea, Card, Badge, Label, Separator, ToggleGroup) with preset bIkfWsK
+- [ ] **UIAUD-02**: All buttons in the main window have visible borders and consistent sizing (h-11 for form-level, h-10 for card-level) via shadcn Button variants
+- [ ] **UIAUD-03**: Settings checkboxes use shadcn Checkbox and radio buttons use shadcn RadioGroup, replacing native HTML form controls
+- [ ] **UIAUD-04**: Dark and light mode toggle is available in settings using CSS variable theming with class-based strategy, persistent via localStorage
+- [ ] **UIAUD-05**: Consistent spacing, padding, and typography across sidebar, editor, settings, and media card views using Inter font and shadcn default design tokens
+
 ## v2 Requirements
 
 ### Deployment and Identity
@@ -182,12 +190,17 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | UIPOL-05 | Phase 11 | Planned |
 | UIPOL-06 | Phase 11 | Planned |
 | UIPOL-07 | Phase 11 | Planned |
+| UIAUD-01 | Phase 12 | Planned |
+| UIAUD-02 | Phase 12 | Planned |
+| UIAUD-03 | Phase 12 | Planned |
+| UIAUD-04 | Phase 12 | Planned |
+| UIAUD-05 | Phase 12 | Planned |
 
 **Coverage:**
-- v1 requirements: 55 total
-- Mapped to phases: 55
+- v1 requirements: 60 total
+- Mapped to phases: 60
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-01 after Phase 11 planning*
+*Last updated: 2026-04-01 after Phase 12 planning*

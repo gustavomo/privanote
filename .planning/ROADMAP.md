@@ -127,13 +127,14 @@ Plans:
 
 ### Phase 7: Fix screen capture to record system audio instead of microphone
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Change the sidebar capture panel's audio recording to capture system audio (loopback) mixed with microphone input using Electron's setDisplayMediaRequestHandler with Web Audio API mixing, replacing the current microphone-only getUserMedia approach.
+**Requirements**: [SYSAUD-01, SYSAUD-02, SYSAUD-03, SYSAUD-04]
 **Depends on:** Phase 6
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 7 to break down)
+- [ ] 07-01-PLAN.md — Add Chromium loopback flag, display media handler, and screen permission IPC to main process
+- [ ] 07-02-PLAN.md — Replace renderer recording flow with mixed system audio + microphone and verify end-to-end
 
 ### Phase 8: Limit floating capture button to specific apps
 
@@ -154,5 +155,5 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [x] 09-01-PLAN.md — Build ClipboardSession class, extend IPC bridge, and wire clipboard lifecycle into main.js
-- [x] 09-02-PLAN.md — Expand overlay UI with clipboard button, badge counter, and end-to-end verification
+- [ ] 09-01-PLAN.md — Build ClipboardSession class, extend IPC bridge, and wire clipboard lifecycle into main.js
+- [ ] 09-02-PLAN.md — Expand overlay UI with clipboard button, badge counter, and end-to-end verification

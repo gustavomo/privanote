@@ -80,8 +80,8 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 ### Call Recording via Media Detection
 
 - [x] **CALLREC-01**: Active microphone and camera usage by external apps is detected via macOS CoreAudio/CoreMediaIO APIs, excluding Privanote's own usage
-- [ ] **CALLREC-02**: A conditional third button with headphone icon appears on the floating overlay when external mic/camera usage is detected, showing the source app name
-- [ ] **CALLREC-03**: The overlay dynamically resizes between 2-button and 3-button layouts with smooth transitions when media detection state changes
+- [x] **CALLREC-02**: A conditional third button with headphone icon appears on the floating overlay when external mic/camera usage is detected, showing the source app name
+- [x] **CALLREC-03**: The overlay dynamically resizes between 2-button and 3-button layouts with smooth transitions when media detection state changes
 - [ ] **CALLREC-04**: User can start and stop a call recording from the overlay button, using the existing mixed system audio + microphone capture flow
 - [ ] **CALLREC-05**: A structured note is automatically created when call recording stops, titled with source app name and timestamp, with the recording as an attachment
 

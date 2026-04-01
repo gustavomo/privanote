@@ -233,7 +233,7 @@ function createCaptureOverlay() {
 
   captureOverlay = new BrowserWindow({
     width: 64,
-    height: 64,
+    height: 136,
     x: screenWidth - 80,
     y: 80,
     alwaysOnTop: true,

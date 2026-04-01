@@ -12,14 +12,16 @@
       -webkit-user-select: none;
       user-select: none;
       width: 64px;
-      height: 64px;
+      height: 136px;
     }
     .container {
       width: 64px;
-      height: 64px;
+      height: 136px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 8px;
       -webkit-app-region: drag;
     }
     .btn {
@@ -68,6 +70,43 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner { animation: spin 1s linear infinite; }
+    .btn.monitoring { background: oklch(0.488 0.243 264.376); box-shadow: 0 2px 12px rgba(50,80,220,0.35); }
+    .btn.monitoring svg { width: 20px; height: 20px; stroke: white; }
+    .btn.clip-finalizing { background: oklch(0.547 0.021 43.1); cursor: default; }
+    .btn.clip-finalizing svg { stroke: white; }
+    .clipboard-pulse {
+      animation: clipboard-pulse 1.5s ease-out infinite;
+      background: oklch(0.488 0.243 264.376);
+      border-radius: 50%;
+      position: absolute;
+      inset: -4px;
+      pointer-events: none;
+      z-index: 0;
+      display: none;
+    }
+    .monitoring .clipboard-pulse { display: block; }
+    @keyframes clipboard-pulse {
+      0% { transform: scale(1); opacity: 0.4; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+    .badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: oklch(0.488 0.243 264.376);
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 20px;
+      text-align: center;
+      display: none;
+      z-index: 2;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -78,6 +117,14 @@
         <!-- eye icon (idle) -->
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
         <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </button>
+    <button class="btn" id="clipBtn" title="Start clipboard monitoring" aria-label="Start clipboard monitoring">
+      <div class="clipboard-pulse"></div>
+      <span class="badge" id="badge" aria-live="polite"></span>
+      <svg id="clipIcon" viewBox="0 0 24 24">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
       </svg>
     </button>
   </div>
@@ -124,6 +171,65 @@
         await window.captureApi.stopSession();
       } else {
         await window.captureApi.startSession();
+      }
+    });
+
+    // --- Clipboard button ---
+    const clipBtn = document.getElementById('clipBtn');
+    const clipIcon = document.getElementById('clipIcon');
+    const badge = document.getElementById('badge');
+
+    const CLIP_ICONS = {
+      idle: `<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>`,
+      monitoring: `<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>`,
+      finalizing: `<path class="spinner" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>`,
+    };
+
+    const CLIP_TITLES = {
+      idle: 'Start clipboard monitoring',
+      monitoring: 'Stop clipboard monitoring',
+      finalizing: 'Creating note...',
+    };
+
+    function setClipState(state) {
+      const cssClass = state === 'monitoring' ? 'monitoring' : (state === 'finalizing' ? 'clip-finalizing' : '');
+      clipBtn.className = 'btn' + (cssClass ? ' ' + cssClass : '');
+      clipIcon.innerHTML = CLIP_ICONS[state] || CLIP_ICONS.idle;
+      clipBtn.title = CLIP_TITLES[state] || CLIP_TITLES.idle;
+      clipBtn.setAttribute('aria-label', clipBtn.title);
+      if (state === 'idle') {
+        badge.style.display = 'none';
+        badge.textContent = '';
+      }
+    }
+
+    function updateBadge(count) {
+      if (count > 0) {
+        badge.style.display = 'block';
+        badge.textContent = count > 99 ? '99+' : String(count);
+      } else {
+        badge.style.display = 'none';
+        badge.textContent = '';
+      }
+    }
+
+    if (window.captureApi) {
+      window.captureApi.getClipboardState().then(s => { if (s) setClipState(s); });
+      window.captureApi.onClipboardStateChange(setClipState);
+      window.captureApi.onClipboardCount(updateBadge);
+    }
+
+    clipBtn.addEventListener('click', async () => {
+      if (!window.captureApi) {
+        console.warn('[capture-overlay] captureApi not available');
+        return;
+      }
+      if (clipBtn.classList.contains('clip-finalizing')) return;
+
+      if (clipBtn.classList.contains('monitoring')) {
+        await window.captureApi.stopClipboard();
+      } else {
+        await window.captureApi.startClipboard();
       }
     });
   </script>

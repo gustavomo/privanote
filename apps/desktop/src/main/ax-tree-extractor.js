@@ -2,7 +2,7 @@ const { execFile } = require('child_process');
 const path = require('path');
 
 const AX_WALKER_PATH = path.join(__dirname, 'native', 'ax_walker');
-const TIMEOUT_MS = 3000;
+const TIMEOUT_MS = 5000;
 
 function extractTextFromAccessibilityTree(pid) {
   return new Promise((resolve) => {

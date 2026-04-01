@@ -29,9 +29,25 @@ void extractTexts(AXUIElementRef element, int depth, int maxDepth, NSMutableArra
     NSString *role = (__bridge_transfer NSString *)roleRef;
     if (!role) role = @"";
 
-    // Skip menu bars, menu items, and window control buttons
-    NSSet *skipRoles = [NSSet setWithObjects:@"AXMenuBar", @"AXMenu", @"AXMenuItem", @"AXMenuBarItem", nil];
+    // Skip menu bars, menu items, window control buttons, and scrollbars
+    NSSet *skipRoles = [NSSet setWithObjects:@"AXMenuBar", @"AXMenu", @"AXMenuItem", @"AXMenuBarItem", @"AXScrollBar", nil];
     if ([skipRoles containsObject:role]) return;
+
+    // For AXStaticText, always grab the value — this is where web content text lives
+    if ([role isEqualToString:@"AXStaticText"]) {
+        CFTypeRef stRef = NULL;
+        AXUIElementCopyAttributeValue(element, kAXValueAttribute, &stRef);
+        if (stRef) {
+            NSString *stVal = (__bridge_transfer NSString *)stRef;
+            if ([stVal isKindOfClass:[NSString class]]) {
+                NSString *trimmed = [stVal stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                if ([trimmed length] > 0) {
+                    [texts addObject:trimmed];
+                }
+            }
+        }
+        return; // AXStaticText has no meaningful children
+    }
 
     // Extract text value
     CFTypeRef valueRef = NULL;
@@ -105,7 +121,7 @@ int main(int argc, const char *argv[]) {
 
         AXUIElementRef appElement = AXUIElementCreateApplication(pid);
         NSMutableArray *texts = [NSMutableArray array];
-        extractTexts(appElement, 0, 15, texts);
+        extractTexts(appElement, 0, 50, texts);
         CFRelease(appElement);
 
         // Deduplicate while preserving order

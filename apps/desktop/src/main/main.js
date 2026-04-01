@@ -289,7 +289,9 @@ function setupTray() {
 function updateTray(state) {
   if (!tray) return;
 
-  if (state === 'capturing' || state === 'recording') {
+  const isRecording = state === 'capturing' || state === 'recording';
+
+  if (isRecording) {
     tray.setTitle('🔴 REC');
     tray.setToolTip('Privanote — Recording...');
     tray.setContextMenu(Menu.buildFromTemplate([
@@ -306,6 +308,11 @@ function updateTray(state) {
       { type: 'separator' },
       { label: 'Show Privanote', click: () => { if (mainWindow) mainWindow.show(); } },
     ]));
+  }
+
+  // Dock badge — shows "REC" on the app icon in the taskbar when recording
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setBadge(isRecording ? 'REC' : '');
   }
 }
 

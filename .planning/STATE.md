@@ -111,7 +111,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-7 todos pending (2026-03-30):
+9 todos pending (2026-04-01):
 
 - Migrate codebase to TypeScript [tooling]
 - Restructure project organization [general]
@@ -119,7 +119,9 @@ Recent decisions affecting current work:
 - Remove src directories [general]
 - Use Gherkin for tests [testing]
 - Fix UI issues [ui]
-- Make record or import always accessible [ui]
+- Toggle button for clipboard text capture [ui]
+- AI-powered capture processing and deduplication [ui]
+- Detect active media and show recording button [ui]
 
 ### Blockers/Concerns
 

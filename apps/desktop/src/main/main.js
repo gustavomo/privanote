@@ -239,6 +239,7 @@ function createCaptureOverlay() {
     movable: true,
     hasShadow: false,
     focusable: false,
+    type: process.platform === 'darwin' ? 'panel' : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload-capture.js'),
       contextIsolation: true,
@@ -284,6 +285,13 @@ async function toggleCaptureSession() {
   }
 
   const screenStatus = checkScreenPermission();
+  if (screenStatus === 'not-determined') {
+    // Trigger the OS screen recording permission prompt by requesting sources once.
+    // After the user grants, the next click will proceed normally.
+    const { desktopCapturer } = require('electron');
+    desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } }).catch(() => {});
+    return;
+  }
   if (screenStatus !== 'granted') {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('capture:permission-missing', {

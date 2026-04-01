@@ -28,6 +28,8 @@ let tray = null;
 let appDetectionTimer = null;
 let mediaDetectionState = { active: false, appName: null, bundleId: null };
 let callRecordingActive = false;  // Tracks if a call recording is in progress
+let callRecordingAppName = '';    // App name when recording started
+let callRecordingStartTime = 0;  // Timestamp when recording started
 let mediaDetectionCounter = 0;    // Counter to throttle media detection to every ~2.5s
 
 function resolveDataRoot() {
@@ -376,6 +378,11 @@ function updateTray(state) {
 }
 
 async function toggleCaptureSession() {
+  // Mutual exclusion: cannot start screen capture while call recording is active (Pitfall 5)
+  if (callRecordingActive) {
+    return;
+  }
+
   if (captureSession && captureSession.state === 'capturing') {
     const result = await captureSession.stop();
     if (result && result.captureCount > 0) {
@@ -456,6 +463,64 @@ async function createNoteFromClipboard(sessionResult) {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('capture:note-created', { nodeId: node.id });
     }
+    return node;
+  } catch (error) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('capture:note-error', { message: error.message });
+    }
+    return null;
+  }
+}
+
+async function createNoteFromCallRecording(blobInfo) {
+  try {
+    const fs = require('fs');
+    // Per D-12: Auto-title with source app and timestamp
+    // Format: "Zoom call \u2014 Apr 1, 2:30 PM"
+    const startDate = new Date(callRecordingStartTime);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[startDate.getMonth()];
+    const day = startDate.getDate();
+    let hours = startDate.getHours();
+    const minutes = startDate.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const timeStr = `${hours}:${minutes} ${ampm}`;
+
+    const appLabel = callRecordingAppName || 'Call recording';
+    const title = `${appLabel} call \u2014 ${month} ${day}, ${timeStr}`;
+
+    const durationMs = Date.now() - callRecordingStartTime;
+    const durationSec = Math.round(durationMs / 1000);
+    const durationMin = Math.floor(durationSec / 60);
+    const durationRemSec = durationSec % 60;
+    const description = `Duration: ${durationMin}m ${durationRemSec}s\nSource: ${appLabel}`;
+
+    const node = await proxyBackendRequest({
+      operationId: v1.nodes.createNode.id,
+      payload: {
+        title,
+        description,
+        tags: callRecordingAppName || 'call',
+      },
+    });
+
+    // Upload the recording blob as an attachment
+    if (blobInfo.path && fs.existsSync(blobInfo.path)) {
+      const bytes = fs.readFileSync(blobInfo.path);
+      await proxyBackendUpload({
+        operationId: v1.attachments.createAttachment.id,
+        payload: { nodeId: node.id },
+        fileName: path.basename(blobInfo.path),
+        mimeType: blobInfo.mimeType || 'audio/webm',
+        bytes,
+      });
+    }
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('capture:note-created', { nodeId: node.id });
+    }
+
     return node;
   } catch (error) {
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -732,13 +797,70 @@ function registerIpcHandlers() {
   }));
 
   ipcMain.handle('call-recording:start', async () => {
-    // Placeholder -- actual recording wiring in Plan 03
-    return { success: false, error: 'Not yet implemented' };
+    // Mutual exclusion: cannot record call while screen capture is active (Pitfall 5)
+    if (captureSession && captureSession.state === 'capturing') {
+      return { success: false, error: 'Screen capture is active' };
+    }
+
+    if (callRecordingActive) {
+      return { success: false, error: 'Call recording already active' };
+    }
+
+    callRecordingActive = true;
+    callRecordingAppName = mediaDetectionState.appName || 'Unknown';
+    callRecordingStartTime = Date.now();
+    broadcastCallRecordingState('recording');
+
+    // Tell the main window renderer to start recording (D-06: one tap starts immediately)
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('call-recording:trigger-start', {
+        appName: callRecordingAppName,
+      });
+    }
+
+    return { success: true };
   });
 
   ipcMain.handle('call-recording:stop', async () => {
-    // Placeholder -- actual recording wiring in Plan 03
-    return { success: false, error: 'Not yet implemented' };
+    if (!callRecordingActive) {
+      return { success: false, error: 'No active call recording' };
+    }
+
+    broadcastCallRecordingState('finalizing');
+
+    // Tell the main window renderer to stop recording
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('call-recording:trigger-stop');
+    }
+
+    return { success: true };
+  });
+
+  ipcMain.on('call-recording:completed', async (_event, result) => {
+    // result: { success: boolean, blob?: { path, mimeType, size }, error?: string }
+    if (result.success && result.blob) {
+      await createNoteFromCallRecording(result.blob);
+    }
+
+    callRecordingActive = false;
+    broadcastCallRecordingState('idle');
+
+    // If media is no longer active, remove the button
+    if (!mediaDetectionState.active) {
+      updateOverlayForMedia(false);
+    }
+
+    callRecordingAppName = '';
+    callRecordingStartTime = 0;
+  });
+
+  ipcMain.handle('call-recording:save-temp', async (_event, { data, filename }) => {
+    const fs = require('fs');
+    const tempDir = path.join(resolveDataRoot(), 'temp');
+    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+    const tempPath = path.join(tempDir, `${Date.now()}-${filename}`);
+    fs.writeFileSync(tempPath, Buffer.from(data));
+    return tempPath;
   });
 
   ipcMain.handle('capture-apps:get-presets', () => {

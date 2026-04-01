@@ -141,3 +141,6 @@ vite.config.ts.timestamp-*
 # Privanote data
 data/
 apps/desktop/release/
+
+# Compiled native binaries (source and build scripts are tracked)
+apps/desktop/src/main/native/ax_walker

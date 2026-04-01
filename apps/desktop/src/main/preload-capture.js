@@ -22,4 +22,29 @@ contextBridge.exposeInMainWorld('captureApi', {
     ipcRenderer.on('clipboard:count-changed', handler);
     return () => ipcRenderer.removeListener('clipboard:count-changed', handler);
   },
+
+  // --- Call recording / media detection ---
+  startCallRecording: () => ipcRenderer.invoke('call-recording:start'),
+  stopCallRecording: () => ipcRenderer.invoke('call-recording:stop'),
+  getMediaState: () => ipcRenderer.invoke('media:get-detection-state'),
+  onMediaDetected: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('media:detected', handler);
+    return () => ipcRenderer.removeListener('media:detected', handler);
+  },
+  onMediaEnded: (callback) => {
+    const handler = (_event) => callback();
+    ipcRenderer.on('media:ended', handler);
+    return () => ipcRenderer.removeListener('media:ended', handler);
+  },
+  onCallEnded: (callback) => {
+    const handler = (_event) => callback();
+    ipcRenderer.on('media:call-ended', handler);
+    return () => ipcRenderer.removeListener('media:call-ended', handler);
+  },
+  onCallRecordingState: (callback) => {
+    const handler = (_event, state) => callback(state);
+    ipcRenderer.on('call-recording:state-changed', handler);
+    return () => ipcRenderer.removeListener('call-recording:state-changed', handler);
+  },
 });

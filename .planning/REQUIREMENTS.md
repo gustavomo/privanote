@@ -56,8 +56,8 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 - [ ] **EXT-01**: User can see and interact with a floating capture button that stays on top of all other apps
 - [ ] **EXT-02**: User can start and stop a screen capture session from the floating button or via keyboard shortcut (Cmd+Shift+R)
-- [ ] **EXT-03**: Screenshots of the active external app are captured automatically during a session, tagged with app name and timestamp
-- [ ] **EXT-04**: Text is extracted from captured screenshots using OCR
+- [x] **EXT-03**: Screenshots of the active external app are captured automatically during a session, tagged with app name and timestamp
+- [x] **EXT-04**: Text is extracted from captured screenshots using OCR
 - [ ] **EXT-05**: A structured note is automatically created when the capture session ends, grouping content by source app
 - [ ] **EXT-06**: Text is extracted from the active app's accessibility tree when available, falling back to OCR
 

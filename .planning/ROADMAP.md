@@ -121,7 +121,7 @@ Plans:
 
 Plans:
 - [ ] 06-01-PLAN.md — Create floating overlay window, preload IPC bridge, and CaptureOverlay React component
-- [ ] 06-02-PLAN.md — Build capture session state machine, screenshot engine, and OCR text extraction
+- [x] 06-02-PLAN.md — Build capture session state machine, screenshot engine, and OCR text extraction
 - [ ] 06-03-PLAN.md — Wire overlay, capture session, and note creation into main.js with global shortcut
 - [ ] 06-04-PLAN.md — Add macOS Accessibility tree text extraction as primary method with OCR fallback
 

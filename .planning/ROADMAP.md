@@ -120,10 +120,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Create floating overlay window, preload IPC bridge, and CaptureOverlay React component
+- [x] 06-01-PLAN.md — Create floating overlay window, preload IPC bridge, and CaptureOverlay React component
 - [x] 06-02-PLAN.md — Build capture session state machine, screenshot engine, and OCR text extraction
-- [ ] 06-03-PLAN.md — Wire overlay, capture session, and note creation into main.js with global shortcut
-- [ ] 06-04-PLAN.md — Add macOS Accessibility tree text extraction as primary method with OCR fallback
+- [x] 06-03-PLAN.md — Wire overlay, capture session, and note creation into main.js with global shortcut
+- [x] 06-04-PLAN.md — Add macOS Accessibility tree text extraction as primary method with OCR fallback
 
 ### Phase 7: Fix screen capture to record system audio instead of microphone
 

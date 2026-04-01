@@ -59,7 +59,7 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [x] **EXT-03**: Screenshots of the active external app are captured automatically during a session, tagged with app name and timestamp
 - [x] **EXT-04**: Text is extracted from captured screenshots using OCR
 - [ ] **EXT-05**: A structured note is automatically created when the capture session ends, grouping content by source app
-- [ ] **EXT-06**: Text is extracted from the active app's accessibility tree when available, falling back to OCR
+- [x] **EXT-06**: Text is extracted from the active app's accessibility tree when available, falling back to OCR
 
 ## v2 Requirements
 

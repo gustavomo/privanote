@@ -843,6 +843,15 @@ export default function App({ api }) {
     loadNodes();
     loadSettings();
     loadProviderConnections();
+
+    // Refresh notes list when a capture session creates a new note
+    if (window.api?.onCaptureNoteCreated) {
+      return window.api.onCaptureNoteCreated(({ nodeId }) => {
+        loadNodes().then(() => {
+          if (nodeId) setSelectedNodeId(nodeId);
+        });
+      });
+    }
   }, []);
 
   useEffect(() => {

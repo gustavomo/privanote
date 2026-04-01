@@ -27,6 +27,11 @@ const backendClient = createBackendClient({
 
 contextBridge.exposeInMainWorld('api', {
   ...backendClient,
+  onCaptureNoteCreated: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('capture:note-created', handler);
+    return () => ipcRenderer.removeListener('capture:note-created', handler);
+  },
   pickFile: () => ipcRenderer.invoke('files:pick'),
   pickDirectory: () => ipcRenderer.invoke('files:pick-directory'),
   getAttachmentContentUrl: (attachmentId) =>

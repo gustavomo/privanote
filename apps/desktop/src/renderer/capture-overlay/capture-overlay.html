@@ -98,7 +98,9 @@
       finalizing: 'Creating note...',
     };
 
-    function setState(state) {
+    function setState(raw) {
+      // CaptureSession emits 'capturing', overlay uses 'recording'
+      const state = raw === 'capturing' ? 'recording' : raw;
       btn.className = 'btn' + (state !== 'idle' ? ' ' + state : '');
       icon.innerHTML = ICONS[state] || ICONS.idle;
       btn.title = TITLES[state] || TITLES.idle;
@@ -116,15 +118,12 @@
         console.warn('[capture-overlay] captureApi not available');
         return;
       }
-      const current = btn.className.includes('recording') ? 'recording'
-                     : btn.className.includes('finalizing') ? 'finalizing'
-                     : 'idle';
-      if (current === 'finalizing') return;
+      if (btn.classList.contains('finalizing')) return;
 
-      if (current === 'idle') {
-        await window.captureApi.startSession();
-      } else {
+      if (btn.classList.contains('recording')) {
         await window.captureApi.stopSession();
+      } else {
+        await window.captureApi.startSession();
       }
     });
   </script>

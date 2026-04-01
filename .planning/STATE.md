@@ -68,6 +68,7 @@ Progress: [██████████] 100%
 - Phase 6 added: Always-on-top floating capture button for external app screen capture
 - Phase 7 added: Fix screen capture to record system audio instead of microphone
 - Phase 8 added: Limit floating capture button to specific apps
+- Phase 9 added: Toggle button for clipboard text capture
 
 ### Decisions
 

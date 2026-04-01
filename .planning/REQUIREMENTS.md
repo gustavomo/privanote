@@ -77,6 +77,14 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [x] **CLIP-03**: A clipboard toggle button with badge counter appears on the floating overlay with blue active state distinct from the red capture state
 - [x] **CLIP-04**: A structured note is automatically created when clipboard monitoring stops, with entries grouped by source app
 
+### Call Recording via Media Detection
+
+- [ ] **CALLREC-01**: Active microphone and camera usage by external apps is detected via macOS CoreAudio/CoreMediaIO APIs, excluding Privanote's own usage
+- [ ] **CALLREC-02**: A conditional third button with headphone icon appears on the floating overlay when external mic/camera usage is detected, showing the source app name
+- [ ] **CALLREC-03**: The overlay dynamically resizes between 2-button and 3-button layouts with smooth transitions when media detection state changes
+- [ ] **CALLREC-04**: User can start and stop a call recording from the overlay button, using the existing mixed system audio + microphone capture flow
+- [ ] **CALLREC-05**: A structured note is automatically created when call recording stops, titled with source app name and timestamp, with the recording as an attachment
+
 ## v2 Requirements
 
 ### Deployment and Identity
@@ -152,12 +160,17 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | CLIP-02 | Phase 9 | Planned |
 | CLIP-03 | Phase 9 | Planned |
 | CLIP-04 | Phase 9 | Planned |
+| CALLREC-01 | Phase 10 | Planned |
+| CALLREC-02 | Phase 10 | Planned |
+| CALLREC-03 | Phase 10 | Planned |
+| CALLREC-04 | Phase 10 | Planned |
+| CALLREC-05 | Phase 10 | Planned |
 
 **Coverage:**
-- v1 requirements: 43 total
-- Mapped to phases: 43
+- v1 requirements: 48 total
+- Mapped to phases: 48
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-01 after Phase 9 planning*
+*Last updated: 2026-04-01 after Phase 10 planning*

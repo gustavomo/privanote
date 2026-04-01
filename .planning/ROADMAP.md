@@ -160,10 +160,12 @@ Plans:
 
 ### Phase 10: Detect active media (microphone/camera) usage via system APIs and show a floating recording button that integrates with the existing note capture flow
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Detect when another app is actively using the microphone or camera on macOS and surface a conditional third button on the floating overlay that lets the user one-tap record the call. Recording uses the existing system audio + microphone mixed capture flow. Notes are auto-titled with the detected source app name.
+**Requirements**: [CALLREC-01, CALLREC-02, CALLREC-03, CALLREC-04, CALLREC-05]
 **Depends on:** Phase 9
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 10 to break down)
+- [ ] 10-01-PLAN.md — Build native media_detector binary and Node.js wrapper for mic/camera detection
+- [ ] 10-02-PLAN.md — Wire media detection into polling, add IPC bridge, and extend overlay with conditional third button
+- [ ] 10-03-PLAN.md — Wire call recording flow from overlay to renderer with auto-titled note creation

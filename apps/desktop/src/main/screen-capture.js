@@ -1,6 +1,7 @@
 const { desktopCapturer, systemPreferences } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const { extractTextFromAccessibilityTree } = require('./ax-tree-extractor');
 
 let activeWinModule = null;
 let tesseractWorker = null;
@@ -92,9 +93,27 @@ async function extractTextFromImage(pngBuffer) {
   }
 }
 
+async function extractText(pid, pngBuffer) {
+  // Try accessibility tree first (primary method per CONTEXT.md)
+  const axResult = await extractTextFromAccessibilityTree(pid);
+
+  if (axResult.success && axResult.texts.length > 0) {
+    return {
+      text: axResult.texts.join('\n'),
+      confidence: 100,
+      method: 'accessibility',
+    };
+  }
+
+  // Fallback to OCR
+  const ocrResult = await extractTextFromImage(pngBuffer);
+  return ocrResult;
+}
+
 module.exports = {
   captureActiveScreen,
   extractTextFromImage,
+  extractText,
   getActiveWindowInfo,
   checkScreenPermission,
   terminateTesseractWorker,

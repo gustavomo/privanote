@@ -1,4 +1,4 @@
-const { captureActiveScreen, extractTextFromImage, getActiveWindowInfo, terminateTesseractWorker } = require('./screen-capture');
+const { captureActiveScreen, extractText, getActiveWindowInfo, terminateTesseractWorker } = require('./screen-capture');
 
 class CaptureSession {
   constructor({ savePath, onStateChange }) {
@@ -73,8 +73,8 @@ class CaptureSession {
         return;
       }
 
-      // Extract text via OCR in the background
-      const textResult = await extractTextFromImage(capture.pngBuffer);
+      // Extract text via AX tree (primary) with OCR fallback
+      const textResult = await extractText(capture.pid, capture.pngBuffer);
 
       this.captures.push({
         screenshotPath: capture.screenshotPath,

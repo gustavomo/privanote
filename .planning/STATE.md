@@ -134,7 +134,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-10 todos pending (2026-04-01):
+11 todos pending (2026-04-01):
 
 - Migrate codebase to TypeScript [tooling]
 - Restructure project organization [general]
@@ -146,6 +146,7 @@ Recent decisions affecting current work:
 - AI-powered capture processing and deduplication [ui]
 - Detect active media and show recording button [ui]
 - Sync floating button recording with transcription [ui]
+- Sync full note content not just media attachments [general]
 
 ### Blockers/Concerns
 

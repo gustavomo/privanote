@@ -282,11 +282,16 @@ async function toggleCaptureSession() {
 
   const screenStatus = checkScreenPermission();
   if (screenStatus !== 'granted') {
+    // Attempt a capture so macOS registers the app in the Screen Recording list
+    const { desktopCapturer } = require('electron');
+    await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } }).catch(() => {});
+
+    const appLabel = app.isPackaged ? 'Privanote' : 'Electron';
     const { response } = await dialog.showMessageBox({
       type: 'info',
       title: 'Screen Recording Permission',
-      message: 'Privanote needs Screen Recording permission to capture screenshots.',
-      detail: 'Open System Settings → Privacy & Security → Screen Recording, then enable Privanote.',
+      message: 'Screen Recording permission is required to capture screenshots.',
+      detail: `Open System Settings → Privacy & Security → Screen Recording, then enable "${appLabel}". You may need to restart the app after granting permission.`,
       buttons: ['Open System Settings', 'Cancel'],
       defaultId: 0,
     });

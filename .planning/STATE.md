@@ -83,6 +83,7 @@ Progress: [██████████] 100%
 - [Phase 09]: Second overlay button + global shortcut for toggle; badge counter for live entry count
 - Phase 11 added: UI polish: button icon states, active colors, and persistent custom menu bar icon
 - Phase 12 added: UI audit and fix pass: identify and resolve visual bugs, layout inconsistencies, accessibility issues, and interaction edge cases across the app
+- Phase 13 added: AI-powered capture processing: text cleanup, summarization, auto-tagging, screenshot vision analysis, and capture deduplication during sessions
 
 ### Decisions
 
@@ -133,7 +134,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-9 todos pending (2026-04-01):
+10 todos pending (2026-04-01):
 
 - Migrate codebase to TypeScript [tooling]
 - Restructure project organization [general]
@@ -144,6 +145,7 @@ Recent decisions affecting current work:
 - Toggle button for clipboard text capture [ui]
 - AI-powered capture processing and deduplication [ui]
 - Detect active media and show recording button [ui]
+- Sync floating button recording with transcription [ui]
 
 ### Blockers/Concerns
 

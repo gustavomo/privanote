@@ -36,7 +36,7 @@ requirements-completed: [SYSAUD-01, SYSAUD-02, SYSAUD-03, SYSAUD-04]
 
 duration: 3min
 completed: 2026-04-01
-status: checkpoint-pending
+status: complete
 ---
 
 # Phase 07 Plan 02: Renderer Mixed Audio Recording Summary
@@ -45,14 +45,14 @@ status: checkpoint-pending
 
 ## Status
 
-CHECKPOINT PENDING -- Task 1 complete, Task 2 (human-verify) awaiting user verification of mixed audio recording.
+COMPLETE -- All tasks done, human verification approved.
 
 ## Performance
 
 - **Duration:** 3 min (Task 1 only)
 - **Started:** 2026-04-01T10:14:32Z
-- **Completed:** pending checkpoint
-- **Tasks:** 1/2 (Task 2 is human-verify checkpoint)
+- **Completed:** 2026-04-01
+- **Tasks:** 2/2
 - **Files modified:** 1
 
 ## Accomplishments
@@ -66,7 +66,7 @@ CHECKPOINT PENDING -- Task 1 complete, Task 2 (human-verify) awaiting user verif
 Each task was committed atomically:
 
 1. **Task 1: Replace recording flow with mixed system audio + microphone and permission gating** - `8527c5e` (feat)
-2. **Task 2: Verify mixed audio recording works end-to-end** - pending (checkpoint:human-verify)
+2. **Task 2: Verify mixed audio recording works end-to-end** - approved (checkpoint:human-verify)
 
 ## Files Created/Modified
 - `apps/desktop/src/renderer/App.jsx` - Replaced recording flow with mixed stream acquisition, added permission error constants, new refs for cleanup, updated ensureCapturePermissions for screen denial tracking, removed dead resolveCaptureConstraints function
@@ -89,9 +89,9 @@ None - no external service configuration required.
 None - all functionality is fully wired to the IPC channels established in Plan 01.
 
 ## Next Phase Readiness
-- Pending human verification that mixed audio recording works correctly in all three capture modes
-- After verification, phase 07 is complete
+- Human verification approved — mixed audio recording works correctly
+- Phase 07 ready for verification
 
 ---
 *Phase: 07-fix-screen-capture-to-record-system-audio-instead-of-microphone*
-*Completed: pending checkpoint*
+*Completed: 2026-04-01*

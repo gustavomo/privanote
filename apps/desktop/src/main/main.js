@@ -533,6 +533,11 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  // Ensure Dock icon is visible on macOS
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.show();
+  }
+
   registerIpcHandlers();
 
   try {

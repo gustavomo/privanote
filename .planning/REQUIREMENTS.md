@@ -85,6 +85,16 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [ ] **CALLREC-04**: User can start and stop a call recording from the overlay button, using the existing mixed system audio + microphone capture flow
 - [ ] **CALLREC-05**: A structured note is automatically created when call recording stops, titled with source app name and timestamp, with the recording as an attachment
 
+### UI Polish
+
+- [ ] **UIPOL-01**: Overlay buttons are 40px circles with proportionally scaled icons and 4px gap, providing a compact visual footprint
+- [ ] **UIPOL-02**: Each overlay button has distinct idle/active icon pairs (eye-closed/open, clipboard-closed/open, headphones-off/on) that communicate feature state through icon shape
+- [ ] **UIPOL-03**: All active overlay buttons share a unified teal accent color instead of per-feature red/blue/green, creating a cohesive visual language
+- [ ] **UIPOL-04**: Pulse ring animations are removed from all overlay buttons, relying on color change alone for active state indication
+- [ ] **UIPOL-05**: The macOS menu bar shows a monochrome template icon (P lettermark) that adapts to light/dark mode, replacing emoji text
+- [ ] **UIPOL-06**: The tray icon shows a red dot badge variant when any recording is active
+- [ ] **UIPOL-07**: Closing the main window minimizes to tray (app stays alive), clicking the tray reopens, and Cmd+Q fully quits
+
 ## v2 Requirements
 
 ### Deployment and Identity
@@ -165,12 +175,19 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | CALLREC-03 | Phase 10 | Planned |
 | CALLREC-04 | Phase 10 | Planned |
 | CALLREC-05 | Phase 10 | Planned |
+| UIPOL-01 | Phase 11 | Planned |
+| UIPOL-02 | Phase 11 | Planned |
+| UIPOL-03 | Phase 11 | Planned |
+| UIPOL-04 | Phase 11 | Planned |
+| UIPOL-05 | Phase 11 | Planned |
+| UIPOL-06 | Phase 11 | Planned |
+| UIPOL-07 | Phase 11 | Planned |
 
 **Coverage:**
-- v1 requirements: 48 total
-- Mapped to phases: 48
+- v1 requirements: 55 total
+- Mapped to phases: 55
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-01 after Phase 10 planning*
+*Last updated: 2026-04-01 after Phase 11 planning*

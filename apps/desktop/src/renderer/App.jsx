@@ -327,14 +327,16 @@ export default function App({ api }) {
     const removeStartListener = client.onCallRecordingStart(async (data) => {
       if (captureState === 'recording' || isCallRecording) return; // Already recording
 
+      const recordingMode = data.mode || 'audio';
+      const includeVideo = recordingMode === 'video';
+
       setIsCallRecording(true);
       try {
-        // Same mixed audio flow as handleStartRecording but audio-only
         let displayStream;
         try {
           displayStream = await navigator.mediaDevices.getDisplayMedia({
             audio: true,
-            video: { width: 1, height: 1 },
+            video: includeVideo ? true : { width: 1, height: 1 },
           });
         } catch (displayError) {
           client.sendCallRecordingCompleted({
@@ -345,8 +347,10 @@ export default function App({ api }) {
           return;
         }
 
-        // Discard video track -- audio only for call recording
-        displayStream.getVideoTracks().forEach((track) => track.stop());
+        // Audio-only mode: discard video track
+        if (!includeVideo) {
+          displayStream.getVideoTracks().forEach((track) => track.stop());
+        }
 
         // Get microphone
         const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
@@ -363,15 +367,33 @@ export default function App({ api }) {
         systemSource.connect(dest);
         micSource.connect(dest);
 
-        const finalStream = dest.stream;
+        // Build the final stream: mixed audio, optionally with video
+        let finalStream;
+        if (includeVideo) {
+          finalStream = new MediaStream([
+            ...dest.stream.getAudioTracks(),
+            ...displayStream.getVideoTracks(),
+          ]);
+        } else {
+          finalStream = dest.stream;
+        }
         callRecordingStreamRef.current = { displayStream, micStream, audioCtx, finalStream };
 
         // Resolve MIME type
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : MediaRecorder.isTypeSupported('audio/webm')
-            ? 'audio/webm'
-            : undefined;
+        let mimeType;
+        if (includeVideo) {
+          mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+            ? 'video/webm;codecs=vp9,opus'
+            : MediaRecorder.isTypeSupported('video/webm')
+              ? 'video/webm'
+              : undefined;
+        } else {
+          mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : MediaRecorder.isTypeSupported('audio/webm')
+              ? 'audio/webm'
+              : undefined;
+        }
 
         const recorder = mimeType
           ? new MediaRecorder(finalStream, { mimeType })
@@ -393,6 +415,7 @@ export default function App({ api }) {
           const arrayBuffer = await blob.arrayBuffer();
           const uint8Array = new Uint8Array(arrayBuffer);
 
+          const kind = includeVideo ? 'video' : 'audio';
           // Save to temp file via IPC
           const tempPath = await client.saveTempBlob(uint8Array, `call-recording.${ext}`);
 
@@ -400,8 +423,9 @@ export default function App({ api }) {
             success: true,
             blob: {
               path: tempPath,
-              mimeType: recorder.mimeType || 'audio/webm',
+              mimeType: recorder.mimeType || (includeVideo ? 'video/webm' : 'audio/webm'),
               size: blob.size,
+              kind,
             },
           });
 

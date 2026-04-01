@@ -142,6 +142,33 @@
     #btn.visible { display: flex; }
     #callBtn { display: none; }
     #callBtn.visible { display: flex; }
+
+    /* Call mode picker */
+    .mode-picker { display: none; flex-direction: column; gap: 6px; align-items: center; }
+    .mode-picker.visible { display: flex; }
+    .mode-btn {
+      -webkit-app-region: no-drag;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: oklch(0.55 0.20 145);
+      box-shadow: 0 2px 8px rgba(50,180,50,0.3);
+      transition: transform 150ms ease, background-color 150ms ease;
+    }
+    .mode-btn:hover { transform: scale(1.08); background: oklch(0.60 0.22 145); }
+    .mode-btn svg {
+      width: 20px; height: 20px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
   </style>
 </head>
 <body>
@@ -170,6 +197,14 @@
         <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
       </svg>
     </button>
+    <div class="mode-picker" id="modePicker">
+      <button class="mode-btn" id="modeAudio" title="Audio only" aria-label="Audio only">
+        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+      <button class="mode-btn" id="modeVideo" title="Audio + Video" aria-label="Audio + Video">
+        <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      </button>
+    </div>
   </div>
 
   <script>
@@ -190,7 +225,9 @@
       let count = 1;
       if (captureVisible) count++;
       if (callVisible) count++;
-      const height = count * 64 + 8; // 56px button + 8px gap per button, plus 8px padding
+      let height = count * 64 + 8; // 56px button + 8px gap per button, plus 8px padding
+      // Mode picker adds 2 small buttons (48px each + 6px gap + 6px spacing)
+      if (modePickerVisible) height += 108;
       document.body.style.height = height + 'px';
       container.style.height = height + 'px';
       // Notify main process to resize the window
@@ -467,6 +504,22 @@
       });
     }
 
+    // --- Mode picker ---
+    const modePicker = document.getElementById('modePicker');
+    let modePickerVisible = false;
+
+    function showModePicker() {
+      modePickerVisible = true;
+      modePicker.classList.add('visible');
+      recalcHeight();
+    }
+
+    function hideModePicker() {
+      modePickerVisible = false;
+      modePicker.classList.remove('visible');
+      recalcHeight();
+    }
+
     callBtn.addEventListener('click', async () => {
       if (!window.captureApi) return;
       if (callRecState === 'finalizing') return;
@@ -474,8 +527,23 @@
       if (callRecState === 'recording' || callRecState === 'amber') {
         await window.captureApi.stopCallRecording();
       } else {
-        await window.captureApi.startCallRecording();
+        // Show mode picker instead of starting immediately
+        if (modePickerVisible) {
+          hideModePicker();
+        } else {
+          showModePicker();
+        }
       }
+    });
+
+    document.getElementById('modeAudio').addEventListener('click', async () => {
+      hideModePicker();
+      await window.captureApi.startCallRecording('audio');
+    });
+
+    document.getElementById('modeVideo').addEventListener('click', async () => {
+      hideModePicker();
+      await window.captureApi.startCallRecording('video');
     });
 
     // Initial height for clipboard-only

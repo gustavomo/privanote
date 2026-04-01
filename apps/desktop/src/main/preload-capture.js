@@ -24,7 +24,7 @@ contextBridge.exposeInMainWorld('captureApi', {
   },
 
   // --- Call recording / media detection ---
-  startCallRecording: () => ipcRenderer.invoke('call-recording:start'),
+  startCallRecording: (mode) => ipcRenderer.invoke('call-recording:start', mode || 'audio'),
   stopCallRecording: () => ipcRenderer.invoke('call-recording:stop'),
   getMediaState: () => ipcRenderer.invoke('media:get-detection-state'),
   onMediaDetected: (callback) => {

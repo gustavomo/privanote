@@ -507,7 +507,7 @@ async function createNoteFromCallRecording(blobInfo) {
         operationId: v1.attachments.addAttachment.id,
         payload: {
           nodeId: node.id,
-          kind: 'audio',
+          kind: blobInfo.kind || 'audio',
           localPath: blobInfo.path,
         },
       });
@@ -801,7 +801,7 @@ function registerIpcHandlers() {
     callRecordingActive,
   }));
 
-  ipcMain.handle('call-recording:start', async () => {
+  ipcMain.handle('call-recording:start', async (_event, mode) => {
     // Mutual exclusion: cannot record call while screen capture is active (Pitfall 5)
     if (captureSession && captureSession.state === 'capturing') {
       return { success: false, error: 'Screen capture is active' };
@@ -816,10 +816,11 @@ function registerIpcHandlers() {
     callRecordingStartTime = Date.now();
     broadcastCallRecordingState('recording');
 
-    // Tell the main window renderer to start recording (D-06: one tap starts immediately)
+    // Tell the main window renderer to start recording
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('call-recording:trigger-start', {
         appName: callRecordingAppName,
+        mode: mode || 'audio', // 'audio' or 'video'
       });
     }
 

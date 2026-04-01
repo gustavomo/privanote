@@ -114,6 +114,9 @@ export default function SettingsView({
   onSave,
   onBeginProviderConnection,
   onDisconnectProvider,
+  captureAppPresets,
+  captureApps,
+  onToggleCaptureApp,
 }) {
   const isLocalDestination = settings.storageDestination === 'local';
   const isBackendMode = settings.transcriptionMode === 'backend';
@@ -297,6 +300,37 @@ export default function SettingsView({
           </div>
         </div>
       ) : null}
+
+      <div className="grid gap-6 rounded-[28px] bg-secondary/70 p-6">
+        <div className="space-y-1">
+          <h3 className="text-xl font-semibold leading-[1.2]">Capture apps</h3>
+          <p className="text-sm text-muted-foreground">
+            Choose which apps trigger the floating capture button. The button appears only when a selected app is in the foreground.
+          </p>
+        </div>
+        <div className="grid gap-4">
+          {(captureAppPresets || []).map((app) => (
+            <label key={app.id} className="flex items-center justify-between gap-2 rounded-2xl border bg-background px-4 py-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold">{app.label}</span>
+                <span className="text-sm text-muted-foreground">{app.description}</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={Boolean(captureApps[app.id])}
+                onChange={() => onToggleCaptureApp(app.id)}
+                disabled={isLoading || isSaving}
+                className="h-5 w-5 accent-primary"
+              />
+            </label>
+          ))}
+        </div>
+        {!Object.values(captureApps || {}).some(Boolean) ? (
+          <p className="text-sm text-muted-foreground">
+            No apps selected. The capture button will stay hidden until you enable at least one app.
+          </p>
+        ) : null}
+      </div>
 
       <div className="flex justify-start">
         <button

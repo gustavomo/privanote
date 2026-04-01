@@ -268,6 +268,8 @@ export default function App({ api }) {
   const [transcript, setTranscript] = useState(null);
   const [isTranscriptLoading, setIsTranscriptLoading] = useState(false);
   const [transcriptError, setTranscriptError] = useState('');
+  const [captureAppPresets, setCaptureAppPresets] = useState([]);
+  const [captureApps, setCaptureApps] = useState({});
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const captureChunksRef = useRef([]);
@@ -839,10 +841,28 @@ export default function App({ api }) {
     }
   }
 
+  function handleToggleCaptureApp(appId) {
+    const updated = { ...captureApps, [appId]: !captureApps[appId] };
+    setCaptureApps(updated);
+    // Save immediately via IPC -- no need to wait for "Save Settings" button
+    // because the main process needs to know right away for polling decisions
+    if (client.updateCaptureApps) {
+      client.updateCaptureApps(updated).catch(() => {});
+    }
+  }
+
   useEffect(() => {
     loadNodes();
     loadSettings();
     loadProviderConnections();
+
+    // Load capture app presets and whitelist
+    if (client.getCaptureAppPresets) {
+      client.getCaptureAppPresets().then(setCaptureAppPresets).catch(() => {});
+    }
+    if (client.getCaptureApps) {
+      client.getCaptureApps().then(setCaptureApps).catch(() => {});
+    }
 
     // Refresh notes list when a capture session creates a new note
     if (window.api?.onCaptureNoteCreated) {
@@ -1294,6 +1314,9 @@ export default function App({ api }) {
             onSave={handleSaveSettings}
             onBeginProviderConnection={handleBeginProviderConnection}
             onDisconnectProvider={handleDisconnectProvider}
+            captureAppPresets={captureAppPresets}
+            captureApps={captureApps}
+            onToggleCaptureApp={handleToggleCaptureApp}
           />
         )}
       </div>

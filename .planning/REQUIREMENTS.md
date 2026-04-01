@@ -61,6 +61,15 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [ ] **EXT-05**: A structured note is automatically created when the capture session ends, grouping content by source app
 - [x] **EXT-06**: Text is extracted from the active app's accessibility tree when available, falling back to OCR
 
+### App-Aware Overlay Visibility
+
+- [ ] **APPVIS-01**: The floating overlay is hidden by default and only appears when the active foreground app matches a user-configured whitelist
+- [ ] **APPVIS-02**: Native apps (Slack) are detected by bundleId or app name
+- [ ] **APPVIS-03**: Browser-based apps (Gmail, Notion, Jira, GitHub) are detected via URL extraction from Chrome and Safari with window title fallback
+- [ ] **APPVIS-04**: The overlay remains visible during an active capture session regardless of the foreground app
+- [ ] **APPVIS-05**: User can toggle which of the 5 preset apps (Slack, Gmail, Notion, Jira, GitHub) trigger the overlay from a settings section
+- [ ] **APPVIS-06**: The capture apps whitelist persists across app relaunch
+
 ## v2 Requirements
 
 ### Deployment and Identity
@@ -126,12 +135,18 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | EXT-04 | Phase 6 | Planned |
 | EXT-05 | Phase 6 | Planned |
 | EXT-06 | Phase 6 | Planned |
+| APPVIS-01 | Phase 8 | Planned |
+| APPVIS-02 | Phase 8 | Planned |
+| APPVIS-03 | Phase 8 | Planned |
+| APPVIS-04 | Phase 8 | Planned |
+| APPVIS-05 | Phase 8 | Planned |
+| APPVIS-06 | Phase 8 | Planned |
 
 **Coverage:**
-- v1 requirements: 33 total
-- Mapped to phases: 33
+- v1 requirements: 39 total
+- Mapped to phases: 39
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-31 after Phase 6 planning*
+*Last updated: 2026-04-01 after Phase 8 planning*

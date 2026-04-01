@@ -157,3 +157,13 @@ Plans:
 Plans:
 - [ ] 09-01-PLAN.md — Build ClipboardSession class, extend IPC bridge, and wire clipboard lifecycle into main.js
 - [ ] 09-02-PLAN.md — Expand overlay UI with clipboard button, badge counter, and end-to-end verification
+
+### Phase 10: Detect active media (microphone/camera) usage via system APIs and show a floating recording button that integrates with the existing note capture flow
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 9
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 10 to break down)

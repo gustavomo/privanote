@@ -75,6 +75,7 @@ Progress: [██████████] 100%
 - Phase 9 added: Toggle button for clipboard text capture
 - [Phase 09]: Clipboard monitoring is independent of screen capture; both run simultaneously
 - [Phase 09]: Text-only capture, grouped by source app, with deduplication and concealed-entry filtering
+- Phase 10 added: Detect active media usage and show floating recording button
 - [Phase 09]: Second overlay button + global shortcut for toggle; badge counter for live entry count
 
 ### Decisions

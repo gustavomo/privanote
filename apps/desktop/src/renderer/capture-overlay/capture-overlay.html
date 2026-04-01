@@ -12,17 +12,18 @@
       -webkit-user-select: none;
       user-select: none;
       width: 64px;
-      height: 136px;
+      height: 72px;
+      transition: height 200ms ease-out;
     }
     .container {
       width: 64px;
-      height: 136px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 8px;
       -webkit-app-region: drag;
+      transition: height 200ms ease-out;
     }
     .btn {
       -webkit-app-region: no-drag;
@@ -133,34 +134,32 @@
       100% { transform: scale(1.3); opacity: 0; }
     }
 
-    /* Smooth container/body height transitions */
-    body { transition: height 200ms ease-out; }
-    .container { transition: height 200ms ease-out; }
-
     /* Mutual exclusion disabled state */
     .btn.disabled { opacity: 0.35; pointer-events: none; cursor: default; }
 
-    /* Call button entrance */
+    /* Conditional visibility for screen capture and call buttons */
+    #btn { display: none; }
+    #btn.visible { display: flex; }
     #callBtn { display: none; }
     #callBtn.visible { display: flex; }
   </style>
 </head>
 <body>
   <div class="container">
-    <button class="btn" id="btn" title="Start screen capture" aria-label="Start screen capture">
-      <div class="pulse"></div>
-      <svg id="icon" viewBox="0 0 24 24">
-        <!-- eye icon (idle) -->
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-        <circle cx="12" cy="12" r="3"/>
-      </svg>
-    </button>
     <button class="btn" id="clipBtn" title="Start clipboard monitoring" aria-label="Start clipboard monitoring">
       <div class="clipboard-pulse"></div>
       <span class="badge" id="badge" aria-live="polite"></span>
       <svg id="clipIcon" viewBox="0 0 24 24">
         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
         <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+      </svg>
+    </button>
+    <button class="btn" id="btn" title="Start screen capture" aria-label="Start screen capture">
+      <div class="pulse"></div>
+      <svg id="icon" viewBox="0 0 24 24">
+        <!-- eye icon (idle) -->
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
       </svg>
     </button>
     <button class="btn" id="callBtn" title="Record call" aria-label="Record call">
@@ -176,10 +175,29 @@
   <script>
     const btn = document.getElementById('btn');
     const icon = document.getElementById('icon');
+    const container = document.querySelector('.container');
+
+    // Track which buttons are visible to compute dynamic height
+    let captureVisible = false;
+    let callVisible = false;
 
     // Mutual exclusion state tracking
     let screenCaptureActive = false;
     let callRecActive = false;
+
+    function recalcHeight() {
+      // clipboard always visible = 1, plus conditional buttons
+      let count = 1;
+      if (captureVisible) count++;
+      if (callVisible) count++;
+      const height = count * 64 + 8; // 56px button + 8px gap per button, plus 8px padding
+      document.body.style.height = height + 'px';
+      container.style.height = height + 'px';
+      // Notify main process to resize the window
+      if (window.captureApi && window.captureApi.resizeOverlay) {
+        window.captureApi.resizeOverlay(64, height);
+      }
+    }
 
     function updateMutualExclusion() {
       // Disable screen capture button when call recording is active
@@ -196,6 +214,7 @@
       }
     }
 
+    // --- Screen capture button ---
     const ICONS = {
       idle: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
       recording: `<rect x="6" y="6" width="12" height="12" rx="1" fill="white" stroke="none"/>`,
@@ -211,12 +230,32 @@
     function setState(raw) {
       // CaptureSession emits 'capturing', overlay uses 'recording'
       const state = raw === 'capturing' ? 'recording' : raw;
-      btn.className = 'btn' + (state !== 'idle' ? ' ' + state : '');
+      // Preserve 'visible' class
+      const vis = btn.classList.contains('visible') ? ' visible' : '';
+      btn.className = 'btn' + (state !== 'idle' ? ' ' + state : '') + vis;
       icon.innerHTML = ICONS[state] || ICONS.idle;
       btn.title = TITLES[state] || TITLES.idle;
       btn.setAttribute('aria-label', btn.title);
       screenCaptureActive = (state === 'recording' || state === 'finalizing');
       updateMutualExclusion();
+    }
+
+    function showCaptureButton() {
+      if (!captureVisible) {
+        captureVisible = true;
+        btn.classList.add('visible');
+        recalcHeight();
+      }
+    }
+
+    function hideCaptureButton() {
+      // Don't hide if actively capturing
+      if (screenCaptureActive) return;
+      if (captureVisible) {
+        captureVisible = false;
+        btn.classList.remove('visible');
+        recalcHeight();
+      }
     }
 
     // Listen for state changes from main process
@@ -239,7 +278,7 @@
       }
     });
 
-    // --- Clipboard button ---
+    // --- Clipboard button (always visible) ---
     const clipBtn = document.getElementById('clipBtn');
     const clipIcon = document.getElementById('clipIcon');
     const badge = document.getElementById('badge');
@@ -301,7 +340,6 @@
     // --- Call recording button ---
     const callBtn = document.getElementById('callBtn');
     const callIcon = document.getElementById('callIcon');
-    const container = document.querySelector('.container');
     let callMediaActive = false;
     let callRecState = 'idle'; // idle, recording, amber, finalizing
 
@@ -315,23 +353,25 @@
       callRecState = state;
       callRecActive = (state === 'recording' || state === 'amber' || state === 'finalizing');
       const label = appName || 'call';
+      // Preserve 'visible' class
+      const vis = callBtn.classList.contains('visible') ? ' visible' : '';
       if (state === 'idle') {
-        callBtn.className = 'btn visible';
+        callBtn.className = 'btn' + vis;
         callIcon.innerHTML = CALL_ICONS.idle;
         callBtn.title = `Record ${label}`;
         callBtn.setAttribute('aria-label', `Record ${label}`);
       } else if (state === 'recording') {
-        callBtn.className = 'btn call-recording visible';
+        callBtn.className = 'btn call-recording' + vis;
         callIcon.innerHTML = CALL_ICONS.recording;
         callBtn.title = `Stop ${label} recording`;
         callBtn.setAttribute('aria-label', `Stop ${label} recording`);
       } else if (state === 'amber') {
-        callBtn.className = 'btn call-amber visible';
+        callBtn.className = 'btn call-amber' + vis;
         callIcon.innerHTML = CALL_ICONS.recording;
         callBtn.title = 'Stop recording (call ended)';
         callBtn.setAttribute('aria-label', 'Stop recording (call ended)');
       } else if (state === 'finalizing') {
-        callBtn.className = 'btn call-finalizing visible';
+        callBtn.className = 'btn call-finalizing' + vis;
         callIcon.innerHTML = CALL_ICONS.finalizing;
         callBtn.title = 'Creating note...';
         callBtn.setAttribute('aria-label', 'Creating note...');
@@ -345,9 +385,11 @@
       callMediaActive = true;
       currentAppName = appName || 'Unknown';
       const displayName = currentAppName + ' call';
-      callBtn.classList.add('visible');
-      document.body.style.height = '208px';
-      container.style.height = '208px';
+      if (!callVisible) {
+        callVisible = true;
+        callBtn.classList.add('visible');
+        recalcHeight();
+      }
       if (callRecState === 'idle') {
         setCallState('idle', displayName);
       }
@@ -356,20 +398,20 @@
     function hideCallButton() {
       callMediaActive = false;
       if (callRecState === 'idle') {
+        callVisible = false;
         callBtn.classList.remove('visible');
         callBtn.className = 'btn';
-        document.body.style.height = '136px';
-        container.style.height = '136px';
+        recalcHeight();
       }
       // If recording, button stays visible (amber state handled by onCallEnded)
     }
 
     function removeCallButton() {
+      callVisible = false;
       callBtn.classList.remove('visible');
       callBtn.className = 'btn';
       callRecState = 'idle';
-      document.body.style.height = '136px';
-      container.style.height = '136px';
+      recalcHeight();
     }
 
     if (window.captureApi) {
@@ -414,6 +456,15 @@
           }
         }
       });
+
+      // Listen for whitelist state changes from main process
+      window.captureApi.onWhitelistState((whitelisted) => {
+        if (whitelisted) {
+          showCaptureButton();
+        } else {
+          hideCaptureButton();
+        }
+      });
     }
 
     callBtn.addEventListener('click', async () => {
@@ -426,6 +477,9 @@
         await window.captureApi.startCallRecording();
       }
     });
+
+    // Initial height for clipboard-only
+    recalcHeight();
   </script>
 </body>
 </html>

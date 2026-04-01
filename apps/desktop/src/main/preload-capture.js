@@ -47,4 +47,12 @@ contextBridge.exposeInMainWorld('captureApi', {
     ipcRenderer.on('call-recording:state-changed', handler);
     return () => ipcRenderer.removeListener('call-recording:state-changed', handler);
   },
+
+  // --- Overlay layout ---
+  resizeOverlay: (width, height) => ipcRenderer.send('overlay:resize', { width, height }),
+  onWhitelistState: (callback) => {
+    const handler = (_event, whitelisted) => callback(whitelisted);
+    ipcRenderer.on('overlay:whitelist-state', handler);
+    return () => ipcRenderer.removeListener('overlay:whitelist-state', handler);
+  },
 });

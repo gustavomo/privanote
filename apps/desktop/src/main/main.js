@@ -240,7 +240,7 @@ function createCaptureOverlay() {
 
   captureOverlay = new BrowserWindow({
     width: 64,
-    height: 136,
+    height: 72,
     x: screenWidth - 80,
     y: 80,
     alwaysOnTop: true,
@@ -294,10 +294,6 @@ function broadcastClipboardCount(count) {
 
 function updateOverlayForMedia(mediaActive) {
   if (!captureOverlay || captureOverlay.isDestroyed()) return;
-  const height = mediaActive ? 208 : 136;
-  // Preserve x,y position when resizing
-  const bounds = captureOverlay.getBounds();
-  captureOverlay.setBounds({ x: bounds.x, y: bounds.y, width: 64, height });
   if (mediaActive) {
     captureOverlay.webContents.send('media:detected', {
       appName: mediaDetectionState.appName,
@@ -505,15 +501,15 @@ async function createNoteFromCallRecording(blobInfo) {
       },
     });
 
-    // Upload the recording blob as an attachment
+    // Attach the recording file to the note
     if (blobInfo.path && fs.existsSync(blobInfo.path)) {
-      const bytes = fs.readFileSync(blobInfo.path);
-      await proxyBackendUpload({
-        operationId: v1.attachments.createAttachment.id,
-        payload: { nodeId: node.id },
-        fileName: path.basename(blobInfo.path),
-        mimeType: blobInfo.mimeType || 'audio/webm',
-        bytes,
+      await proxyBackendRequest({
+        operationId: v1.attachments.addAttachment.id,
+        payload: {
+          nodeId: node.id,
+          kind: 'audio',
+          localPath: blobInfo.path,
+        },
       });
     }
 
@@ -562,7 +558,7 @@ async function createNoteFromSession(sessionResult) {
         try {
           const bytes = fs.readFileSync(cap.screenshotPath);
           await proxyBackendUpload({
-            operationId: v1.attachments.createAttachment.id,
+            operationId: v1.attachments.addAttachment.id,
             payload: { nodeId: node.id },
             fileName: cap.fileName || path.basename(cap.screenshotPath),
             mimeType: 'image/png',
@@ -673,17 +669,19 @@ function startAppDetection() {
         if (windowInfo.bundleId === 'com.privanote.desktop' || windowInfo.appName === 'Electron') {
           // Still run media detection below
         } else {
-          const whitelist = loadWhitelist();
-          const shouldShow = await shouldShowOverlay(windowInfo, whitelist);
-
-          if (shouldShow && captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
+          // Always show overlay (clipboard is always available)
+          if (captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
             captureOverlay.showInactive();
             // Re-broadcast media state when overlay becomes visible
             if (mediaDetectionState.active) {
               updateOverlayForMedia(true);
             }
-          } else if (!shouldShow && !mediaDetectionState.active && !callRecordingActive && captureOverlay && !captureOverlay.isDestroyed() && captureOverlay.isVisible()) {
-            captureOverlay.hide();
+          }
+          // Tell overlay whether current app is whitelisted (for screen capture button)
+          const whitelist = loadWhitelist();
+          const isWhitelisted = await shouldShowOverlay(windowInfo, whitelist);
+          if (captureOverlay && !captureOverlay.isDestroyed()) {
+            captureOverlay.webContents.send('overlay:whitelist-state', isWhitelisted);
           }
         }
       } catch {
@@ -787,6 +785,13 @@ function registerIpcHandlers() {
 
   ipcMain.handle('clipboard:get-state', () => {
     return clipboardSession ? clipboardSession.state : 'idle';
+  });
+
+  ipcMain.on('overlay:resize', (_event, { width, height }) => {
+    if (captureOverlay && !captureOverlay.isDestroyed()) {
+      const bounds = captureOverlay.getBounds();
+      captureOverlay.setBounds({ x: bounds.x, y: bounds.y, width, height });
+    }
   });
 
   ipcMain.handle('media:get-detection-state', () => ({

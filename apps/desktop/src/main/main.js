@@ -5,6 +5,7 @@ const { v1 } = require('@privanote/backend/contracts');
 const { resolveBackendErrorMessage } = require('./backend-response');
 const { startBackendProcess, stopBackendProcess } = require('./backend-process');
 const { CaptureSession } = require('./capture-session');
+const { ClipboardSession } = require('./clipboard-session');
 const { checkScreenPermission } = require('./screen-capture');
 const { PRESET_APPS, shouldShowOverlay } = require('./app-detector');
 
@@ -19,6 +20,7 @@ let backendStartupPromise = null;
 let isQuitting = false;
 let captureOverlay = null;
 let captureSession = null;
+let clipboardSession = null;
 let mainWindow = null;
 let tray = null;
 let appDetectionTimer = null;
@@ -271,6 +273,18 @@ function broadcastCaptureState(state) {
   updateTray(state);
 }
 
+function broadcastClipboardState(state) {
+  if (captureOverlay && !captureOverlay.isDestroyed()) {
+    captureOverlay.webContents.send('clipboard:state-changed', state);
+  }
+}
+
+function broadcastClipboardCount(count) {
+  if (captureOverlay && !captureOverlay.isDestroyed()) {
+    captureOverlay.webContents.send('clipboard:count-changed', count);
+  }
+}
+
 function createEmptyTrayImage() {
   // Minimal 1x1 transparent PNG — macOS menu bar text via setTitle does the visual work
   const png = Buffer.from(
@@ -362,6 +376,64 @@ async function toggleCaptureSession() {
   });
 
   await captureSession.start();
+}
+
+async function toggleClipboardSession() {
+  if (clipboardSession && clipboardSession.state === 'monitoring') {
+    const result = await clipboardSession.stop();
+    if (result && result.entryCount > 0) {
+      await createNoteFromClipboard(result);
+    }
+    clipboardSession = null;
+    updateTray();
+    return;
+  }
+  if (clipboardSession && clipboardSession.state === 'finalizing') {
+    return; // Already stopping
+  }
+  clipboardSession = new ClipboardSession({
+    onStateChange: broadcastClipboardState,
+    onCountChange: broadcastClipboardCount,
+  });
+  await clipboardSession.start();
+  updateTray();
+}
+
+async function createNoteFromClipboard(sessionResult) {
+  if (sessionResult.entryCount === 0) return null;
+  try {
+    const node = await proxyBackendRequest({
+      operationId: v1.nodes.createNode.id,
+      payload: {
+        title: sessionResult.title,
+        description: buildClipboardNoteDescription(sessionResult),
+        tags: sessionResult.appNames.join(','),
+      },
+    });
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('capture:note-created', { nodeId: node.id });
+    }
+    return node;
+  } catch (error) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('capture:note-error', { message: error.message });
+    }
+    return null;
+  }
+}
+
+function buildClipboardNoteDescription(sessionResult) {
+  const lines = [];
+  lines.push(`${sessionResult.entryCount} clipboard entries captured`);
+  for (const [appName, entries] of Object.entries(sessionResult.grouped)) {
+    lines.push('');
+    lines.push(`--- From ${appName} ---`);
+    for (const entry of entries) {
+      const time = new Date(entry.timestamp).toLocaleTimeString();
+      lines.push(`[${time}] ${entry.text}`);
+    }
+  }
+  return lines.join('\n');
 }
 
 async function createNoteFromSession(sessionResult) {
@@ -460,8 +532,9 @@ function startAppDetection() {
   const { getActiveWindowInfo } = require('./screen-capture');
 
   appDetectionTimer = setInterval(async () => {
-    // Always show overlay during active capture session (Pitfall 4)
-    if (captureSession && captureSession.state === 'capturing') {
+    // Always show overlay during active capture or clipboard session
+    if ((captureSession && captureSession.state === 'capturing') ||
+        (clipboardSession && clipboardSession.state === 'monitoring')) {
       if (captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
         captureOverlay.showInactive();
       }
@@ -523,6 +596,19 @@ function registerIpcHandlers() {
 
   ipcMain.handle('capture:get-state', () => {
     return captureSession ? captureSession.state : 'idle';
+  });
+
+  ipcMain.handle('clipboard:start-session', async () => {
+    await toggleClipboardSession();
+    return clipboardSession ? clipboardSession.state : 'idle';
+  });
+
+  ipcMain.handle('clipboard:stop-session', async () => {
+    await toggleClipboardSession();
+  });
+
+  ipcMain.handle('clipboard:get-state', () => {
+    return clipboardSession ? clipboardSession.state : 'idle';
   });
 
   ipcMain.handle('capture-apps:get-presets', () => {
@@ -650,6 +736,10 @@ app.whenReady().then(async () => {
     globalShortcut.register('CommandOrControl+Shift+R', () => {
       toggleCaptureSession();
     });
+
+    globalShortcut.register('CommandOrControl+Shift+C', () => {
+      toggleClipboardSession();
+    });
   } catch (error) {
     if (isSmokeNoWindow) {
       process.stderr.write(`${error.message || 'Unable to start the local backend.'}\n`);
@@ -686,6 +776,10 @@ app.on('before-quit', () => {
     captureSession.destroy();
     captureSession = null;
   }
+  if (clipboardSession) {
+    clipboardSession.destroy();
+    clipboardSession = null;
+  }
 });
 
 app.on('window-all-closed', async () => {
@@ -697,6 +791,10 @@ app.on('window-all-closed', async () => {
   if (captureSession) {
     captureSession.destroy();
     captureSession = null;
+  }
+  if (clipboardSession) {
+    clipboardSession.destroy();
+    clipboardSession = null;
   }
   globalShortcut.unregisterAll();
 

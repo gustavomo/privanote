@@ -116,18 +116,38 @@ function createMockApi() {
       status: 'granted',
     })),
     pickFile: vi.fn(async () => null),
+    getScreenPermissionStatus: vi.fn(async () => ({ status: 'granted', denialCount: 0 })),
+    recordScreenDenial: vi.fn(async () => ({ denialCount: 1 })),
   };
 
   return api;
 }
 
 function createMediaStream() {
+  const track = { stop: vi.fn(), kind: 'audio' };
   return {
-    getTracks: () => [
-      {
-        stop: vi.fn(),
-      },
-    ],
+    getTracks: () => [track],
+    getAudioTracks: () => [track],
+    getVideoTracks: () => [],
+  };
+}
+
+function createDisplayStream() {
+  const audioTrack = { stop: vi.fn(), kind: 'audio' };
+  const videoTrack = { stop: vi.fn(), kind: 'video' };
+  return {
+    getTracks: () => [audioTrack, videoTrack],
+    getAudioTracks: () => [audioTrack],
+    getVideoTracks: () => [videoTrack],
+  };
+}
+
+function createMockAudioContext() {
+  const destStream = createMediaStream();
+  return {
+    createMediaStreamSource: vi.fn(() => ({ connect: vi.fn() })),
+    createMediaStreamDestination: vi.fn(() => ({ stream: destStream })),
+    close: vi.fn(async () => {}),
   };
 }
 
@@ -142,8 +162,22 @@ beforeEach(() => {
     configurable: true,
     value: {
       getUserMedia: vi.fn(async () => createMediaStream()),
+      getDisplayMedia: vi.fn(async () => createDisplayStream()),
     },
   });
+
+  vi.stubGlobal('AudioContext', vi.fn(() => createMockAudioContext()));
+  vi.stubGlobal(
+    'MediaStream',
+    vi.fn((tracksOrStream) => {
+      const tracks = Array.isArray(tracksOrStream) ? tracksOrStream : [];
+      return {
+        getTracks: () => tracks,
+        getAudioTracks: () => tracks.filter((t) => !t.kind || t.kind === 'audio'),
+        getVideoTracks: () => tracks.filter((t) => t.kind === 'video'),
+      };
+    })
+  );
 });
 
 afterEach(() => {
@@ -166,6 +200,13 @@ describe('capture review flow', () => {
           title: expect.stringMatching(/^Audio note - /),
         })
       );
+    });
+
+    await waitFor(() => {
+      expect(global.navigator.mediaDevices.getDisplayMedia).toHaveBeenCalledWith({
+        audio: true,
+        video: { width: 1, height: 1 },
+      });
     });
 
     await waitFor(() => {
@@ -230,6 +271,13 @@ describe('capture review flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Recording' }));
 
     await waitFor(() => {
+      expect(global.navigator.mediaDevices.getDisplayMedia).toHaveBeenCalledWith({
+        audio: true,
+        video: { width: 1, height: 1 },
+      });
+    });
+
+    await waitFor(() => {
       expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
         audio: true,
         video: true,
@@ -248,7 +296,7 @@ describe('capture review flow', () => {
 
   it('renders the inline permission failure copy when media access fails', async () => {
     const api = createMockApi();
-    global.navigator.mediaDevices.getUserMedia.mockRejectedValueOnce(new Error('permission denied'));
+    global.navigator.mediaDevices.getDisplayMedia.mockRejectedValueOnce(new Error('permission denied'));
 
     render(<App api={api} />);
 
@@ -256,7 +304,7 @@ describe('capture review flow', () => {
 
     expect(
       await screen.findByText(
-        'Camera or microphone access is unavailable. Check device permissions, then retry or switch to import.'
+        'Screen recording was not granted. Click Record to try again, or enable it in System Settings > Privacy & Security > Screen Recording.'
       )
     ).toBeInTheDocument();
   });

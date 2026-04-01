@@ -7,6 +7,13 @@
       content="width=device-width, initial-scale=1.0"
     />
     <title>Privanote</title>
+    <script>
+      (function() {
+        var t = localStorage.getItem('privanote-theme') || 'system';
+        var d = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (d) document.documentElement.classList.add('dark');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

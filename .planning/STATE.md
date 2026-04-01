@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-04-01T06:54:04.972Z"
+status: verifying
+stopped_at: Completed 08-02-PLAN.md (checkpoint pending)
+last_updated: "2026-04-01T06:58:24.664Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 8
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 19
-  completed_plans: 18
+  completed_plans: 19
   percent: 100
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 Phase: 08 (limit-floating-capture-button-to-specific-apps) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
 Progress: [██████████] 100%
@@ -58,6 +58,7 @@ Progress: [██████████] 100%
 | Phase 06 P02 | 2 | 2 tasks | 3 files |
 | Phase 06 P04 | 7 | 2 tasks | 6 files |
 | Phase 08 P01 | 2min | 2 tasks | 3 files |
+| Phase 08 P02 | 2 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,7 @@ Recent decisions affecting current work:
 - [Phase 06]: Used Objective-C instead of Swift for AX walker binary due to Swift toolchain/SDK mismatch; AX-tree-first with OCR fallback for text extraction
 - [Phase 08]: AppleScript for browser URL extraction instead of AX tree -- more reliable for URL data
 - [Phase 08]: Whitelist stored as JSON in userData, not backend DB -- desktop-only UI state
+- [Phase 08]: Capture apps whitelist saves immediately on toggle via IPC, not on Save Settings click
 
 ### Pending Todos
 
@@ -122,6 +124,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-01T06:54:04.962Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-04-01T06:58:24.659Z
+Stopped at: Completed 08-02-PLAN.md (checkpoint pending)
 Resume file: None

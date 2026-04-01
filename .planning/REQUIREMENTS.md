@@ -67,8 +67,8 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [x] **APPVIS-02**: Native apps (Slack) are detected by bundleId or app name
 - [x] **APPVIS-03**: Browser-based apps (Gmail, Notion, Jira, GitHub) are detected via URL extraction from Chrome and Safari with window title fallback
 - [x] **APPVIS-04**: The overlay remains visible during an active capture session regardless of the foreground app
-- [ ] **APPVIS-05**: User can toggle which of the 5 preset apps (Slack, Gmail, Notion, Jira, GitHub) trigger the overlay from a settings section
-- [ ] **APPVIS-06**: The capture apps whitelist persists across app relaunch
+- [x] **APPVIS-05**: User can toggle which of the 5 preset apps (Slack, Gmail, Notion, Jira, GitHub) trigger the overlay from a settings section
+- [x] **APPVIS-06**: The capture apps whitelist persists across app relaunch
 
 ## v2 Requirements
 

@@ -63,7 +63,7 @@ The clarified product direction extends that baseline substantially: the repo sh
 
 ## Current State
 
-Phase 5 complete (2026-03-30) — capture panel is now a persistent sidebar fixture; Create Note form removed; auto-create and auto-navigate on save/import implemented; all 21 tests pass.
+Phase 9 complete (2026-04-01) — clipboard text capture added to floating overlay with polling, dedup, concealed filtering, source app detection, badge counter, and grouped note creation. All milestone phases complete.
 
 ## Evolution
 

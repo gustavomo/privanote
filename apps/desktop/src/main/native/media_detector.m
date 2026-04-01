@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <CoreAudio/CoreAudio.h>
-#import <CoreMediaIO/CMIOHardware.h>
+#import <IOKit/IOKitLib.h>
 #import <AppKit/AppKit.h>
 
 // Known call app bundle IDs
@@ -69,55 +69,42 @@ BOOL isMicrophoneActive(void) {
     return micActive;
 }
 
-// Check if any camera device is running
+// Check if any camera is active via IOKit (avoids CMIO which deadlocks under Electron)
 BOOL isCameraActive(void) {
-    // Allow screen capture devices to be enumerated
-    UInt32 allow = 1;
-    CMIOObjectPropertyAddress allowAddr = {
-        kCMIOHardwarePropertyAllowScreenCaptureDevices,
-        kCMIOObjectPropertyScopeGlobal,
-        kCMIOObjectPropertyElementMain
-    };
-    CMIOObjectSetPropertyData(
-        kCMIOObjectSystemObject, &allowAddr, 0, NULL, sizeof(allow), &allow);
+    io_iterator_t iterator;
+    kern_return_t kr = IOServiceGetMatchingServices(
+        kIOMainPortDefault,
+        IOServiceMatching("AppleH13CameraInterface"),
+        &iterator);
 
-    // Get all CMIO devices
-    CMIOObjectPropertyAddress devicesAddr = {
-        kCMIOHardwarePropertyDevices,
-        kCMIOObjectPropertyScopeGlobal,
-        kCMIOObjectPropertyElementMain
-    };
-
-    UInt32 dataSize = 0;
-    OSStatus status = CMIOObjectGetPropertyDataSize(
-        kCMIOObjectSystemObject, &devicesAddr, 0, NULL, &dataSize);
-    if (status != noErr || dataSize == 0) return NO;
-
-    UInt32 deviceCount = dataSize / sizeof(CMIOObjectID);
-    CMIOObjectID *devices = (CMIOObjectID *)malloc(dataSize);
-    UInt32 dataUsed = 0;
-    status = CMIOObjectGetPropertyData(
-        kCMIOObjectSystemObject, &devicesAddr, 0, NULL, dataSize, &dataUsed, devices);
-    if (status != noErr) { free(devices); return NO; }
+    // Fallback for older Macs
+    if (kr != KERN_SUCCESS || !iterator) {
+        kr = IOServiceGetMatchingServices(
+            kIOMainPortDefault,
+            IOServiceMatching("AppleCameraInterface"),
+            &iterator);
+    }
+    if (kr != KERN_SUCCESS || !iterator) return NO;
 
     BOOL cameraActive = NO;
-    for (UInt32 i = 0; i < deviceCount; i++) {
-        CMIOObjectPropertyAddress runningAddr = {
-            kCMIODevicePropertyDeviceIsRunningSomewhere,
-            kCMIOObjectPropertyScopeWildcard,
-            kCMIOObjectPropertyElementMain
-        };
-        UInt32 isRunning = 0;
-        UInt32 runningSize = sizeof(isRunning);
-        UInt32 runningUsed = 0;
-        status = CMIOObjectGetPropertyData(devices[i], &runningAddr, 0, NULL, runningSize, &runningUsed, &isRunning);
-        if (status == noErr && isRunning) {
-            cameraActive = YES;
-            break;
-        }
-    }
+    io_service_t service;
+    while ((service = IOIteratorNext(iterator)) != IO_OBJECT_NULL) {
+        CFNumberRef deviceIsRunning = (CFNumberRef)IORegistryEntryCreateCFProperty(
+            service, CFSTR("DeviceIsRunning"), kCFAllocatorDefault, 0);
 
-    free(devices);
+        if (deviceIsRunning) {
+            int running = 0;
+            CFNumberGetValue(deviceIsRunning, kCFNumberIntType, &running);
+            CFRelease(deviceIsRunning);
+            if (running) {
+                cameraActive = YES;
+                IOObjectRelease(service);
+                break;
+            }
+        }
+        IOObjectRelease(service);
+    }
+    IOObjectRelease(iterator);
     return cameraActive;
 }
 

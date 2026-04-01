@@ -134,7 +134,7 @@ Plans:
 
 Plans:
 - [x] 07-01-PLAN.md — Add Chromium loopback flag, display media handler, and screen permission IPC to main process
-- [ ] 07-02-PLAN.md — Replace renderer recording flow with mixed system audio + microphone and verify end-to-end
+- [x] 07-02-PLAN.md — Replace renderer recording flow with mixed system audio + microphone and verify end-to-end
 
 ### Phase 8: Limit floating capture button to specific apps
 

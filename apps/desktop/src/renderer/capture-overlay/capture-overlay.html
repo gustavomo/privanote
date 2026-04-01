@@ -107,6 +107,39 @@
       z-index: 2;
       pointer-events: none;
     }
+
+    /* Call recording button states */
+    .btn.call-recording { background: oklch(0.55 0.20 145); box-shadow: 0 2px 12px rgba(50,180,50,0.35); }
+    .btn.call-recording svg { width: 20px; height: 20px; stroke: white; }
+    .btn.call-amber { background: oklch(0.75 0.18 85); box-shadow: 0 2px 12px rgba(200,160,50,0.35); }
+    .btn.call-amber svg { width: 20px; height: 20px; stroke: white; }
+    .btn.call-finalizing { background: oklch(0.547 0.021 43.1); cursor: default; }
+    .btn.call-finalizing svg { stroke: white; }
+
+    .call-pulse {
+      animation: call-pulse 1.5s ease-out infinite;
+      background: oklch(0.55 0.20 145);
+      border-radius: 50%;
+      position: absolute;
+      inset: -4px;
+      pointer-events: none;
+      z-index: 0;
+      display: none;
+    }
+    .call-recording .call-pulse { display: block; }
+    .call-amber .call-pulse { display: block; background: oklch(0.75 0.18 85); }
+    @keyframes call-pulse {
+      0% { transform: scale(1); opacity: 0.4; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+
+    /* Smooth container/body height transitions */
+    body { transition: height 200ms ease-out; }
+    .container { transition: height 200ms ease-out; }
+
+    /* Call button entrance */
+    #callBtn { display: none; }
+    #callBtn.visible { display: flex; }
   </style>
 </head>
 <body>
@@ -125,6 +158,14 @@
       <svg id="clipIcon" viewBox="0 0 24 24">
         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
         <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+      </svg>
+    </button>
+    <button class="btn" id="callBtn" title="Record call" aria-label="Record call">
+      <div class="call-pulse"></div>
+      <svg id="callIcon" viewBox="0 0 24 24">
+        <!-- headphones icon (idle) -->
+        <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
       </svg>
     </button>
   </div>
@@ -230,6 +271,133 @@
         await window.captureApi.stopClipboard();
       } else {
         await window.captureApi.startClipboard();
+      }
+    });
+
+    // --- Call recording button ---
+    const callBtn = document.getElementById('callBtn');
+    const callIcon = document.getElementById('callIcon');
+    const container = document.querySelector('.container');
+    let callMediaActive = false;
+    let callRecState = 'idle'; // idle, recording, amber, finalizing
+
+    const CALL_ICONS = {
+      idle: `<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>`,
+      recording: `<rect x="6" y="6" width="12" height="12" rx="1" fill="white" stroke="none"/>`,
+      finalizing: `<path class="spinner" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>`,
+    };
+
+    function setCallState(state, appName) {
+      callRecState = state;
+      const label = appName || 'call';
+      if (state === 'idle') {
+        callBtn.className = 'btn visible';
+        callIcon.innerHTML = CALL_ICONS.idle;
+        callBtn.title = `Record ${label}`;
+        callBtn.setAttribute('aria-label', `Record ${label}`);
+      } else if (state === 'recording') {
+        callBtn.className = 'btn call-recording visible';
+        callIcon.innerHTML = CALL_ICONS.recording;
+        callBtn.title = `Stop ${label} recording`;
+        callBtn.setAttribute('aria-label', `Stop ${label} recording`);
+      } else if (state === 'amber') {
+        callBtn.className = 'btn call-amber visible';
+        callIcon.innerHTML = CALL_ICONS.recording;
+        callBtn.title = 'Stop recording (call ended)';
+        callBtn.setAttribute('aria-label', 'Stop recording (call ended)');
+      } else if (state === 'finalizing') {
+        callBtn.className = 'btn call-finalizing visible';
+        callIcon.innerHTML = CALL_ICONS.finalizing;
+        callBtn.title = 'Creating note...';
+        callBtn.setAttribute('aria-label', 'Creating note...');
+      }
+    }
+
+    let currentAppName = '';
+
+    function showCallButton(appName) {
+      callMediaActive = true;
+      currentAppName = appName || 'Unknown';
+      const displayName = currentAppName + ' call';
+      callBtn.classList.add('visible');
+      document.body.style.height = '208px';
+      container.style.height = '208px';
+      if (callRecState === 'idle') {
+        setCallState('idle', displayName);
+      }
+    }
+
+    function hideCallButton() {
+      callMediaActive = false;
+      if (callRecState === 'idle') {
+        callBtn.classList.remove('visible');
+        callBtn.className = 'btn';
+        document.body.style.height = '136px';
+        container.style.height = '136px';
+      }
+      // If recording, button stays visible (amber state handled by onCallEnded)
+    }
+
+    function removeCallButton() {
+      callBtn.classList.remove('visible');
+      callBtn.className = 'btn';
+      callRecState = 'idle';
+      document.body.style.height = '136px';
+      container.style.height = '136px';
+    }
+
+    if (window.captureApi) {
+      // Check initial state on load
+      window.captureApi.getMediaState().then(state => {
+        if (state && state.active) {
+          showCallButton(state.appName);
+          if (state.callRecordingActive) {
+            setCallState('recording', (state.appName || 'Unknown') + ' call');
+          }
+        }
+      });
+
+      window.captureApi.onMediaDetected((data) => {
+        showCallButton(data.appName);
+      });
+
+      window.captureApi.onMediaEnded(() => {
+        hideCallButton();
+      });
+
+      window.captureApi.onCallEnded(() => {
+        // Call ended while recording — transition to amber per D-07
+        if (callRecState === 'recording') {
+          setCallState('amber');
+        } else {
+          hideCallButton();
+        }
+      });
+
+      window.captureApi.onCallRecordingState((state) => {
+        if (state === 'recording') {
+          setCallState('recording', currentAppName + ' call');
+        } else if (state === 'finalizing') {
+          setCallState('finalizing');
+        } else if (state === 'idle') {
+          // Recording finished
+          if (!callMediaActive) {
+            removeCallButton();
+          } else {
+            setCallState('idle', currentAppName + ' call');
+          }
+        }
+      });
+    }
+
+    callBtn.addEventListener('click', async () => {
+      if (!window.captureApi) return;
+      if (callRecState === 'finalizing') return;
+
+      if (callRecState === 'recording' || callRecState === 'amber') {
+        await window.captureApi.stopCallRecording();
+      } else {
+        await window.captureApi.startCallRecording();
       }
     });
   </script>

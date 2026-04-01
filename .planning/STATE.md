@@ -62,6 +62,7 @@ Progress: [██████████] 100%
 
 - Phase 5 added: Make record or import always accessible as a persistent entry point
 - Phase 6 added: Always-on-top floating capture button for external app screen capture
+- Phase 7 added: Fix screen capture to record system audio instead of microphone
 
 ### Decisions
 

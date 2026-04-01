@@ -3,15 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const { extractTextFromAccessibilityTree } = require('./ax-tree-extractor');
 
-let activeWinModule = null;
-let tesseractWorker = null;
+const { execFile } = require('child_process');
 
-async function getActiveWin() {
-  if (!activeWinModule) {
-    activeWinModule = await import('active-win');
-  }
-  return activeWinModule;
-}
+let tesseractWorker = null;
 
 async function getTesseractWorker() {
   if (!tesseractWorker) {
@@ -33,20 +27,40 @@ function checkScreenPermission() {
   return systemPreferences.getMediaAccessStatus('screen');
 }
 
+const ACTIVE_WIN_SCRIPT = `
+tell application "System Events"
+  set frontApp to first application process whose frontmost is true
+  set appName to name of frontApp
+  set bundleId to bundle identifier of frontApp
+  set windowTitle to ""
+  try
+    set windowTitle to name of front window of frontApp
+  end try
+  set pid to unix id of frontApp
+  return appName & "|" & bundleId & "|" & windowTitle & "|" & pid
+end tell
+`.trim();
+
 async function getActiveWindowInfo() {
-  try {
-    const mod = await getActiveWin();
-    const info = await mod.default();
-    if (!info) return { appName: 'Unknown', windowTitle: '', bundleId: '', pid: 0 };
-    return {
-      appName: info.owner?.name || 'Unknown',
-      windowTitle: info.title || '',
-      bundleId: info.owner?.bundleId || '',
-      pid: info.owner?.processId || 0,
-    };
-  } catch {
+  if (process.platform !== 'darwin') {
     return { appName: 'Unknown', windowTitle: '', bundleId: '', pid: 0 };
   }
+
+  return new Promise((resolve) => {
+    execFile('osascript', ['-e', ACTIVE_WIN_SCRIPT], { timeout: 2000 }, (error, stdout) => {
+      if (error) {
+        resolve({ appName: 'Unknown', windowTitle: '', bundleId: '', pid: 0 });
+        return;
+      }
+      const parts = (stdout || '').trim().split('|');
+      resolve({
+        appName: parts[0] || 'Unknown',
+        bundleId: parts[1] || '',
+        windowTitle: parts[2] || '',
+        pid: parseInt(parts[3], 10) || 0,
+      });
+    });
+  });
 }
 
 async function captureActiveScreen(savePath) {

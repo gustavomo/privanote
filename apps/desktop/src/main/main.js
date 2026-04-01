@@ -463,18 +463,24 @@ function startAppDetection() {
     // Always show overlay during active capture session (Pitfall 4)
     if (captureSession && captureSession.state === 'capturing') {
       if (captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
-        captureOverlay.show();
+        captureOverlay.showInactive();
       }
       return;
     }
 
     try {
       const windowInfo = await getActiveWindowInfo();
+
+      // Skip detection when Privanote itself is focused — keep overlay as-is
+      if (windowInfo.bundleId === 'com.privanote.desktop' || windowInfo.appName === 'Electron') {
+        return;
+      }
+
       const whitelist = loadWhitelist();
       const shouldShow = await shouldShowOverlay(windowInfo, whitelist);
 
       if (shouldShow && captureOverlay && !captureOverlay.isDestroyed() && !captureOverlay.isVisible()) {
-        captureOverlay.show();
+        captureOverlay.showInactive();
       } else if (!shouldShow && captureOverlay && !captureOverlay.isDestroyed() && captureOverlay.isVisible()) {
         captureOverlay.hide();
       }

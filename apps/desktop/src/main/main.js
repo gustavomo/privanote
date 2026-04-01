@@ -1,5 +1,5 @@
 const { Blob } = require('buffer');
-const { app, BrowserWindow, dialog, globalShortcut, ipcMain, screen, session, shell, systemPreferences } = require('electron');
+const { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeImage, screen, session, shell, systemPreferences, Tray } = require('electron');
 const path = require('path');
 const { v1 } = require('@privanote/backend/contracts');
 const { resolveBackendErrorMessage } = require('./backend-response');
@@ -19,6 +19,7 @@ let isQuitting = false;
 let captureOverlay = null;
 let captureSession = null;
 let mainWindow = null;
+let tray = null;
 
 function resolveDataRoot() {
   const configuredRoot = String(process.env.PRIVANOTE_DATA_DIR || '').trim();
@@ -265,6 +266,57 @@ function broadcastCaptureState(state) {
   if (captureOverlay && !captureOverlay.isDestroyed()) {
     captureOverlay.webContents.send('capture:state-changed', state);
   }
+  updateTray(state);
+}
+
+function createTrayIcon() {
+  // 22x22 template image for macOS menu bar (drawn as a simple eye)
+  const canvas = 22;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}" viewBox="0 0 22 22">
+    <path d="M1 11s4-6 10-6 10 6 10 6-4 6-10 6S1 11 1 11z" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="11" cy="11" r="2.5" fill="none" stroke="black" stroke-width="1.5"/>
+  </svg>`;
+  const img = nativeImage.createFromBuffer(Buffer.from(svg));
+  img.setTemplateImage(true);
+  return img;
+}
+
+function createTrayIconRecording() {
+  const canvas = 22;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}" viewBox="0 0 22 22">
+    <circle cx="11" cy="11" r="6" fill="#E53935"/>
+    <circle cx="11" cy="11" r="3" fill="white"/>
+  </svg>`;
+  return nativeImage.createFromBuffer(Buffer.from(svg));
+}
+
+function setupTray() {
+  tray = new Tray(createTrayIcon());
+  tray.setToolTip('Privanote Capture');
+  updateTray('idle');
+}
+
+function updateTray(state) {
+  if (!tray) return;
+
+  if (state === 'capturing' || state === 'recording') {
+    tray.setImage(createTrayIconRecording());
+    tray.setToolTip('Privanote — Recording...');
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: '● Recording...', enabled: false },
+      { label: 'Stop Capture', click: () => toggleCaptureSession() },
+      { type: 'separator' },
+      { label: 'Show Privanote', click: () => { if (mainWindow) mainWindow.show(); } },
+    ]));
+  } else {
+    tray.setImage(createTrayIcon());
+    tray.setToolTip('Privanote Capture');
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: 'Start Capture', click: () => toggleCaptureSession() },
+      { type: 'separator' },
+      { label: 'Show Privanote', click: () => { if (mainWindow) mainWindow.show(); } },
+    ]));
+  }
 }
 
 async function toggleCaptureSession() {
@@ -488,6 +540,7 @@ app.whenReady().then(async () => {
   try {
     await createWindow();
     createCaptureOverlay();
+    setupTray();
 
     globalShortcut.register('CommandOrControl+Shift+R', () => {
       toggleCaptureSession();

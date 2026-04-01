@@ -1,12 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Privanote Capture</title>
-  </head>
-  <body style="margin:0;padding:0;overflow:hidden;background:transparent;">
-    <div id="root"></div>
-    <script type="module" src="./main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privanote Capture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: transparent;
+      overflow: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+      width: 64px;
+      height: 64px;
+    }
+    .container {
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-app-region: drag;
+    }
+    .btn {
+      -webkit-app-region: no-drag;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 150ms ease, transform 150ms ease;
+      position: relative;
+      z-index: 1;
+      background: oklch(0.214 0.009 43.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+    }
+    .btn:hover { background: oklch(0.35 0.012 43.1); transform: scale(1.06); }
+    .btn.recording { background: oklch(0.577 0.245 27.325); box-shadow: 0 2px 12px rgba(220,50,50,0.35); }
+    .btn.finalizing { background: oklch(0.547 0.021 43.1); cursor: default; }
+    .btn svg {
+      width: 24px; height: 24px;
+      fill: none;
+      stroke: oklch(0.986 0.002 67.8);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .btn.recording svg { width: 20px; height: 20px; stroke: white; }
+    .btn.finalizing svg { stroke: white; }
+    .pulse {
+      animation: pulse 1.5s ease-out infinite;
+      background: oklch(0.577 0.245 27.325);
+      border-radius: 50%;
+      position: absolute;
+      inset: -4px;
+      pointer-events: none;
+      z-index: 0;
+      display: none;
+    }
+    .recording .pulse { display: block; }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.4; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="btn" id="btn" title="Start screen capture" aria-label="Start screen capture">
+      <div class="pulse"></div>
+      <svg id="icon" viewBox="0 0 24 24">
+        <!-- eye icon (idle) -->
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    const btn = document.getElementById('btn');
+    const icon = document.getElementById('icon');
+
+    const ICONS = {
+      idle: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
+      recording: `<rect x="6" y="6" width="12" height="12" rx="1" fill="white" stroke="none"/>`,
+      finalizing: `<path class="spinner" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>`,
+    };
+
+    const TITLES = {
+      idle: 'Start screen capture',
+      recording: 'Stop screen capture',
+      finalizing: 'Creating note...',
+    };
+
+    function setState(state) {
+      btn.className = 'btn' + (state !== 'idle' ? ' ' + state : '');
+      icon.innerHTML = ICONS[state] || ICONS.idle;
+      btn.title = TITLES[state] || TITLES.idle;
+      btn.setAttribute('aria-label', btn.title);
+    }
+
+    // Listen for state changes from main process
+    if (window.captureApi) {
+      window.captureApi.getSessionState().then(s => { if (s) setState(s); });
+      window.captureApi.onStateChange(setState);
+    }
+
+    btn.addEventListener('click', async () => {
+      if (!window.captureApi) {
+        console.warn('[capture-overlay] captureApi not available');
+        return;
+      }
+      const current = btn.className.includes('recording') ? 'recording'
+                     : btn.className.includes('finalizing') ? 'finalizing'
+                     : 'idle';
+      if (current === 'finalizing') return;
+
+      if (current === 'idle') {
+        await window.captureApi.startSession();
+      } else {
+        await window.captureApi.stopSession();
+      }
+    });
+  </script>
+</body>
 </html>

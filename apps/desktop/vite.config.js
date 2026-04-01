@@ -16,7 +16,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'src/renderer/index.html'),
-        'capture-overlay': path.resolve(__dirname, 'src/renderer/capture-overlay/capture-overlay.html'),
       },
     },
   },

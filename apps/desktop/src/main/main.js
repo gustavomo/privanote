@@ -251,12 +251,8 @@ function createCaptureOverlay() {
   captureOverlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   captureOverlay.setAlwaysOnTop(true, 'floating');
 
-  if (app.isPackaged) {
-    captureOverlay.loadFile(path.join(__dirname, '..', '..', 'dist', 'capture-overlay', 'capture-overlay.html'));
-  } else {
-    const url = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
-    captureOverlay.loadURL(`${url}/capture-overlay/capture-overlay.html`);
-  }
+  // Always load the overlay directly from disk — it's self-contained HTML with no build step.
+  captureOverlay.loadFile(path.join(__dirname, '..', 'renderer', 'capture-overlay', 'capture-overlay.html'));
 
   captureOverlay.on('closed', () => {
     captureOverlay = null;

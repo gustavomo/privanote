@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-04-PLAN.md
-last_updated: "2026-04-01T06:00:57.712Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-04-01T06:54:04.972Z"
 last_activity: 2026-04-01
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 6
-  total_plans: 17
-  completed_plans: 17
+  total_plans: 19
+  completed_plans: 18
   percent: 100
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A user can capture and revisit media-backed notes locally, quickly, and without losing control of where their data lives.
-**Current focus:** Phase 06 — always-on-top-floating-capture-button-for-external-app-screen-capture
+**Current focus:** Phase 08 — limit-floating-capture-button-to-specific-apps
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
+Phase: 08 (limit-floating-capture-button-to-specific-apps) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
 Last activity: 2026-04-01
 
@@ -57,6 +57,7 @@ Progress: [██████████] 100%
 | Phase 05 P01 | 14 | 2 tasks | 3 files |
 | Phase 06 P02 | 2 | 2 tasks | 3 files |
 | Phase 06 P04 | 7 | 2 tasks | 6 files |
+| Phase 08 P01 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,8 @@ Recent decisions affecting current work:
 - [Phase 05]: Create Note form and its three state variables removed entirely — notes are a result of capture, not a prerequisite
 - [Phase 06]: Used dynamic import() for ESM-only active-win@9 from CommonJS main process; Tesseract worker lazily initialized as singleton for performance
 - [Phase 06]: Used Objective-C instead of Swift for AX walker binary due to Swift toolchain/SDK mismatch; AX-tree-first with OCR fallback for text extraction
+- [Phase 08]: AppleScript for browser URL extraction instead of AX tree -- more reliable for URL data
+- [Phase 08]: Whitelist stored as JSON in userData, not backend DB -- desktop-only UI state
 
 ### Pending Todos
 
@@ -119,6 +122,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-01T05:54:26.059Z
-Stopped at: Completed 06-04-PLAN.md
+Last session: 2026-04-01T06:54:04.962Z
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None

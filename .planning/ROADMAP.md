@@ -140,8 +140,8 @@ Plans:
 **Goal:** Show/hide the floating capture overlay based on the active foreground app. The overlay is hidden by default and only appears when the active app matches a user-configured whitelist of 5 preset apps. A settings UI lets users toggle which apps trigger the overlay.
 **Requirements**: [APPVIS-01, APPVIS-02, APPVIS-03, APPVIS-04, APPVIS-05, APPVIS-06]
 **Depends on:** Phase 7
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 08-01-PLAN.md — Build app detector, whitelist persistence, polling loop, and IPC bridge
+- [x] 08-01-PLAN.md — Build app detector, whitelist persistence, polling loop, and IPC bridge
 - [ ] 08-02-PLAN.md — Add Capture Apps toggle section to Settings and verify end-to-end

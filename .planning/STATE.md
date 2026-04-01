@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A user can capture and revisit media-backed notes locally, quickly, and without losing control of where their data lives.
-**Current focus:** Phase 08 — limit-floating-capture-button-to-specific-apps
+**Current focus:** Phase 09 — toggle-button-for-clipboard-text-capture
 
 ## Current Position
 
-Phase: 08
+Phase: 09
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Context gathered — ready for planning
 Last activity: 2026-04-01
 
 Progress: [██████████] 100%
@@ -69,6 +69,9 @@ Progress: [██████████] 100%
 - Phase 7 added: Fix screen capture to record system audio instead of microphone
 - Phase 8 added: Limit floating capture button to specific apps
 - Phase 9 added: Toggle button for clipboard text capture
+- [Phase 09]: Clipboard monitoring is independent of screen capture; both run simultaneously
+- [Phase 09]: Text-only capture, grouped by source app, with deduplication and concealed-entry filtering
+- [Phase 09]: Second overlay button + global shortcut for toggle; badge counter for live entry count
 
 ### Decisions
 
@@ -126,5 +129,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-04-01T06:58:24.659Z
-Stopped at: Completed 08-02-PLAN.md (checkpoint pending)
+Stopped at: Phase 9 context gathered, ready for plan-phase
 Resume file: None

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 13 context gathered
-last_updated: "2026-04-01T23:32:11.877Z"
+status: completed
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-04-01T23:39:21.451Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 13
   completed_phases: 11
   total_plans: 31
-  completed_plans: 28
+  completed_plans: 29
   percent: 100
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A user can capture and revisit media-backed notes locally, quickly, and without losing control of where their data lives.
-**Current focus:** Phase 11 — ui-polish-button-icon-states-active-colors-and-persistent-custom-menu-bar-icon
+**Current focus:** Phase 12 — ui-audit-and-fix-pass
 
 ## Current Position
 
-Phase: 11
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 12
+Plan: 1 of 3
+Status: Plan 01 complete
 Last activity: 2026-04-01
 
 Progress: [██████████] 100%
@@ -67,6 +67,7 @@ Progress: [██████████] 100%
 | Phase 10 P02 | 3 | 3 tasks | 3 files |
 | Phase 11 P01 | 4 | 2 tasks | 2 files |
 | Phase 11 P02 | 3min | 2 tasks | 5 files |
+| Phase 12 P01 | 2min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -131,6 +132,8 @@ Recent decisions affecting current work:
 - [Phase 11]: Stop-square icons removed; toggle state shown via icon pairs (eye-closed/open, clipboard-closed/open, headphones-off/on) plus teal color
 - [Phase 11]: Used nativeImage.createFromPath with Template filename suffix for automatic template image and @2x detection
 - [Phase 11]: Minimize-to-tray with isQuitting guard: close hides window, Cmd+Q sets flag to allow actual quit
+- [Phase 12]: Used shadcn CLI scaffolding with radix-nova style; customized Button to h-10/h-11 sizes with destructive-outline variant
+- [Phase 12]: Dark mode via class-based switching with oklch CSS variables; theme persisted in localStorage under privanote-theme key with FOUC prevention
 
 ### Pending Todos
 
@@ -157,6 +160,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-01T23:32:11.873Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-ai-powered-capture-processing-text-cleanup-summarization-auto-tagging-screenshot-vision-analysis-and-capture-deduplication-during-sessions/13-CONTEXT.md
+Last session: 2026-04-01T23:39:21.447Z
+Stopped at: Completed 12-01-PLAN.md
+Resume file: None

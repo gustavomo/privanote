@@ -326,20 +326,21 @@ function broadcastCallRecordingState(state) {
   captureOverlay.webContents.send('call-recording:state-changed', state);
 }
 
-function createEmptyTrayImage() {
-  // Minimal 1x1 transparent PNG — macOS menu bar text via setTitle does the visual work
-  const png = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-    'base64'
-  );
-  const img = nativeImage.createFromBuffer(png, { width: 1, height: 1 });
-  img.setTemplateImage(true);
-  return img;
+function createTrayIcon(recording) {
+  const iconName = recording ? 'trayRecTemplate' : 'trayTemplate';
+  const iconPath = path.join(__dirname, '..', '..', 'resources', `${iconName}.png`);
+  return nativeImage.createFromPath(iconPath);
 }
 
 function setupTray() {
-  tray = new Tray(createEmptyTrayImage());
+  tray = new Tray(createTrayIcon(false));
   tray.setToolTip('Privanote Capture');
+  tray.on('click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
   updateTray('idle');
 }
 
@@ -348,22 +349,28 @@ function updateTray(state) {
 
   const isRecording = state === 'capturing' || state === 'recording';
 
+  // Swap tray icon between idle P and recording P+red-dot (per D-12, D-14)
+  tray.setImage(createTrayIcon(isRecording));
+
   if (isRecording) {
-    tray.setTitle('🔴 REC');
-    tray.setToolTip('Privanote — Recording...');
+    // Remove emoji title — icon alone signals state (per D-12)
+    tray.setTitle('');
+    tray.setToolTip('Privanote -- Recording...');
     tray.setContextMenu(Menu.buildFromTemplate([
-      { label: '● Recording...', enabled: false },
+      { label: 'Recording...', enabled: false },
       { label: 'Stop Capture', click: () => toggleCaptureSession() },
       { type: 'separator' },
-      { label: 'Show Privanote', click: () => { if (mainWindow) mainWindow.show(); } },
+      { label: 'Show Privanote', click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } } },
+      { label: 'Quit Privanote', click: () => { app.quit(); } },
     ]));
   } else {
-    tray.setTitle('👁');
+    tray.setTitle('');
     tray.setToolTip('Privanote Capture');
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: 'Start Capture', click: () => toggleCaptureSession() },
       { type: 'separator' },
-      { label: 'Show Privanote', click: () => { if (mainWindow) mainWindow.show(); } },
+      { label: 'Show Privanote', click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } } },
+      { label: 'Quit Privanote', click: () => { app.quit(); } },
     ]));
   }
 
@@ -955,6 +962,14 @@ async function createWindow() {
   });
 
   mainWindow = win;
+  // Minimize to tray on close (per D-15). Actual quit happens via Cmd+Q / app.quit().
+  win.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      win.hide();
+    }
+  });
+  // Cleanup reference after actual window destruction (during quit)
   win.on('closed', () => { mainWindow = null; });
 
   if (app.isPackaged) {
@@ -1029,7 +1044,10 @@ app.whenReady().then(async () => {
       return;
     }
 
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    } else if (BrowserWindow.getAllWindows().length === 0) {
       try {
         await createWindow();
       } catch (error) {
@@ -1041,6 +1059,11 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  // Clean up tray icon to prevent ghost icon (Pitfall 7 from RESEARCH.md)
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
   stopAppDetection();
   if (captureSession) {
     captureSession.destroy();

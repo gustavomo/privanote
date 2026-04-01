@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Phase 12 context gathered
-last_updated: "2026-04-01T23:00:06.244Z"
+stopped_at: Phase 12 UI-SPEC approved
+last_updated: "2026-04-01T23:09:28.902Z"
 last_activity: 2026-04-01
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 11
   total_plans: 28
   completed_plans: 28
@@ -134,7 +134,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-11 todos pending (2026-04-01):
+12 todos pending (2026-04-01):
 
 - Migrate codebase to TypeScript [tooling]
 - Restructure project organization [general]
@@ -147,6 +147,7 @@ Recent decisions affecting current work:
 - Detect active media and show recording button [ui]
 - Sync floating button recording with transcription [ui]
 - Sync full note content not just media attachments [general]
+- Record screen not camera to capture call participants [general]
 
 ### Blockers/Concerns
 
@@ -155,6 +156,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-01T23:00:06.239Z
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-ui-audit-and-fix-pass-identify-and-resolve-visual-bugs-layout-inconsistencies-accessibility-issues-and-interaction-edge-cases-across-the-app/12-CONTEXT.md
+Last session: 2026-04-01T23:09:28.897Z
+Stopped at: Phase 12 UI-SPEC approved
+Resume file: .planning/phases/12-ui-audit-and-fix-pass-identify-and-resolve-visual-bugs-layout-inconsistencies-accessibility-issues-and-interaction-edge-cases-across-the-app/12-UI-SPEC.md

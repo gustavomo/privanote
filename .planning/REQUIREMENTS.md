@@ -114,13 +114,13 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 ### GitHub PR Analysis (Hidden Feature)
 
-- [ ] **PR-01**: The PR analysis feature is completely hidden by default and only activates when the environment variable PRIVANOTE_PR_ANALYSIS=true is set
+- [x] **PR-01**: The PR analysis feature is completely hidden by default and only activates when the environment variable PRIVANOTE_PR_ANALYSIS=true is set
 - [ ] **PR-02**: A Python FastAPI service ("pr-insight") lives in apps/pr-analysis/ with hexagonal architecture (api/domain/adapters layers, ABC port interfaces, constructor injection)
 - [ ] **PR-03**: An ADK agent using OpenAI gpt-4o orchestrates Qodo Merge review/describe/improve and GitHub API data to produce structured analysis notes
-- [ ] **PR-04**: The Python service exposes an async job API (POST returns job ID, GET polls for status/result) with strict GitHub PR URL validation
-- [ ] **PR-05**: Node.js auto-starts the Python service at app startup (when env var set), polls health until ready, and kills it on quit
+- [x] **PR-04**: The Python service exposes an async job API (POST returns job ID, GET polls for status/result) with strict GitHub PR URL validation
+- [x] **PR-05**: Node.js auto-starts the Python service at app startup (when env var set), polls health until ready, and kills it on quit
 - [ ] **PR-06**: A 4th button appears on the floating overlay when the active browser tab is on a GitHub PR page, with URL input popover and analysis status text
-- [ ] **PR-07**: Analysis results are delivered to the Node.js backend via webhook-style callback that creates a note with title, description, and github-analysis tag
+- [x] **PR-07**: Analysis results are delivered to the Node.js backend via webhook-style callback that creates a note with title, description, and github-analysis tag
 - [ ] **PR-08**: All error states (private repo access, rate limits, service unavailable, invalid URL) produce clear user-facing error messages via Sonner toast
 
 ## v2 Requirements

@@ -151,7 +151,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-13 todos pending (2026-04-01):
+12 todos pending (2026-04-02):
 
 - Migrate codebase to TypeScript [tooling]
 - Restructure project organization [general]

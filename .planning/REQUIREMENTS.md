@@ -112,6 +112,17 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 - [x] **SHADCN-05**: Dark mode CSS variables use a VS Code 2026 cool blue-gray palette (hue ~260) replacing the warm taupe palette, while light mode remains unchanged
 - [x] **SHADCN-06**: Custom macOS dock icon (dark charcoal rounded square with white P lettermark) is generated and wired into both development and production builds
 
+### GitHub PR Analysis (Hidden Feature)
+
+- [ ] **PR-01**: The PR analysis feature is completely hidden by default and only activates when the environment variable PRIVANOTE_PR_ANALYSIS=true is set
+- [ ] **PR-02**: A Python FastAPI service ("pr-insight") lives in apps/pr-analysis/ with hexagonal architecture (api/domain/adapters layers, ABC port interfaces, constructor injection)
+- [ ] **PR-03**: An ADK agent using OpenAI gpt-4o orchestrates Qodo Merge review/describe/improve and GitHub API data to produce structured analysis notes
+- [ ] **PR-04**: The Python service exposes an async job API (POST returns job ID, GET polls for status/result) with strict GitHub PR URL validation
+- [ ] **PR-05**: Node.js auto-starts the Python service at app startup (when env var set), polls health until ready, and kills it on quit
+- [ ] **PR-06**: A 4th button appears on the floating overlay when the active browser tab is on a GitHub PR page, with URL input popover and analysis status text
+- [ ] **PR-07**: Analysis results are delivered to the Node.js backend via webhook-style callback that creates a note with title, description, and github-analysis tag
+- [ ] **PR-08**: All error states (private repo access, rate limits, service unavailable, invalid URL) produce clear user-facing error messages via Sonner toast
+
 ## v2 Requirements
 
 ### Deployment and Identity
@@ -210,12 +221,20 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | SHADCN-04 | Phase 14 | Complete |
 | SHADCN-05 | Phase 14 | Planned |
 | SHADCN-06 | Phase 14 | Planned |
+| PR-01 | Phase 15 | Planned |
+| PR-02 | Phase 15 | Planned |
+| PR-03 | Phase 15 | Planned |
+| PR-04 | Phase 15 | Planned |
+| PR-05 | Phase 15 | Planned |
+| PR-06 | Phase 15 | Planned |
+| PR-07 | Phase 15 | Planned |
+| PR-08 | Phase 15 | Planned |
 
 **Coverage:**
-- v1 requirements: 66 total
-- Mapped to phases: 66
+- v1 requirements: 74 total
+- Mapped to phases: 74
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-02 after Phase 14 planning*
+*Last updated: 2026-04-02 after Phase 15 planning*

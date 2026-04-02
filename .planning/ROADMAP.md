@@ -93,7 +93,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -218,12 +218,17 @@ Plans:
 - [x] 14-05-PLAN.md — Fix progress bar animation, AlertDialog CSS scoping, and double-confirmation bugs (gap closure)
 - [x] 14-06-PLAN.md — Regenerate dock icon with transparency and proper macOS sizing (gap closure)
 
-### Phase 15: GitHub PR analysis — hidden feature gated by env var, ADK + Qodo Merge
+### Phase 15: GitHub PR analysis -- hidden feature gated by env var, ADK + Qodo Merge
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Add a hidden backend feature (off by default, enabled via PRIVANOTE_PR_ANALYSIS=true) that analyzes GitHub PRs using a Python-based ADK agent orchestrating Qodo Merge code review and GitHub API data, generating structured notes with full analysis, code review findings, categorized changes, improvement suggestions, and Mermaid diagrams. The Python service ("pr-insight") is architected with hexagonal/layer-based separation for future extraction as a standalone project. A new 4th floating overlay button triggers analysis when the user is on a GitHub PR page in a browser.
+**Requirements**: [PR-01, PR-02, PR-03, PR-04, PR-05, PR-06, PR-07, PR-08]
 **Depends on:** Phase 14
-**Plans:** 0 plans
+**Plans:** 6 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 15 to break down)
+- [ ] 15-01-PLAN.md — Scaffold Python project with hexagonal architecture, domain models, port interfaces, and FastAPI health endpoint
+- [ ] 15-02-PLAN.md — Implement GitHub, Qodo, and Note Callback adapters fulfilling port interfaces
+- [ ] 15-03-PLAN.md — Build ADK agent, analysis pipeline, and FastAPI async job routes
+- [ ] 15-04-PLAN.md — Create Python process lifecycle manager, Fastify proxy routes, and internal callback endpoint
+- [ ] 15-05-PLAN.md — Add 4th overlay button with URL detection, popover, status text, and IPC wiring
+- [ ] 15-06-PLAN.md — Wire toast notifications, auto-select, backend tests, and end-to-end verification

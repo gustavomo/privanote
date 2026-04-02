@@ -3,7 +3,6 @@ import { cn } from './lib/utils.js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Label } from '@/components/ui/label';
 import ThemeToggle from './components/theme-toggle.jsx';
 import MediaCard from './components/media-card.jsx';
@@ -45,19 +44,6 @@ const screenPermissionBlocked =
 const captureFailureCopy =
   'Camera or microphone access is unavailable. Check device permissions, then retry or switch to import.';
 
-function renderToggleIndicator(isActive) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'h-2.5 w-2.5 rounded-full border transition-all',
-        isActive
-          ? 'border-primary-foreground/70 bg-primary-foreground shadow-[0_0_0_3px_rgba(255,255,255,0.16)]'
-          : 'border-border bg-transparent opacity-70'
-      )}
-    />
-  );
-}
 
 function formatDate(dateString) {
   const date = new Date(dateString);
@@ -1180,22 +1166,17 @@ export default function App({ api }) {
           </p>
         </div>
 
-        <ToggleGroup
-          type="single"
-          value={captureMode}
-          onValueChange={(value) => {
-            if (value) setCaptureMode(value);
-          }}
-          disabled={isRecording || isStopping || isSavingRecording}
-          className="inline-flex flex-wrap gap-2 rounded-2xl bg-background p-2"
-        >
+        <div className="inline-flex flex-wrap gap-2 rounded-2xl bg-background p-2">
           {captureModes.map((mode) => {
             const isActive = captureMode === mode.value;
 
             return (
-              <ToggleGroupItem
+              <button
                 key={mode.value}
-                value={mode.value}
+                type="button"
+                aria-pressed={isActive}
+                disabled={isRecording || isStopping || isSavingRecording}
+                onClick={() => setCaptureMode(mode.value)}
                 className={cn(
                   'inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-all duration-200',
                   isActive
@@ -1203,12 +1184,11 @@ export default function App({ api }) {
                     : 'border-transparent bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'
                 )}
               >
-                {renderToggleIndicator(isActive)}
                 <span>{mode.label}</span>
-              </ToggleGroupItem>
+              </button>
             );
           })}
-        </ToggleGroup>
+        </div>
 
         {captureError ? (
           <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -1481,23 +1461,18 @@ export default function App({ api }) {
               </p>
             </div>
 
-            <ToggleGroup
-              type="single"
-              value={activeView}
-              onValueChange={(value) => {
-                if (value) setActiveView(value);
-              }}
-              className="inline-flex rounded-2xl bg-secondary p-2"
-            >
+            <div className="inline-flex rounded-2xl bg-secondary p-2">
               {['Workspace', 'Settings'].map((label) => {
                 const value = label.toLowerCase();
                 const isActive = activeView === value;
 
                 return (
-                  <ToggleGroupItem
+                  <button
                     key={label}
-                    value={value}
+                    type="button"
+                    aria-pressed={isActive}
                     aria-current={isActive ? 'page' : undefined}
+                    onClick={() => setActiveView(value)}
                     className={cn(
                       'inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-all duration-200',
                       isActive
@@ -1505,12 +1480,11 @@ export default function App({ api }) {
                         : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
                     )}
                   >
-                    {renderToggleIndicator(isActive)}
                     <span>{label}</span>
-                  </ToggleGroupItem>
+                  </button>
                 );
               })}
-            </ToggleGroup>
+            </div>
           </div>
         </header>
 

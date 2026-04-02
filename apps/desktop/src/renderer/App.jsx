@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from './lib/utils.js';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import ThemeToggle from './components/theme-toggle.jsx';
 import MediaCard from './components/media-card.jsx';
 import SettingsView from './components/settings-view.jsx';
 import TranscriptSection from './components/transcript-section.jsx';
@@ -39,19 +44,6 @@ const screenPermissionBlocked =
 const captureFailureCopy =
   'Camera or microphone access is unavailable. Check device permissions, then retry or switch to import.';
 
-function renderToggleIndicator(isActive) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'h-2.5 w-2.5 rounded-full border transition-all',
-        isActive
-          ? 'border-primary-foreground/70 bg-primary-foreground shadow-[0_0_0_3px_rgba(255,255,255,0.16)]'
-          : 'border-border bg-transparent opacity-70'
-      )}
-    />
-  );
-}
 
 function formatDate(dateString) {
   const date = new Date(dateString);
@@ -1182,10 +1174,9 @@ export default function App({ api }) {
               <button
                 key={mode.value}
                 type="button"
-                onClick={() => setCaptureMode(mode.value)}
                 aria-pressed={isActive}
-                data-state={isActive ? 'active' : 'inactive'}
                 disabled={isRecording || isStopping || isSavingRecording}
+                onClick={() => setCaptureMode(mode.value)}
                 className={cn(
                   'inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-all duration-200',
                   isActive
@@ -1193,7 +1184,6 @@ export default function App({ api }) {
                     : 'border-transparent bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'
                 )}
               >
-                {renderToggleIndicator(isActive)}
                 <span>{mode.label}</span>
               </button>
             );
@@ -1231,22 +1221,12 @@ export default function App({ api }) {
             )}
 
             <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleSaveRecording}
-                disabled={isSavingRecording}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-              >
+              <Button size="lg" onClick={handleSaveRecording} disabled={isSavingRecording}>
                 Save Recording
-              </button>
-              <button
-                type="button"
-                onClick={handleDiscardRecording}
-                disabled={isSavingRecording}
-                className="inline-flex h-11 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
-              >
+              </Button>
+              <Button variant="destructive-outline" size="lg" onClick={handleDiscardRecording} disabled={isSavingRecording}>
                 Discard Recording
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
@@ -1267,30 +1247,17 @@ export default function App({ api }) {
 
             <div className="flex flex-wrap gap-3">
               {isRecording || isStopping ? (
-                <button
-                  type="button"
-                  onClick={handleStopRecording}
-                  disabled={isStopping}
-                  className="inline-flex h-11 items-center justify-center rounded-xl border border-primary/30 px-4 text-sm font-semibold text-primary"
-                >
+                <Button variant="outline" size="lg" onClick={handleStopRecording} disabled={isStopping}>
                   Stop Recording
-                </button>
+                </Button>
               ) : (
                 <>
-                  <button
-                    type="button"
-                    onClick={handleStartRecording}
-                    className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                  >
+                  <Button size="lg" onClick={handleStartRecording}>
                     Start Recording
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleImportFiles}
-                    className="inline-flex h-11 items-center justify-center rounded-xl border bg-background px-4 text-sm font-semibold"
-                  >
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={handleImportFiles}>
                     Import Files
-                  </button>
+                  </Button>
                 </>
               )}
             </div>
@@ -1402,48 +1369,27 @@ export default function App({ api }) {
                   Last updated {formatDate(selectedNode.updated_at)}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => handleDeleteNode(selectedNode.id)}
-                className="inline-flex h-11 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
-              >
+              <Button variant="destructive-outline" size="lg" onClick={() => handleDeleteNode(selectedNode.id)}>
                 Delete Note
-              </button>
+              </Button>
             </div>
 
             <form className="grid gap-4" onSubmit={handleSaveNode}>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold">Title</label>
-                <input
-                  className="h-11 rounded-xl border bg-background px-3 text-sm"
-                  required
-                  value={editTitle}
-                  onChange={(event) => setEditTitle(event.target.value)}
-                />
+                <Label>Title</Label>
+                <Input required value={editTitle} onChange={(event) => setEditTitle(event.target.value)} />
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold">Description</label>
-                <textarea
-                  className="min-h-[180px] rounded-xl border bg-background px-3 py-3 text-sm"
-                  rows={8}
-                  value={editDescription}
-                  onChange={(event) => setEditDescription(event.target.value)}
-                />
+                <Label>Description</Label>
+                <Textarea className="min-h-[180px]" rows={8} value={editDescription} onChange={(event) => setEditDescription(event.target.value)} />
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold">Tags</label>
-                <input
-                  className="h-11 rounded-xl border bg-background px-3 text-sm"
-                  value={editTags}
-                  onChange={(event) => setEditTags(event.target.value)}
-                />
+                <Label>Tags</Label>
+                <Input value={editTags} onChange={(event) => setEditTags(event.target.value)} />
               </div>
-              <button
-                type="submit"
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-              >
+              <Button type="submit" size="lg">
                 Save Changes
-              </button>
+              </Button>
             </form>
 
             <TranscriptSection
@@ -1524,10 +1470,9 @@ export default function App({ api }) {
                   <button
                     key={label}
                     type="button"
-                    onClick={() => setActiveView(value)}
                     aria-pressed={isActive}
                     aria-current={isActive ? 'page' : undefined}
-                    data-state={isActive ? 'active' : 'inactive'}
+                    onClick={() => setActiveView(value)}
                     className={cn(
                       'inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-all duration-200',
                       isActive
@@ -1535,7 +1480,6 @@ export default function App({ api }) {
                         : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
                     )}
                   >
-                    {renderToggleIndicator(isActive)}
                     <span>{label}</span>
                   </button>
                 );
@@ -1553,23 +1497,34 @@ export default function App({ api }) {
         {activeView === 'workspace' ? (
           workspaceView
         ) : (
-          <SettingsView
-            settings={settingsDraft}
-            providerConnections={providerConnections}
-            error={settingsError}
-            errorDetail={settingsErrorDetail}
-            isLoading={isSettingsLoading}
-            isSaving={isSavingSettings}
-            onChange={updateSettingsDraft}
-            onChooseDirectory={handleChooseDirectory}
-            onClearCredential={handleClearCredential}
-            onSave={handleSaveSettings}
-            onBeginProviderConnection={handleBeginProviderConnection}
-            onDisconnectProvider={handleDisconnectProvider}
-            captureAppPresets={captureAppPresets}
-            captureApps={captureApps}
-            onToggleCaptureApp={handleToggleCaptureApp}
-          />
+          <div className="grid gap-8">
+            <section className="grid gap-6 rounded-[32px] border bg-background p-6 shadow-sm">
+              <div className="space-y-1">
+                <h3 className="text-xl font-semibold leading-[1.2]">Appearance</h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose how Privanote looks on your device.
+                </p>
+              </div>
+              <ThemeToggle />
+            </section>
+            <SettingsView
+              settings={settingsDraft}
+              providerConnections={providerConnections}
+              error={settingsError}
+              errorDetail={settingsErrorDetail}
+              isLoading={isSettingsLoading}
+              isSaving={isSavingSettings}
+              onChange={updateSettingsDraft}
+              onChooseDirectory={handleChooseDirectory}
+              onClearCredential={handleClearCredential}
+              onSave={handleSaveSettings}
+              onBeginProviderConnection={handleBeginProviderConnection}
+              onDisconnectProvider={handleDisconnectProvider}
+              captureAppPresets={captureAppPresets}
+              captureApps={captureApps}
+              onToggleCaptureApp={handleToggleCaptureApp}
+            />
+          </div>
         )}
       </div>
     </main>

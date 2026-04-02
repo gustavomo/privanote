@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
 function isProcessingTranscript(transcript) {
   return transcript && ['queued', 'processing'].includes(transcript.status);
@@ -62,13 +63,9 @@ export default function TranscriptSection({
             {transcript.text}
           </div>
           <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={onRetry}
-              className="inline-flex h-11 items-center justify-center rounded-xl border bg-background px-4 text-sm font-semibold"
-            >
+            <Button variant="outline" size="lg" onClick={onRetry}>
               Regenerate Transcript
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -78,13 +75,9 @@ export default function TranscriptSection({
           <div>Transcript could not be generated. Check your transcription settings and try again.</div>
           {transcript.last_error ? <div className="text-xs text-destructive/80">{transcript.last_error}</div> : null}
           <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={onRetry}
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
-            >
+            <Button variant="destructive-outline" size="lg" onClick={onRetry}>
               Retry Transcript
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

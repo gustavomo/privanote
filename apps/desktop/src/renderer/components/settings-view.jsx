@@ -1,4 +1,11 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 const storageOptions = [
   { value: 'local', label: 'Local' },
@@ -52,14 +59,10 @@ function renderProviderCard({
 
         <div className="flex flex-wrap gap-2">
           {isConnected ? (
-            <span className="inline-flex items-center rounded-full bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground">
-              Connected
-            </span>
+            <Badge>Connected</Badge>
           ) : null}
           {isDefault ? (
-            <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
-              Default destination
-            </span>
+            <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">Default destination</Badge>
           ) : null}
         </div>
       </div>
@@ -78,23 +81,22 @@ function renderProviderCard({
 
       <div className="flex flex-wrap gap-3">
         {!isConnected ? (
-          <button
-            type="button"
+          <Button
+            size="lg"
             onClick={() => onBeginProviderConnection(provider)}
             disabled={isLoading || isSaving}
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
           >
             {provider === 'google-drive' ? 'Connect Google Drive' : 'Connect OneDrive'}
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
+          <Button
+            variant="destructive-outline"
+            size="lg"
             onClick={() => onDisconnectProvider(provider)}
             disabled={isLoading || isSaving}
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
           >
             {provider === 'google-drive' ? 'Disconnect Google Drive' : 'Disconnect OneDrive'}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -149,22 +151,21 @@ export default function SettingsView({
           </p>
         </div>
 
-        <fieldset className="grid gap-3">
-          <legend className="text-sm font-semibold">Default destination</legend>
-          {storageOptions.map((option) => (
-            <label key={option.value} className="flex items-center gap-3 rounded-2xl border bg-background px-4 py-3">
-              <input
-                type="radio"
-                name="storage-destination"
-                value={option.value}
-                checked={settings.storageDestination === option.value}
-                onChange={() => onChange({ storageDestination: option.value })}
-                disabled={isLoading || isSaving}
-              />
-              <span className="text-sm font-semibold">{option.label}</span>
-            </label>
-          ))}
-        </fieldset>
+        <div className="grid gap-3">
+          <Label className="text-sm font-semibold">Default destination</Label>
+          <RadioGroup
+            value={settings.storageDestination}
+            onValueChange={(value) => onChange({ storageDestination: value })}
+            disabled={isLoading || isSaving}
+          >
+            {storageOptions.map((option) => (
+              <label key={option.value} className="flex items-center gap-3 rounded-2xl border bg-background px-4 py-3">
+                <RadioGroupItem value={option.value} />
+                <span className="text-sm font-semibold">{option.label}</span>
+              </label>
+            ))}
+          </RadioGroup>
+        </div>
 
         <div className="grid gap-4">
           {renderProviderCard({
@@ -193,6 +194,8 @@ export default function SettingsView({
         </p>
       </div>
 
+      <Separator />
+
       <div className="grid gap-6 rounded-[28px] bg-secondary/70 p-6">
         <div className="space-y-1">
           <h3 className="text-xl font-semibold leading-[1.2]">Storage</h3>
@@ -202,26 +205,27 @@ export default function SettingsView({
         </div>
 
         <div className="grid gap-3 rounded-2xl border bg-background p-4">
-          <label className="text-sm font-semibold" htmlFor="local-media-directory">
+          <Label htmlFor="local-media-directory">
             Local folder
-          </label>
-          <input
+          </Label>
+          <Input
             id="local-media-directory"
-            className="h-11 rounded-xl border bg-background px-3 text-sm"
             readOnly
             value={settings.localMediaDirectory || ''}
             placeholder="Choose a folder for future local saves"
           />
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="lg"
             onClick={onChooseDirectory}
             disabled={isLoading || isSaving || !isLocalDestination}
-            className="inline-flex h-11 items-center justify-center rounded-xl border bg-background px-4 text-sm font-semibold"
           >
             Choose Folder
-          </button>
+          </Button>
         </div>
       </div>
+
+      <Separator />
 
       <div className="grid gap-6 rounded-[28px] bg-secondary/70 p-6">
         <div className="space-y-1">
@@ -231,22 +235,21 @@ export default function SettingsView({
           </p>
         </div>
 
-        <fieldset className="grid gap-3">
-          <legend className="text-sm font-semibold">Mode</legend>
-          {transcriptionOptions.map((option) => (
-            <label key={option.value} className="flex items-center gap-3 rounded-2xl border bg-background px-4 py-3">
-              <input
-                type="radio"
-                name="transcription-mode"
-                value={option.value}
-                checked={settings.transcriptionMode === option.value}
-                onChange={() => onChange({ transcriptionMode: option.value })}
-                disabled={isLoading || isSaving}
-              />
-              <span className="text-sm font-semibold">{option.label}</span>
-            </label>
-          ))}
-        </fieldset>
+        <div className="grid gap-3">
+          <Label className="text-sm font-semibold">Mode</Label>
+          <RadioGroup
+            value={settings.transcriptionMode}
+            onValueChange={(value) => onChange({ transcriptionMode: value })}
+            disabled={isLoading || isSaving}
+          >
+            {transcriptionOptions.map((option) => (
+              <label key={option.value} className="flex items-center gap-3 rounded-2xl border bg-background px-4 py-3">
+                <RadioGroupItem value={option.value} />
+                <span className="text-sm font-semibold">{option.label}</span>
+              </label>
+            ))}
+          </RadioGroup>
+        </div>
 
         {!isBackendMode ? (
           <div className="rounded-2xl border border-dashed bg-background px-4 py-4 text-sm text-muted-foreground">
@@ -265,12 +268,11 @@ export default function SettingsView({
           </div>
 
           <div className="grid gap-3 rounded-2xl border bg-background p-4">
-            <label className="text-sm font-semibold" htmlFor="backend-api-key">
+            <Label htmlFor="backend-api-key">
               OpenAI API Key
-            </label>
-            <input
+            </Label>
+            <Input
               id="backend-api-key"
-              className="h-11 rounded-xl border bg-background px-3 text-sm"
               type="password"
               value={settings.backendApiKey || ''}
               placeholder={settings.backendApiKeyMaskedHint || 'Enter API key'}
@@ -288,18 +290,20 @@ export default function SettingsView({
               </p>
             ) : null}
             {settings.backendApiKeyConfigured || settings.backendApiKey ? (
-              <button
-                type="button"
+              <Button
+                variant="destructive-outline"
+                size="lg"
                 onClick={onClearCredential}
                 disabled={isLoading || isSaving}
-                className="inline-flex h-11 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
               >
                 Clear Credential
-              </button>
+              </Button>
             ) : null}
           </div>
         </div>
       ) : null}
+
+      <Separator />
 
       <div className="grid gap-6 rounded-[28px] bg-secondary/70 p-6">
         <div className="space-y-1">
@@ -315,12 +319,10 @@ export default function SettingsView({
                 <span className="text-sm font-semibold">{app.label}</span>
                 <span className="text-sm text-muted-foreground">{app.description}</span>
               </div>
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={Boolean(captureApps[app.id])}
-                onChange={() => onToggleCaptureApp(app.id)}
+                onCheckedChange={() => onToggleCaptureApp(app.id)}
                 disabled={isLoading || isSaving}
-                className="h-5 w-5 accent-primary"
               />
             </label>
           ))}
@@ -333,14 +335,13 @@ export default function SettingsView({
       </div>
 
       <div className="flex justify-start">
-        <button
-          type="button"
+        <Button
+          size="lg"
           onClick={onSave}
           disabled={isLoading || isSaving}
-          className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
         >
           Save Settings
-        </button>
+        </Button>
       </div>
     </section>
   );

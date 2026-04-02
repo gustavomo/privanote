@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const mediaTitles = {
   audio: 'Audio preview',
@@ -98,17 +100,22 @@ export default function MediaCard({
             <h4 className="text-xl font-semibold leading-[1.2]">{mediaTitles[attachment.kind]}</h4>
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm text-muted-foreground">Saved {formatDate(attachment.created_at)}</p>
-              <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${
+              <Badge
+                variant={
                   showSyncFailure
-                    ? 'bg-destructive/10 text-destructive'
+                    ? 'destructive'
                     : syncBadge === 'Local only'
-                      ? 'bg-secondary text-foreground'
-                      : 'bg-primary/10 text-primary'
-                }`}
+                      ? 'secondary'
+                      : 'outline'
+                }
+                className={
+                  !showSyncFailure && syncBadge !== 'Local only'
+                    ? 'border-primary/20 bg-primary/10 text-primary'
+                    : undefined
+                }
               >
                 {syncBadge}
-              </span>
+              </Badge>
             </div>
             {showTranscriptPending ? (
               <p className="text-sm text-muted-foreground">
@@ -168,30 +175,18 @@ export default function MediaCard({
 
       <div className="flex flex-wrap gap-3">
         {showSyncFailure ? (
-          <button
-            type="button"
-            onClick={onRetrySync}
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-          >
+          <Button onClick={onRetrySync}>
             Retry Sync
-          </button>
+          </Button>
         ) : null}
         {attachment.kind === 'file' ? (
-          <button
-            type="button"
-            onClick={() => onOpenFile(attachment.local_path)}
-            className="inline-flex h-10 items-center justify-center rounded-xl border bg-background px-4 text-sm font-semibold"
-          >
+          <Button variant="outline" onClick={() => onOpenFile(attachment.local_path)}>
             Open File
-          </button>
+          </Button>
         ) : null}
-        <button
-          type="button"
-          onClick={onRemove}
-          className="inline-flex h-10 items-center justify-center rounded-xl border border-destructive/30 px-4 text-sm font-semibold text-destructive"
-        >
+        <Button variant="destructive-outline" onClick={onRemove}>
           Remove Media
-        </button>
+        </Button>
       </div>
     </li>
   );

@@ -4,6 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { Circle, Square, Upload, Save, X, Trash2, AlertCircle } from 'lucide-react';
 import ThemeToggle from './components/theme-toggle.jsx';
 import MediaCard from './components/media-card.jsx';
 import SettingsView from './components/settings-view.jsx';
@@ -1158,13 +1165,14 @@ export default function App({ api }) {
     const isStopping = captureState === 'stopping';
 
     return (
-      <div className="grid gap-4 rounded-[28px] bg-secondary/70 p-6">
-        <div className="space-y-1">
-          <h3 className="text-xl font-semibold leading-[1.2]">Capture</h3>
-          <p className="text-sm leading-6 text-muted-foreground">
+      <Card className="rounded-[28px] bg-secondary/70 border-0 ring-0 shadow-none">
+        <CardHeader className="px-6 pt-6 pb-0">
+          <CardTitle className="text-xl font-semibold leading-[1.2]">Capture</CardTitle>
+          <CardDescription className="text-sm leading-6">
             Start a recording or import a file — a note is created automatically.
-          </p>
-        </div>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-6 pb-6 pt-4">
 
         <div className="inline-flex flex-wrap gap-2 rounded-2xl bg-background p-2">
           {captureModes.map((mode) => {
@@ -1191,13 +1199,15 @@ export default function App({ api }) {
         </div>
 
         {captureError ? (
-          <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {captureError}
-          </div>
+          <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/10">
+            <AlertCircle className="size-4" />
+            <AlertDescription>{captureError}</AlertDescription>
+          </Alert>
         ) : null}
 
         {isReview ? (
-          <div className="grid gap-4 rounded-[24px] border bg-background p-5">
+          <Card className="rounded-[24px]">
+          <CardContent className="p-5 grid gap-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1">
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -1222,15 +1232,19 @@ export default function App({ api }) {
 
             <div className="flex flex-wrap gap-3">
               <Button size="lg" onClick={handleSaveRecording} disabled={isSavingRecording}>
+                <Save className="size-4" />
                 Save Recording
               </Button>
               <Button variant="destructive-outline" size="lg" onClick={handleDiscardRecording} disabled={isSavingRecording}>
+                <X className="size-4" />
                 Discard Recording
               </Button>
             </div>
-          </div>
+          </CardContent>
+          </Card>
         ) : (
-          <div className="grid gap-4 rounded-[24px] border bg-background p-5">
+          <Card className="rounded-[24px]">
+          <CardContent className="p-5 grid gap-4">
             <div className="space-y-1">
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Recorder
@@ -1245,25 +1259,32 @@ export default function App({ api }) {
               </p>
             </div>
 
+            {isRecording && <Progress className="progress-indeterminate h-1" />}
+
             <div className="flex flex-wrap gap-3">
               {isRecording || isStopping ? (
                 <Button variant="outline" size="lg" onClick={handleStopRecording} disabled={isStopping}>
+                  <Square className="size-4" />
                   Stop Recording
                 </Button>
               ) : (
                 <>
                   <Button size="lg" onClick={handleStartRecording}>
+                    <Circle className="size-4 fill-current" />
                     Start Recording
                   </Button>
                   <Button variant="outline" size="lg" onClick={handleImportFiles}>
+                    <Upload className="size-4" />
                     Import Files
                   </Button>
                 </>
               )}
             </div>
-          </div>
+          </CardContent>
+          </Card>
         )}
-      </div>
+      </CardContent>
+      </Card>
     );
   };
 
@@ -1309,10 +1330,15 @@ export default function App({ api }) {
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <ScrollArea className="flex-1">
           {loading ? (
-            <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center text-sm text-muted-foreground">
-              Loading notes...
+            <div className="grid gap-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-2xl border bg-background p-4 space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))}
             </div>
           ) : nodes.length === 0 ? (
             <div className="rounded-2xl border border-dashed bg-background px-4 py-10 text-center">
@@ -1353,11 +1379,12 @@ export default function App({ api }) {
               })}
             </ul>
           )}
-        </div>
+        </ScrollArea>
       </aside>
 
-      <section className="rounded-[32px] border bg-background p-6 shadow-sm">
+      <section className="flex flex-col rounded-[32px] border bg-background shadow-sm overflow-hidden">
         {selectedNode ? (
+          <ScrollArea className="flex-1 p-6">
           <div className="grid gap-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
@@ -1370,6 +1397,7 @@ export default function App({ api }) {
                 </p>
               </div>
               <Button variant="destructive-outline" size="lg" onClick={() => handleDeleteNode(selectedNode.id)}>
+                <Trash2 className="size-4" />
                 Delete Note
               </Button>
             </div>
@@ -1388,6 +1416,7 @@ export default function App({ api }) {
                 <Input value={editTags} onChange={(event) => setEditTags(event.target.value)} />
               </div>
               <Button type="submit" size="lg">
+                <Save className="size-4" />
                 Save Changes
               </Button>
             </form>
@@ -1401,14 +1430,14 @@ export default function App({ api }) {
               onRetry={handleRetryTranscript}
             />
 
-            <div className="grid gap-4 rounded-[28px] bg-secondary/70 p-6">
-              <div className="space-y-1">
-                <h3 className="text-xl font-semibold leading-[1.2]">Saved Media</h3>
-                <p className="text-sm text-muted-foreground">
+            <Card className="rounded-[28px] bg-secondary/70 border-0 ring-0 shadow-none">
+              <CardHeader className="px-6 pt-6 pb-0">
+                <CardTitle className="text-xl font-semibold leading-[1.2]">Saved Media</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
                   Recorded and imported media stay attached to the active note and remain stored locally first.
-                </p>
-              </div>
-
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-6 pb-6 pt-4">
               {attachments.length === 0 ? (
                 <div className="rounded-2xl border border-dashed bg-background px-4 py-8 text-center">
                   <h4 className="text-xl font-semibold leading-[1.2]">Saved media appears here</h4>
@@ -1431,10 +1460,12 @@ export default function App({ api }) {
                   ))}
                 </ul>
               )}
-            </div>
+              </CardContent>
+            </Card>
           </div>
+          </ScrollArea>
         ) : (
-          <div className="grid min-h-[520px] content-center gap-3 text-center">
+          <div className="grid min-h-[520px] content-center gap-3 text-center p-6">
             <h2 className="text-xl font-semibold leading-[1.2]">Select a note to view it</h2>
             <p className="text-sm leading-6 text-muted-foreground">
               Capture a recording or import a file from the sidebar to create your first note.
@@ -1461,52 +1492,45 @@ export default function App({ api }) {
               </p>
             </div>
 
-            <div className="inline-flex rounded-2xl bg-secondary p-2">
-              {['Workspace', 'Settings'].map((label) => {
-                const value = label.toLowerCase();
-                const isActive = activeView === value;
-
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    aria-pressed={isActive}
-                    aria-current={isActive ? 'page' : undefined}
-                    onClick={() => setActiveView(value)}
-                    className={cn(
-                      'inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-all duration-200',
-                      isActive
-                        ? 'border-primary bg-primary text-primary-foreground shadow-[0_18px_42px_-22px_rgba(15,23,42,0.95)] ring-2 ring-primary/20 -translate-y-px'
-                        : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
-                    )}
-                  >
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <Tabs value={activeView} onValueChange={setActiveView}>
+              <TabsList className="rounded-2xl bg-secondary p-2 h-auto">
+                <TabsTrigger
+                  value="workspace"
+                  className="h-11 rounded-xl px-4 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_18px_42px_-22px_rgba(15,23,42,0.95)] data-[state=active]:ring-2 data-[state=active]:ring-primary/20 data-[state=active]:-translate-y-px"
+                >
+                  Workspace
+                </TabsTrigger>
+                <TabsTrigger
+                  value="settings"
+                  className="h-11 rounded-xl px-4 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_18px_42px_-22px_rgba(15,23,42,0.95)] data-[state=active]:ring-2 data-[state=active]:ring-primary/20 data-[state=active]:-translate-y-px"
+                >
+                  Settings
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </header>
 
         {error ? (
-          <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
+          <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/10">
+            <AlertCircle className="size-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : null}
 
         {activeView === 'workspace' ? (
           workspaceView
         ) : (
           <div className="grid gap-8">
-            <section className="grid gap-6 rounded-[32px] border bg-background p-6 shadow-sm">
-              <div className="space-y-1">
-                <h3 className="text-xl font-semibold leading-[1.2]">Appearance</h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose how Privanote looks on your device.
-                </p>
-              </div>
-              <ThemeToggle />
-            </section>
+            <Card className="rounded-[32px] shadow-sm">
+              <CardHeader className="px-6 pt-6 pb-0">
+                <CardTitle className="text-xl font-semibold leading-[1.2]">Appearance</CardTitle>
+                <CardDescription>Choose how Privanote looks on your device.</CardDescription>
+              </CardHeader>
+              <CardContent className="px-6 pb-6 pt-4">
+                <ThemeToggle />
+              </CardContent>
+            </Card>
             <SettingsView
               settings={settingsDraft}
               providerConnections={providerConnections}

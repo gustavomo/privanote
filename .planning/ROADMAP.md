@@ -217,3 +217,13 @@ Plans:
 - [x] 14-04-PLAN.md — Generate custom dock icon and wire into development and production builds
 - [x] 14-05-PLAN.md — Fix progress bar animation, AlertDialog CSS scoping, and double-confirmation bugs (gap closure)
 - [x] 14-06-PLAN.md — Regenerate dock icon with transparency and proper macOS sizing (gap closure)
+
+### Phase 15: GitHub PR analysis — hidden feature gated by env var, ADK + Qodo Merge
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 14
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 15 to break down)

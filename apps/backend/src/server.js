@@ -9,6 +9,8 @@ const { registerSettingsRoutes } = require('./routes/settings');
 const { registerSyncRoutes } = require('./routes/sync');
 const { resumePendingTranscriptJobs, stopTranscriptionRunner } = require('./services/transcription-runner');
 const { resumePendingSyncJobs, stopSyncRunner } = require('./services/sync-runner');
+const { registerAnalyzeRoutes } = require('./routes/analyze');
+const { registerInternalRoutes } = require('./routes/internal');
 
 async function createServer() {
   const app = Fastify({ logger: false });
@@ -32,6 +34,12 @@ async function createServer() {
   await registerTranscriptRoutes(app);
   await registerSettingsRoutes(app);
   await registerSyncRoutes(app);
+  // PR analysis routes -- only registered when feature is enabled (per D-01)
+  if (process.env.PRIVANOTE_PR_ANALYSIS === 'true') {
+    await registerAnalyzeRoutes(app);
+    await registerInternalRoutes(app);
+  }
+
   resumePendingTranscriptJobs();
   resumePendingSyncJobs();
 

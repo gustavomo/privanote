@@ -4,6 +4,7 @@ const { media } = require('./v1/media');
 const { transcripts } = require('./v1/transcripts');
 const { settings } = require('./v1/settings');
 const { sync } = require('./v1/sync');
+const { analyze } = require('./v1/analyze');
 
 const operations = {
   listNodes: nodes.listNodes,
@@ -24,6 +25,8 @@ const operations = {
   beginProviderConnection: sync.beginProviderConnection,
   disconnectProvider: sync.disconnectProvider,
   retryAttachmentSync: sync.retryAttachmentSync,
+  startAnalysis: analyze.startAnalysis,
+  getAnalysisStatus: analyze.getAnalysisStatus,
 };
 
 const v1 = {
@@ -34,6 +37,7 @@ const v1 = {
   transcripts,
   settings,
   sync,
+  analyze,
   operations,
 };
 

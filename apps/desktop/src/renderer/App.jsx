@@ -10,6 +10,9 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
+import { Toaster } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { Circle, Square, Upload, Save, X, Trash2, AlertCircle } from 'lucide-react';
 import ThemeToggle from './components/theme-toggle.jsx';
 import MediaCard from './components/media-card.jsx';
@@ -699,9 +702,11 @@ export default function App({ api }) {
       if (selectedNodeIdRef.current) {
         await loadAttachments(selectedNodeIdRef.current);
       }
+      toast.success('Settings saved');
     } catch (saveError) {
       setSettingsError("We couldn't save these settings. Fix the highlighted fields and try again.");
       setSettingsErrorDetail(saveError.message || '');
+      toast.error('Could not save settings. Try again.');
     } finally {
       setIsSavingSettings(false);
     }
@@ -722,6 +727,7 @@ export default function App({ api }) {
       backendApiKeyConfigured: false,
       backendApiKeyMaskedHint: '',
     });
+    toast.info('Credential cleared');
   }
 
   async function handleBeginProviderConnection(provider) {
@@ -737,8 +743,10 @@ export default function App({ api }) {
       }
 
       startProviderPolling(provider);
+      toast.success('Connected to ' + (providerLabels[provider] || provider));
     } catch (connectError) {
       setSettingsError(connectError.message || `Unable to connect ${providerLabels[provider]}.`);
+      toast.error('Could not connect provider. Try again.');
     }
   }
 
@@ -765,6 +773,7 @@ export default function App({ api }) {
       if (selectedNodeIdRef.current) {
         await loadAttachments(selectedNodeIdRef.current);
       }
+      toast.info('Disconnected from ' + (providerLabels[provider] || provider));
     } catch (disconnectError) {
       setSettingsError(disconnectError.message || `Unable to disconnect ${providerLabels[provider]}.`);
     }
@@ -789,23 +798,23 @@ export default function App({ api }) {
       setNodes((current) =>
         current.map((node) => (node.id === updatedNode.id ? updatedNode : node))
       );
+      toast.success('Note saved');
     } catch (updateError) {
       setError(updateError.message || 'Unable to update note.');
+      toast.error('Could not save changes. Try again.');
     }
   }
 
   async function handleDeleteNode(nodeId) {
-    if (!confirmAction('Delete Note: Delete this note and all linked media? This cannot be undone.')) {
-      return;
-    }
-
     setError('');
 
     try {
       await client.deleteNode(nodeId);
       await loadNodes();
+      toast.success('Note deleted');
     } catch (deleteError) {
       setError(deleteError.message || 'Unable to delete note.');
+      toast.error('Could not delete note. Try again.');
     }
   }
 
@@ -843,6 +852,7 @@ export default function App({ api }) {
       await loadAttachments(result.node.id);
     } catch (importError) {
       setError(importError.message || 'Unable to import files.');
+      toast.error('Import failed. Check the file and try again.');
     }
   }
 
@@ -1058,8 +1068,10 @@ export default function App({ api }) {
       await loadNodes();
       setSelectedNodeId(result.node.id);
       await loadAttachments(result.node.id);
+      toast.success('Recording saved');
     } catch (saveError) {
       setError(saveError.message || 'Unable to save recording.');
+      toast.error('Could not save recording. Try again.');
     } finally {
       setIsSavingRecording(false);
     }
@@ -1396,10 +1408,31 @@ export default function App({ api }) {
                   Last updated {formatDate(selectedNode.updated_at)}
                 </p>
               </div>
-              <Button variant="destructive-outline" size="lg" onClick={() => handleDeleteNode(selectedNode.id)}>
-                <Trash2 className="size-4" />
-                Delete Note
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive-outline" size="lg">
+                    <Trash2 className="size-4" />
+                    Delete Note
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete note?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete this note and all its attachments. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      variant="destructive"
+                      onClick={() => handleDeleteNode(selectedNode.id)}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
 
             <form className="grid gap-4" onSubmit={handleSaveNode}>
@@ -1477,6 +1510,7 @@ export default function App({ api }) {
   );
 
   return (
+    <>
     <main className="theme min-h-screen bg-background px-6 py-8 text-foreground">
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
         <header className="flex flex-col gap-4">
@@ -1552,5 +1586,7 @@ export default function App({ api }) {
         )}
       </div>
     </main>
+    <Toaster />
+    </>
   );
 }

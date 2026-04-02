@@ -215,5 +215,5 @@ Plans:
 - [x] 14-02-PLAN.md — Migrate App.jsx containers, ScrollArea, Tabs, Skeleton, AlertDialog, icons, toasts
 - [x] 14-03-PLAN.md — Migrate media-card, transcript-section, settings-view with icons, AlertDialog, toasts
 - [x] 14-04-PLAN.md — Generate custom dock icon and wire into development and production builds
-- [ ] 14-05-PLAN.md — Fix progress bar animation, AlertDialog CSS scoping, and double-confirmation bugs (gap closure)
+- [x] 14-05-PLAN.md — Fix progress bar animation, AlertDialog CSS scoping, and double-confirmation bugs (gap closure)
 - [x] 14-06-PLAN.md — Regenerate dock icon with transparency and proper macOS sizing (gap closure)

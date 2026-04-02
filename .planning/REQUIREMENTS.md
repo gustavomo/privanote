@@ -205,9 +205,9 @@ Which phases cover which requirements. This will be updated during roadmap creat
 | UIAUD-04 | Phase 12 | Complete |
 | UIAUD-05 | Phase 12 | Complete |
 | SHADCN-01 | Phase 14 | Planned |
-| SHADCN-02 | Phase 14 | Planned |
-| SHADCN-03 | Phase 14 | Planned |
-| SHADCN-04 | Phase 14 | Planned |
+| SHADCN-02 | Phase 14 | Complete |
+| SHADCN-03 | Phase 14 | Complete |
+| SHADCN-04 | Phase 14 | Complete |
 | SHADCN-05 | Phase 14 | Planned |
 | SHADCN-06 | Phase 14 | Planned |
 

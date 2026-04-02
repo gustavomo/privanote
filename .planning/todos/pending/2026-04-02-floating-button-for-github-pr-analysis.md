@@ -1,48 +1,46 @@
 ---
 created: 2026-04-02T05:32:03.990Z
-title: Floating button for GitHub PR analysis
-area: ui
+title: GitHub PR analysis as ADK agent tool
+area: general
 files:
-  - apps/desktop/src/renderer/capture-overlay/capture-overlay.html
-  - apps/desktop/src/main/app-detector.js
-  - apps/desktop/src/main/main.js
-  - apps/desktop/src/main/preload-capture.js
   - apps/backend/src/services/openai-transcription.js
   - apps/backend/src/services/nodes-service.js
   - apps/backend/src/services/settings-service.js
-  - apps/desktop/src/renderer/App.jsx
-  - apps/desktop/src/renderer/components/settings-view.jsx
   - apps/backend/src/server.js
   - apps/backend/src/contracts/v1/index.js
 ---
 
 ## Problem
 
-Need a floating button in the capture overlay that detects when the user is on a GitHub PR page, captures the URL from Chrome (or allows manual URL input), and analyzes the PR using the GitHub API to generate a structured note with changelog, insights, change diagrams, and improvement suggestions.
+Need the ability to analyze GitHub PRs (changelog, insights, change diagrams, improvement suggestions) from within Privanote. Instead of a visible UI button, this should be a hidden/internal function exposed as an ADK agent tool — the user asks the agent via chat (e.g., "analyze this PR: github.com/org/repo/pull/123") and the agent calls the tool to fetch PR data, analyze it, and create a note.
 
-Currently Privanote captures screenshots, clipboard, and recordings but has no way to extract and analyze structured data from web pages like GitHub PRs.
+Currently Privanote captures screenshots, clipboard, and recordings but has no way to extract and analyze structured data from GitHub PRs. This ties into the existing ADK agent todo for note search and insights.
 
 ## Solution
 
-1. **GitHub PAT in Settings**: Add field in settings-view.jsx for GitHub Personal Access Token (same pattern as OpenAI key). Supports org repos where user is a collaborator.
+### ADK Agent Tool approach (hidden function, no UI button)
+
+1. **GitHub PAT in Settings**: Add field in settings for GitHub Personal Access Token (same pattern as OpenAI key). Supports org repos where user is a collaborator.
 
 2. **GitHub Service** (`apps/backend/src/services/github-service.js`): Use `@octokit/rest` to fetch PR data (diff, commits, reviews, files changed). Parse GitHub URLs to extract owner/repo/pull_number.
 
-3. **PR Analysis Service** (`apps/backend/src/services/pr-analysis-service.js`): Reuse OpenAI API pattern with chat completions (gpt-4o-mini) to generate:
-   - Executive summary of PR changes
-   - Per-file/module change list
-   - Mermaid diagram of change flow/dependencies
-   - Risk/complexity insights
-   - Improvement suggestions
+3. **PR Analysis Tool for ADK Agent**: Register as an ADK tool/function that the agent can invoke:
+   - Tool name: `analyze_github_pr`
+   - Input: GitHub PR URL or `{owner, repo, pull_number}`
+   - Processing: Fetch PR data via GitHub API → send to LLM for analysis
+   - Output: Structured analysis (summary, changes, Mermaid diagram, risks, suggestions)
+   - Side effect: Creates a note with tag `github-analysis`
 
-4. **Backend Endpoint**: `POST /api/v1/analyze/pr` - receives URL, calls GitHub API, runs AI analysis, creates note.
+4. **Backend Endpoint** (internal): `POST /api/v1/analyze/pr` — called by the ADK agent, not directly by UI.
 
-5. **Overlay Button**: Add 4th circular button in capture-overlay.html, visible only when app-detector detects GitHub. Click triggers IPC to main process which gets active browser URL and sends to backend.
+5. **Agent Integration**: The ADK agent (from the "AI agent for note search and insights" todo) orchestrates this tool alongside search/RAG tools. User interacts via chat interface:
+   - "Analyze PR github.com/org/repo/pull/123"
+   - "What changed in the last 3 PRs of repo X?"
+   - "Compare PR 45 and PR 50"
 
-6. **Manual URL Input**: Add input field in App.jsx for pasting PR URLs when not in browser.
-
-7. **Note Output**: Creates note with tag `github-analysis` containing formatted analysis with Mermaid diagrams.
+### Relationship to ADK agent todo
+This is a **tool/function** within the broader ADK agent system. The agent orchestrates when to call it based on user intent. No floating button or separate UI needed — the agent's chat interface is the entry point.
 
 ### New dependencies
-- `@octokit/rest` (backend)
-- `mermaid` (frontend, for diagram rendering - future enhancement)
+- `@octokit/rest` (backend - GitHub API client)
+- ADK framework (shared with the agent todo)

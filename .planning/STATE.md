@@ -136,6 +136,7 @@ Recent decisions affecting current work:
 - [Phase 12]: Used shadcn CLI scaffolding with radix-nova style; customized Button to h-10/h-11 sizes with destructive-outline variant
 - [Phase 12]: Dark mode via class-based switching with oklch CSS variables; theme persisted in localStorage under privanote-theme key with FOUC prevention
 - [Phase 12]: Migrated settings-view, media-card, transcript-section to shadcn components; Checkbox uses onCheckedChange, RadioGroup uses onValueChange, Button destructive-outline for destructive secondary actions
+- Phase 14 added: Apply shadcn/ui to all remaining components and add custom dock bar icon
 
 ### Pending Todos
 

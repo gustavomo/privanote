@@ -202,3 +202,13 @@ Plans:
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 13 to break down)
+
+### Phase 14: Apply shadcn/ui to all remaining components and add custom dock bar icon
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 13
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 14 to break down)

@@ -186,12 +186,12 @@ Plans:
 **Goal:** Migrate all main window form controls to shadcn/ui with preset bIkfWsK, fix visual bugs (borderless buttons, ugly checkboxes, ugly radio buttons), add dark/light mode toggle with CSS variable theming, and unify spacing and typography across all views.
 **Requirements**: [UIAUD-01, UIAUD-02, UIAUD-03, UIAUD-04, UIAUD-05]
 **Depends on:** Phase 11
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 12-01-PLAN.md — Scaffold shadcn components, customize Button variants, configure dark mode theming, and create ThemeToggle
-- [ ] 12-02-PLAN.md — Migrate settings-view.jsx, media-card.jsx, and transcript-section.jsx to shadcn components
-- [ ] 12-03-PLAN.md — Migrate App.jsx to shadcn components and wire dark mode toggle into settings
+- [x] 12-01-PLAN.md — Scaffold shadcn components, customize Button variants, configure dark mode theming, and create ThemeToggle
+- [x] 12-02-PLAN.md — Migrate settings-view.jsx, media-card.jsx, and transcript-section.jsx to shadcn components
+- [x] 12-03-PLAN.md — Migrate App.jsx to shadcn components and wire dark mode toggle into settings
 
 ### Phase 13: AI-powered capture processing: text cleanup, summarization, auto-tagging, screenshot vision analysis, and capture deduplication during sessions
 

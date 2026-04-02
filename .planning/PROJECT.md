@@ -63,7 +63,7 @@ The clarified product direction extends that baseline substantially: the repo sh
 
 ## Current State
 
-Phase 11 complete (2026-04-01) — overlay buttons polished to 40px with teal active color, idle/active icon state pairs (eye, clipboard, headphones), pulse animations removed, emoji tray replaced with monochrome macOS template icon (P lettermark with recording red dot), and minimize-to-tray behavior added. All milestone phases complete.
+Phase 12 complete (2026-04-01) — all main window form controls migrated to shadcn/ui (Button, Input, Textarea, Checkbox, RadioGroup, ToggleGroup, Badge, Label, Separator), dark mode with light/dark/system toggle added via CSS variable theming and class-based Tailwind, visual bugs fixed (borderless buttons, ugly checkboxes, ugly radio buttons).
 
 ## Evolution
 
@@ -83,4 +83,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-01 after Phase 7 completion*
+*Last updated: 2026-04-01 after Phase 12 completion*

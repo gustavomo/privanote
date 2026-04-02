@@ -953,6 +953,7 @@ async function createWindow() {
     height: 840,
     minWidth: 1024,
     minHeight: 700,
+    icon: path.join(__dirname, '..', '..', 'resources', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -962,6 +963,16 @@ async function createWindow() {
   });
 
   mainWindow = win;
+
+  // Set custom dock icon for development mode (macOS).
+  // In production, the .icns in the .app bundle handles this.
+  if (process.platform === 'darwin' && app.dock) {
+    const iconPath = path.join(__dirname, '..', '..', 'resources', 'icon.png');
+    if (require('fs').existsSync(iconPath)) {
+      app.dock.setIcon(nativeImage.createFromPath(iconPath));
+    }
+  }
+
   // Minimize to tray on close (per D-15). Actual quit happens via Cmd+Q / app.quit().
   win.on('close', (event) => {
     if (!isQuitting) {

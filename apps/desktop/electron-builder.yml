@@ -8,6 +8,7 @@ extraResources:
 asarUnpack:
   - node_modules/better-sqlite3/**/*
 mac:
+  icon: resources/icon.icns
   artifactName: ${productName}-${version}-${arch}.${ext}
   target:
     - dir

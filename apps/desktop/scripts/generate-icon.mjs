@@ -14,24 +14,21 @@ const iconsetDir = path.join(resourcesDir, 'icon.iconset');
 
 // Create SVG with P lettermark on dark charcoal rounded square.
 // Using SVG path for the "P" instead of text element to avoid font rendering issues.
+// Artwork occupies ~80% of 1024px canvas (~820px) with ~102px padding per macOS HIG.
+// Area outside the rounded rect is transparent (no background fill on full canvas).
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" rx="228" fill="#1e2028"/>
-  <path d="M370 280h180c100 0 180 80 180 180s-80 180-180 180h-80v104h-100V280zm100 264h80c44 0 80-36 80-84s-36-80-80-80h-80v164z" fill="white"/>
+  <rect x="102" y="102" width="820" height="820" rx="180" fill="#1e2028"/>
+  <path d="M370 280h180c100 0 180 80 180 180s-80 180-180 180h-80v104h-100V280zm100 264h80c44 0 80-36 80-84s-36-80-80-80h-80v164z" fill="white" transform="translate(0, 52)"/>
 </svg>`;
 
 // Step 1: Write SVG
 const svgPath = path.join(resourcesDir, 'icon.svg');
 fs.writeFileSync(svgPath, svg);
 
-// Step 2: Convert SVG to 1024px PNG using qlmanage (always available on macOS)
+// Step 2: Convert SVG to 1024px PNG using rsvg-convert (preserves alpha transparency)
 try {
   const pngPath = path.join(resourcesDir, 'icon.png');
-  execSync(`qlmanage -t -s 1024 -o "${resourcesDir}" "${svgPath}" 2>/dev/null`);
-  // qlmanage outputs as icon.svg.png
-  const qlOutput = path.join(resourcesDir, 'icon.svg.png');
-  if (fs.existsSync(qlOutput)) {
-    fs.renameSync(qlOutput, pngPath);
-  }
+  execSync(`rsvg-convert -w 1024 -h 1024 "${svgPath}" -o "${pngPath}"`);
 
   // Verify PNG exists
   if (!fs.existsSync(pngPath)) {

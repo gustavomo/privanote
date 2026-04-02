@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 phase: 14-apply-shadcn-ui-to-all-remaining-components-and-add-custom-dock-bar-icon
 source: [14-01-SUMMARY.md, 14-02-SUMMARY.md, 14-03-SUMMARY.md, 14-04-SUMMARY.md]
 started: 2026-04-02T04:15:00Z
-updated: 2026-04-02T04:35:00Z
+updated: 2026-04-02T14:00:00Z
 ---
 
 ## Current Test
@@ -82,7 +82,7 @@ blocked: 0
 ## Gaps
 
 - truth: "Indeterminate progress bar appears during active recording and disappears when recording stops"
-  status: failed
+  status: resolved
   reason: "User reported: is not showing"
   severity: major
   test: 6
@@ -96,7 +96,7 @@ blocked: 0
     - "Remove inline style transform when in indeterminate mode (no value prop), so CSS animation can control the indicator"
   debug_session: ""
 - truth: "Custom dock icon shows dark charcoal rounded square with white P lettermark, properly sized with no white background"
-  status: failed
+  status: resolved
   reason: "User reported: looks wrong, bigger compared with the rest icons, and have a background white."
   severity: major
   test: 13
@@ -111,7 +111,7 @@ blocked: 0
     - "Resize SVG artwork to ~80% of canvas (~820x820 centered) with transparent padding"
   debug_session: ".planning/debug/dock-icon-oversized-white-bg.md"
 - truth: "Delete Note button shows styled shadcn AlertDialog instead of browser confirm(), with Cancel and red Delete button"
-  status: failed
+  status: resolved
   reason: "User reported: is showing weird, and appear again a native alert."
   severity: major
   test: 8

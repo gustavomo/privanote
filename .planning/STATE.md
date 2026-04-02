@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: All plans executed
-stopped_at: Completed 14-05-PLAN.md and 14-06-PLAN.md
-last_updated: "2026-04-02T14:34:48.344Z"
+stopped_at: Phase 15 context gathered
+last_updated: "2026-04-02T20:18:21.590Z"
 last_activity: 2026-04-02
 progress:
-  total_phases: 14
+  total_phases: 15
   completed_phases: 13
   total_plans: 37
   completed_plans: 37
@@ -143,6 +143,7 @@ Recent decisions affecting current work:
 - [Phase 12]: Dark mode via class-based switching with oklch CSS variables; theme persisted in localStorage under privanote-theme key with FOUC prevention
 - [Phase 12]: Migrated settings-view, media-card, transcript-section to shadcn components; Checkbox uses onCheckedChange, RadioGroup uses onValueChange, Button destructive-outline for destructive secondary actions
 - Phase 14 added: Apply shadcn/ui to all remaining components and add custom dock bar icon
+- Phase 15 added: GitHub PR analysis — hidden feature gated by env var, ADK + Qodo Merge
 - [Phase 14]: Backed up button.jsx before alert-dialog install to preserve destructive-outline variant and h-10/h-11 sizes
 - [Phase 14]: Custom sonner.jsx with MutationObserver on documentElement classList for theme detection without next-themes
 - [Phase 14]: Used native macOS tools (qlmanage, sips, iconutil) for dock icon generation instead of npm dependencies
@@ -177,6 +178,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-02T13:58:00Z
-Stopped at: Completed 14-05-PLAN.md and 14-06-PLAN.md
-Resume file: None
+Last session: 2026-04-02T20:18:21.577Z
+Stopped at: Phase 15 context gathered
+Resume file: .planning/phases/15-github-pr-analysis-hidden-feature-gated-by-env-var-adk-qodo-merge/15-CONTEXT.md

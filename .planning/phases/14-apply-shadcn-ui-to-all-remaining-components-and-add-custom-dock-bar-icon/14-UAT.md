@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 14-apply-shadcn-ui-to-all-remaining-components-and-add-custom-dock-bar-icon
 source: [14-01-SUMMARY.md, 14-02-SUMMARY.md, 14-03-SUMMARY.md, 14-04-SUMMARY.md]
 started: 2026-04-02T04:15:00Z
@@ -86,25 +86,45 @@ blocked: 0
   reason: "User reported: is not showing"
   severity: major
   test: 6
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "Progress component inline style `transform: translateX(-100%)` (progress.jsx:22) overrides the CSS animation. Inline styles have higher specificity than @keyframes, so the indicator is stuck off-screen."
+  artifacts:
+    - path: "apps/desktop/src/renderer/components/ui/progress.jsx"
+      issue: "Line 22: inline style transform overrides CSS animation for indeterminate mode"
+    - path: "apps/desktop/src/renderer/index.css"
+      issue: "Lines 104-107: .progress-indeterminate animation works but is overridden by inline style"
+  missing:
+    - "Remove inline style transform when in indeterminate mode (no value prop), so CSS animation can control the indicator"
   debug_session: ""
 - truth: "Custom dock icon shows dark charcoal rounded square with white P lettermark, properly sized with no white background"
   status: failed
-  reason: "User reported: looks wrong, bigger compared with the rest icons, and have a background white. Screenshot shows P icon is oversized relative to other dock icons and has a visible white background square behind the charcoal rounded-square."
+  reason: "User reported: looks wrong, bigger compared with the rest icons, and have a background white."
   severity: major
   test: 13
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Two defects in generate-icon.mjs: (1) qlmanage -t composites onto opaque white background, destroying SVG transparency; (2) SVG artwork fills 100% of 1024x1024 canvas — macOS expects ~80% with transparent padding."
+  artifacts:
+    - path: "apps/desktop/scripts/generate-icon.mjs"
+      issue: "Line 29: qlmanage -t destroys transparency; Lines 17-19: SVG rect fills 100% of canvas"
+    - path: "apps/desktop/resources/icon.png"
+      issue: "Generated with white background and no padding"
+  missing:
+    - "Replace qlmanage with a tool that preserves alpha (resvg, sharp, or Canvas-based approach)"
+    - "Resize SVG artwork to ~80% of canvas (~820x820 centered) with transparent padding"
+  debug_session: ".planning/debug/dock-icon-oversized-white-bg.md"
 - truth: "Delete Note button shows styled shadcn AlertDialog instead of browser confirm(), with Cancel and red Delete button"
   status: failed
-  reason: "User reported: is showing weird, and appear again a native alert. Screenshot shows Remove Media AlertDialog renders but layout is broken (overlapping video player), and a native confirm() still fires alongside or after the dialog."
+  reason: "User reported: is showing weird, and appear again a native alert."
   severity: major
   test: 8
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Two issues: (1) confirmAction() helper (App.jsx:130) still calls window.confirm() in handlers that now have AlertDialog wrappers, causing double confirmation; (2) AlertDialog portal renders outside .theme scope so font variables are missing, overlay is near-invisible (bg-black/10), and max-width is too narrow (max-w-xs)."
+  artifacts:
+    - path: "apps/desktop/src/renderer/App.jsx"
+      issue: "Line 130: confirmAction() uses window.confirm; Line 864: handleDeleteAttachment still calls it"
+    - path: "apps/desktop/src/renderer/components/ui/alert-dialog.jsx"
+      issue: "Line 33: overlay bg-black/10 nearly invisible; Line 52: max-w-xs too narrow"
+    - path: "apps/desktop/src/renderer/index.css"
+      issue: "Lines 10-11: .theme font variables not on :root, so portals miss them"
+  missing:
+    - "Remove confirmAction() calls from handlers with AlertDialog wrappers"
+    - "Move font variables to :root or apply .theme to html/body"
+    - "Increase overlay opacity to bg-black/50"
+  debug_session: ".planning/debug/delete-note-alertdialog-broken.md"

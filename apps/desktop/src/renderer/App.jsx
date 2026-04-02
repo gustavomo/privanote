@@ -861,10 +861,6 @@ export default function App({ api }) {
       return;
     }
 
-    if (!confirmAction('Remove Media: Remove this saved media from the note? This cannot be undone.')) {
-      return;
-    }
-
     setError('');
 
     try {

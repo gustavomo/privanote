@@ -31,9 +31,9 @@ Declared values (must be multiples of 4):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Overlay button gap, inline SVG padding |
-| sm | 8px | URL input field internal padding, popover padding |
-| md | 16px | Toast content padding, popover margins |
+| xs | 4px | Overlay button gap, inline SVG padding, status text vertical padding |
+| sm | 8px | URL input field internal padding, popover padding, action row gap |
+| md | 16px | Toast content padding, popover margins, status text total height |
 | lg | 24px | Not used in this phase |
 | xl | 32px | Not used in this phase |
 | 2xl | 48px | Not used in this phase |
@@ -49,9 +49,9 @@ Exceptions: Overlay buttons are 40px circles with 4px gap (established Phase 11 
 |------|------|--------|-------------|
 | Body | 14px | 400 (regular) | 1.5 |
 | Label | 12px | 600 (semibold) | 1.3 |
-| Heading | 16px | 600 (semibold) | 1.2 |
+| Badge | 9px | 600 (semibold) | 1.0 |
 
-Note: Overlay uses system font at 9px/600 for badge text (established pattern). The URL input popover uses 12px label and 14px input text. Toast notifications use the existing Sonner defaults (14px body).
+Note: Overlay uses system font at 9px/600 for badge text and status text (established pattern). The URL input popover uses 12px label and 14px input text. Toast notifications use the existing Sonner defaults (14px body). All overlay text uses only weights 400 and 600. Three sizes total: 9px (badge/status), 12px (label/button text/validation), 14px (body/input).
 
 ---
 
@@ -131,7 +131,7 @@ Overlay disabled: `opacity: 0.35; pointer-events: none` (existing mutual exclusi
 1. **URL input field**
    - Full-width text input
    - Height: 32px
-   - Font: system font, 13px, weight 400
+   - Font: system font, 14px, weight 400
    - Background: `oklch(0.30 0.008 43.1)`
    - Border: 1px solid `oklch(0.40 0.01 43.1)`
    - Border-radius: 6px
@@ -142,7 +142,7 @@ Overlay disabled: `opacity: 0.35; pointer-events: none` (existing mutual exclusi
    - Focus ring: 2px solid `oklch(0.65 0.15 195)` (teal accent)
 
 2. **Validation error text** (conditional)
-   - Font: system font, 11px, weight 400
+   - Font: system font, 12px, weight 400
    - Color: `oklch(0.75 0.18 25)` (warm red, readable on dark background)
    - Margin-top: 4px
    - Copy: "Enter a valid GitHub PR URL"
@@ -150,20 +150,20 @@ Overlay disabled: `opacity: 0.35; pointer-events: none` (existing mutual exclusi
 
 3. **Action row** (horizontal, right-aligned)
    - Margin-top: 8px
-   - Gap: 6px between buttons
+   - Gap: 8px between buttons
 
-   **Cancel button:**
-   - Width: auto, padding: 4px 10px
+   **Dismiss button:**
+   - Width: auto, padding: 4px 12px
    - Height: 28px
-   - Font: system font, 12px, weight 500
+   - Font: system font, 12px, weight 400
    - Background: transparent
    - Color: `oklch(0.70 0.01 43.1)`
    - Border: none
    - Border-radius: 4px
    - Hover: `background: oklch(0.30 0.008 43.1)`
-   - Label: "Cancel"
+   - Label: "Dismiss"
 
-   **Analyze button:**
+   **Analyze PR button:**
    - Width: auto, padding: 4px 12px
    - Height: 28px
    - Font: system font, 12px, weight 600
@@ -173,9 +173,9 @@ Overlay disabled: `opacity: 0.35; pointer-events: none` (existing mutual exclusi
    - Border-radius: 4px
    - Hover: `background: oklch(0.70 0.15 195)`
    - Disabled state: `opacity: 0.5; pointer-events: none` (when URL is invalid)
-   - Label: "Analyze"
+   - Label: "Analyze PR"
 
-**Dismiss:** Clicking Cancel, pressing Escape, or clicking outside the popover closes it.
+**Dismiss:** Clicking Dismiss, pressing Escape, or clicking outside the popover closes it.
 
 **Overlay resize:** When popover is visible, overlay window width expands from 48px to accommodate 48px (buttons) + 8px (gap) + 280px (popover) = 336px. Height remains based on button count. `resizeOverlay` IPC call adjusts the BrowserWindow dimensions. Popover is positioned to the left of the button column using `position: absolute`.
 
@@ -192,13 +192,13 @@ Overlay disabled: `opacity: 0.35; pointer-events: none` (existing mutual exclusi
 | Generating note | "Generating note..." | `oklch(0.65 0.15 195)` |
 
 **Typography:**
-- Font: system font, 9px, weight 500
+- Font: system font, 9px, weight 600
 - Letter-spacing: 0.02em
 - Text-align: center
 - Width: 48px (contained within button column)
 - Overflow: hidden, text-overflow: ellipsis, white-space: nowrap
 
-**Height recalculation:** Status text adds 14px to the overlay height when visible (9px text + 2px top gap + 3px bottom).
+**Height recalculation:** Status text adds 16px to the overlay height when visible (4px top padding + 9px text + 4px bottom padding = 17px, rendered as 16px total allocation with 4px vertical padding around the 9px text line).
 
 ### Main Window: Sonner Toast on Completion
 
@@ -234,7 +234,7 @@ The generated PR analysis note follows the existing note display pattern -- no n
 
 | Element | Copy |
 |---------|------|
-| Primary CTA (overlay) | "Analyze" (in the URL input popover action button) |
+| Primary CTA (overlay) | "Analyze PR" (in the URL input popover action button) |
 | Overlay idle tooltip | "Analyze this PR" |
 | Overlay analyzing tooltip | "Analyzing PR..." |
 | Overlay finalizing tooltip | "Creating note..." |
@@ -248,7 +248,7 @@ The generated PR analysis note follows the existing note display pattern -- no n
 | Error: generic | "Analysis failed. Retry from the overlay button." |
 | Error: Python missing | (console only, no UI -- per D-43) |
 | Error: service unavailable | "PR analysis service not available. Check setup." |
-| Cancel button | "Cancel" |
+| Dismiss button | "Dismiss" |
 
 No empty state UI exists for this feature. The 4th button simply does not appear unless the env var is set and a GitHub PR page is detected. There is no "no data" screen because the feature is invisible when unused.
 
@@ -279,7 +279,7 @@ No new shadcn components are needed. The overlay is plain HTML/CSS. The main win
 ### Analysis Flow
 
 1. User clicks idle PR button -> URL input popover opens with auto-detected URL pre-filled
-2. User confirms or edits URL, clicks "Analyze"
+2. User confirms or edits URL, clicks "Analyze PR"
 3. Popover closes, button transitions to `pr-analyzing` state, status text appears
 4. Overlay sends IPC `pr:start-analysis` with `{ url }` to main process
 5. Main process forwards to Node.js backend `POST /api/v1/analyze/pr`
@@ -295,7 +295,7 @@ The PR analysis button has NO mutual exclusion with other overlay buttons. Scree
 
 ### Keyboard
 
-No new keyboard shortcuts for this phase. The PR button is click-only from the overlay. The URL input field supports standard text editing (Cmd+A, Cmd+V, Cmd+C) and Enter to submit, Escape to cancel.
+No new keyboard shortcuts for this phase. The PR button is click-only from the overlay. The URL input field supports standard text editing (Cmd+A, Cmd+V, Cmd+C) and Enter to submit, Escape to dismiss.
 
 ---
 

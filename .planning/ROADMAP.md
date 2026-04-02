@@ -213,5 +213,5 @@ Plans:
 Plans:
 - [x] 14-01-PLAN.md — Install 8 shadcn components, rework dark mode palette, customize Sonner wrapper
 - [ ] 14-02-PLAN.md — Migrate App.jsx containers, ScrollArea, Tabs, Skeleton, AlertDialog, icons, toasts
-- [ ] 14-03-PLAN.md — Migrate media-card, transcript-section, settings-view with icons, AlertDialog, toasts
+- [x] 14-03-PLAN.md — Migrate media-card, transcript-section, settings-view with icons, AlertDialog, toasts
 - [x] 14-04-PLAN.md — Generate custom dock icon and wire into development and production builds

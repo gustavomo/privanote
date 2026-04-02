@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Save, FolderOpen, Link, Unlink, Eraser } from 'lucide-react';
 
 const storageOptions = [
   { value: 'local', label: 'Local' },
@@ -86,6 +87,7 @@ function renderProviderCard({
             onClick={() => onBeginProviderConnection(provider)}
             disabled={isLoading || isSaving}
           >
+            <Link className="size-4" />
             {provider === 'google-drive' ? 'Connect Google Drive' : 'Connect OneDrive'}
           </Button>
         ) : (
@@ -95,6 +97,7 @@ function renderProviderCard({
             onClick={() => onDisconnectProvider(provider)}
             disabled={isLoading || isSaving}
           >
+            <Unlink className="size-4" />
             {provider === 'google-drive' ? 'Disconnect Google Drive' : 'Disconnect OneDrive'}
           </Button>
         )}
@@ -220,6 +223,7 @@ export default function SettingsView({
             onClick={onChooseDirectory}
             disabled={isLoading || isSaving || !isLocalDestination}
           >
+            <FolderOpen className="size-4" />
             Choose Folder
           </Button>
         </div>
@@ -296,6 +300,7 @@ export default function SettingsView({
                 onClick={onClearCredential}
                 disabled={isLoading || isSaving}
               >
+                <Eraser className="size-4" />
                 Clear Credential
               </Button>
             ) : null}
@@ -340,6 +345,7 @@ export default function SettingsView({
           onClick={onSave}
           disabled={isLoading || isSaving}
         >
+          <Save className="size-4" />
           Save Settings
         </Button>
       </div>

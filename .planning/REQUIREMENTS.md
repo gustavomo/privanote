@@ -105,10 +105,10 @@ Requirements for the clarified v1 scope. These map to roadmap phases for turning
 
 ### Full shadcn Migration and Dock Icon
 
-- [ ] **SHADCN-01**: All structural containers (capture panel, recorder, review, saved media, transcript, media cards) use shadcn Card, and error banners use shadcn Alert with destructive variant
-- [ ] **SHADCN-02**: All action buttons across App.jsx, media-card, transcript-section, and settings-view have lucide-react icons in text+icon format
-- [ ] **SHADCN-03**: Destructive actions (Delete Note, Remove Media) show shadcn AlertDialog confirmation before executing
-- [ ] **SHADCN-04**: Toast notifications via Sonner provide non-blocking success/error feedback for save, delete, connect, disconnect, and error operations
+- [x] **SHADCN-01**: All structural containers (capture panel, recorder, review, saved media, transcript, media cards) use shadcn Card, and error banners use shadcn Alert with destructive variant
+- [x] **SHADCN-02**: All action buttons across App.jsx, media-card, transcript-section, and settings-view have lucide-react icons in text+icon format
+- [x] **SHADCN-03**: Destructive actions (Delete Note, Remove Media) show shadcn AlertDialog confirmation before executing
+- [x] **SHADCN-04**: Toast notifications via Sonner provide non-blocking success/error feedback for save, delete, connect, disconnect, and error operations
 - [x] **SHADCN-05**: Dark mode CSS variables use a VS Code 2026 cool blue-gray palette (hue ~260) replacing the warm taupe palette, while light mode remains unchanged
 - [x] **SHADCN-06**: Custom macOS dock icon (dark charcoal rounded square with white P lettermark) is generated and wired into both development and production builds
 

@@ -63,7 +63,7 @@ The clarified product direction extends that baseline substantially: the repo sh
 
 ## Current State
 
-Phase 12 complete (2026-04-01) — all main window form controls migrated to shadcn/ui (Button, Input, Textarea, Checkbox, RadioGroup, ToggleGroup, Badge, Label, Separator), dark mode with light/dark/system toggle added via CSS variable theming and class-based Tailwind, visual bugs fixed (borderless buttons, ugly checkboxes, ugly radio buttons).
+Phase 14 complete (2026-04-02) — shadcn/ui migration complete across all components. Structural containers replaced with Card/Alert/ScrollArea/Tabs/Skeleton/Progress, lucide-react icons on all action buttons, AlertDialog confirmations for destructive actions, Sonner toast notifications integrated, dark mode palette reworked to VS Code 2026 cool blue-gray, custom macOS dock icon generated and wired into dev and production builds.
 
 ## Evolution
 
@@ -83,4 +83,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-01 after Phase 12 completion*
+*Last updated: 2026-04-02 after Phase 14 completion*

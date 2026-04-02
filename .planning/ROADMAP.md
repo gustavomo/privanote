@@ -208,7 +208,7 @@ Plans:
 **Goal:** Complete the shadcn/ui migration by replacing all remaining structural containers with Card/Alert/ScrollArea/Tabs/Skeleton/Progress components, adding lucide-react icons to all action buttons, adding AlertDialog confirmations for destructive actions, integrating Sonner toast notifications, reworking the dark mode palette to VS Code 2026 cool blue-gray, and generating a custom macOS dock icon.
 **Requirements**: [SHADCN-01, SHADCN-02, SHADCN-03, SHADCN-04, SHADCN-05, SHADCN-06]
 **Depends on:** Phase 13
-**Plans:** 6 plans (4 complete, 2 gap closure)
+**Plans:** 5/6 plans executed
 
 Plans:
 - [x] 14-01-PLAN.md — Install 8 shadcn components, rework dark mode palette, customize Sonner wrapper
@@ -216,4 +216,4 @@ Plans:
 - [x] 14-03-PLAN.md — Migrate media-card, transcript-section, settings-view with icons, AlertDialog, toasts
 - [x] 14-04-PLAN.md — Generate custom dock icon and wire into development and production builds
 - [ ] 14-05-PLAN.md — Fix progress bar animation, AlertDialog CSS scoping, and double-confirmation bugs (gap closure)
-- [ ] 14-06-PLAN.md — Regenerate dock icon with transparency and proper macOS sizing (gap closure)
+- [x] 14-06-PLAN.md — Regenerate dock icon with transparency and proper macOS sizing (gap closure)

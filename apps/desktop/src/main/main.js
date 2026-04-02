@@ -8,6 +8,7 @@ const { CaptureSession } = require('./capture-session');
 const { ClipboardSession } = require('./clipboard-session');
 const { checkScreenPermission } = require('./screen-capture');
 const { PRESET_APPS, shouldShowOverlay } = require('./app-detector');
+const { startPrService, stopPrService } = require('./pr-service-process');
 
 app.commandLine.appendSwitch('enable-features', 'MacSckSystemAudioLoopbackOverride');
 
@@ -16,8 +17,10 @@ const operationsById = Object.values(v1.operations).reduce((result, operation) =
   return result;
 }, {});
 const isSmokeNoWindow = process.env.PRIVANOTE_SMOKE_NO_WINDOW === '1';
+const prAnalysisEnabled = process.env.PRIVANOTE_PR_ANALYSIS === 'true';
 
 let backendContext = null;
+let prServiceContext = null;
 let backendStartupPromise = null;
 let isQuitting = false;
 let captureOverlay = null;
@@ -1022,6 +1025,11 @@ app.whenReady().then(async () => {
       captureOverlay.hide();
     }
 
+    // Start PR analysis service if enabled (per D-14)
+    if (prAnalysisEnabled) {
+      prServiceContext = await startPrService();
+    }
+
     // Start app detection polling if any apps are whitelisted
     const initialWhitelist = loadWhitelist();
     const hasEnabledApps = Object.values(initialWhitelist).some(Boolean);
@@ -1070,6 +1078,10 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  if (prServiceContext) {
+    stopPrService(prServiceContext);
+    prServiceContext = null;
+  }
   // Clean up tray icon to prevent ghost icon (Pitfall 7 from RESEARCH.md)
   if (tray) {
     tray.destroy();
@@ -1101,6 +1113,11 @@ app.on('window-all-closed', async () => {
     clipboardSession = null;
   }
   globalShortcut.unregisterAll();
+
+  if (prServiceContext) {
+    await stopPrService(prServiceContext);
+    prServiceContext = null;
+  }
 
   await shutdownBackend();
 

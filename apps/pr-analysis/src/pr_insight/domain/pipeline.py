@@ -11,6 +11,7 @@ import logging
 import re
 import traceback
 
+from pr_insight.config import get_settings
 from pr_insight.domain.agent import create_pr_agent
 from pr_insight.domain.models import (
     AnalysisJob,
@@ -61,11 +62,12 @@ class AnalysisPipeline:
             if pr_info is None:
                 raise ValueError(f"Invalid PR URL: {pr_url}")
 
-            # Phase 1: Fetch code reviews from Qodo
+            # Phase 1: Fetch full diff (for fallback patches) and GitHub metadata
+            # Note: describe() and improve() are skipped — their data overlaps
+            # with get_pr_metadata() (files) and get_review_comments() (comments),
+            # saving 2 redundant GitHub API round-trips.
             job.status = JobStatus.ANALYZING
             review_result = await self._code_review_port.review(pr_url)
-            pr_description = await self._code_review_port.describe(pr_url)
-            improvements = await self._code_review_port.improve(pr_url)
 
             # Phase 2: Fetch GitHub metadata and review comments
             job.status = JobStatus.FETCHING_REVIEWS
@@ -75,6 +77,29 @@ class AnalysisPipeline:
             review_comments = await self._github_port.get_review_comments(
                 pr_info.owner, pr_info.repo, pr_info.number
             )
+
+            # Build pr_description from metadata.files (same data describe() fetched)
+            file_changes: dict[str, list[str]] = {"modified": [], "added": [], "removed": []}
+            for f in (metadata.files or []):
+                status = f.get("status", "modified")
+                filename = f.get("filename", "")
+                bucket = "added" if status == "added" else "removed" if status == "removed" else "modified"
+                file_changes[bucket].append(filename)
+            from pr_insight.domain.models import PRDescription, ImprovementSuggestion
+            pr_description = PRDescription(
+                summary=f"PR modifies {metadata.changed_files} file(s).",
+                changes=file_changes,
+            )
+
+            # Build improvements from review comments (same data improve() fetched)
+            improvements = [
+                ImprovementSuggestion(
+                    file=c.get("path", ""),
+                    suggestion=c.get("body", ""),
+                )
+                for c in review_comments
+                if c.get("body")
+            ]
 
             # Phase 3: Generate note via ADK agent synthesis
             job.status = JobStatus.GENERATING_NOTE
@@ -105,7 +130,8 @@ class AnalysisPipeline:
             job.result = result
 
             # Phase 4: Send to note callback and capture nodeId (D-21, D-47)
-            result_dict = result.model_dump()
+            # Exclude raw_output fields — they're large and only used internally
+            result_dict = result.model_dump(exclude={"review": {"raw_output"}, "pr_description": {"raw_output"}, "improvements": {"__all__": {"raw_output"}}})
             callback_response = await self._note_callback_port.send_analysis_result(
                 result_dict
             )
@@ -207,6 +233,14 @@ class AnalysisPipeline:
             )
 
 
+def _truncate_patch(patch: str, max_lines: int) -> tuple[str, bool]:
+    """Truncate a patch to *max_lines* keeping the head. Returns (text, was_truncated)."""
+    lines = patch.split("\n")
+    if len(lines) <= max_lines:
+        return patch, False
+    return "\n".join(lines[:max_lines]), True
+
+
 def _build_data_prompt(
     pr_url: str,
     pr_info,
@@ -216,34 +250,43 @@ def _build_data_prompt(
     improvements,
     review_comments: list[dict],
 ) -> str:
-    """Build the data prompt to send to the ADK agent for synthesis."""
-    sections = [
-        f"# PR Data for Analysis\n",
-        f"**PR URL:** {pr_url}",
-        f"**Repository:** {pr_info.owner}/{pr_info.repo}",
-        f"**PR Number:** #{pr_info.number}",
-        f"**GitHub Link:** {metadata.html_url}\n",
-        f"## PR Metadata",
-        f"- **Title:** {metadata.title}",
-        f"- **Author:** {metadata.author}",
-        f"- **State:** {metadata.state}",
-        f"- **Base:** {metadata.base_branch} <- **Head:** {metadata.head_branch}",
-        f"- **Created:** {metadata.created_at}",
-        f"- **Updated:** {metadata.updated_at}",
-        f"- **Merged:** {metadata.merged}",
-        f"- **Additions:** +{metadata.additions}",
-        f"- **Deletions:** -{metadata.deletions}",
-        f"- **Changed Files:** {metadata.changed_files}",
-        f"- **Labels:** {', '.join(metadata.labels) if metadata.labels else 'None'}",
-    ]
+    """Build a token-efficient data prompt for the ADK agent.
 
-    # Build full-diff index keyed by filename for fallback (GitHub truncates
-    # per-file patches for large files; the full diff blob has no such limit)
+    Optimizations vs. the original implementation:
+    - Per-file diffs are capped at ``max_diff_lines_per_file`` lines.
+    - Total diff budget is capped at ``max_total_diff_lines`` lines.
+    - Review comment bodies are capped at ``max_review_comment_chars``.
+    - Redundant fields (raw_output, duplicate PR body) are omitted.
+    - Metadata is compacted into fewer lines.
+    """
+    cfg = get_settings()
+    max_per_file = cfg.max_diff_lines_per_file
+    max_total = cfg.max_total_diff_lines
+
+    sections = [
+        f"# PR Data for Analysis",
+        f"**URL:** {pr_url}  **Repo:** {pr_info.owner}/{pr_info.repo}  **#{pr_info.number}**",
+        f"**Title:** {metadata.title}  |  **Author:** {metadata.author}  |  **State:** {metadata.state}",
+        f"**Branches:** {metadata.base_branch} <- {metadata.head_branch}  |  "
+        f"**+{metadata.additions}/-{metadata.deletions}** across {metadata.changed_files} files  |  "
+        f"**Merged:** {metadata.merged}",
+    ]
+    if metadata.labels:
+        sections.append(f"**Labels:** {', '.join(metadata.labels)}")
+
+    # PR body (author's own description — single source, not duplicated)
+    if metadata.body and metadata.body.strip():
+        body = metadata.body.strip()[:1000]
+        sections.append(f"\n## PR Body\n{body}")
+
+    # Build full-diff index keyed by filename for fallback
     full_diff_by_file: dict[str, str] = {}
     if review_result and review_result.raw_output:
         full_diff_by_file = _extract_per_file_diffs(review_result.raw_output)
 
-    # Changed files with per-file diffs (patch from GitHub API)
+    # Changed files with per-file diffs — budget-capped
+    total_diff_lines = 0
+    budget_exhausted = False
     if metadata.files:
         sections.append("\n## Changed Files with Diffs")
         for f in metadata.files:
@@ -252,29 +295,40 @@ def _build_data_prompt(
             additions = f.get("additions", 0)
             deletions = f.get("deletions", 0)
             patch = f.get("patch", "") or full_diff_by_file.get(filename, "")
-            file_url = f"{metadata.html_url}/files"
 
-            sections.append(
-                f"\n### `{filename}` ({status}) +{additions}/-{deletions}"
-                f"\n[View on GitHub]({file_url})"
-            )
-            if patch:
-                sections.append(f"```diff\n{patch}\n```")
-            else:
-                sections.append("_(binary file — no diff available)_")
+            header = f"\n### `{filename}` ({status}) +{additions}/-{deletions}"
 
-    # PR Description from Qodo
-    if pr_description:
-        sections.append(f"\n## PR Description (from Qodo)")
-        sections.append(f"**Summary:** {pr_description.summary}")
-        if pr_description.changes:
-            for category, items in pr_description.changes.items():
-                sections.append(f"**{category}:**")
-                for item in items:
-                    sections.append(f"  - {item}")
+            if not patch:
+                sections.append(f"{header}\n_(binary or empty — no diff)_")
+                continue
 
-    # Code Review Findings from Qodo (structured findings only — per-file diffs
-    # are already included above in Changed Files with Diffs)
+            if budget_exhausted:
+                sections.append(f"{header}\n_(diff omitted — total budget reached)_")
+                continue
+
+            remaining = max_total - total_diff_lines
+            effective_max = min(max_per_file, remaining)
+            patch, was_truncated = _truncate_patch(patch, effective_max)
+            patch_line_count = patch.count("\n") + 1
+            total_diff_lines += patch_line_count
+
+            suffix = ""
+            if was_truncated:
+                suffix = "\n_(truncated — see full diff on GitHub)_"
+            sections.append(f"{header}\n```diff\n{patch}\n```{suffix}")
+
+            if total_diff_lines >= max_total:
+                budget_exhausted = True
+
+    # File change summary from describe() — only the structured bits
+    if pr_description and pr_description.changes:
+        non_empty = {k: v for k, v in pr_description.changes.items() if v}
+        if non_empty:
+            sections.append("\n## File Change Summary")
+            for category, items in non_empty.items():
+                sections.append(f"**{category}:** {', '.join(items)}")
+
+    # Code review findings (structured only)
     if review_result and review_result.findings:
         sections.append("\n## Code Review Findings")
         for finding in review_result.findings:
@@ -286,31 +340,23 @@ def _build_data_prompt(
             if finding.suggestion:
                 sections.append(f"  Suggestion: {finding.suggestion}")
 
-    # Improvement Suggestions from Qodo
+    # Improvement suggestions — compact
     if improvements:
-        sections.append("\n## Improvement Suggestions (from Qodo)")
+        sections.append("\n## Improvement Suggestions")
         for imp in improvements:
-            sections.append(f"- `{imp.file}`: {imp.suggestion}")
-            if imp.code_snippet:
-                sections.append(f"  ```\n  {imp.code_snippet}\n  ```")
+            body = imp.suggestion[:cfg.max_review_comment_chars]
+            sections.append(f"- `{imp.file}`: {body}")
 
-    # GitHub Review Comments
+    # GitHub review comments — compact
     if review_comments:
-        sections.append("\n## GitHub Review Comments")
+        sections.append("\n## Review Comments")
         for comment in review_comments:
+            body = comment.get("body", "")[:cfg.max_review_comment_chars]
             sections.append(
-                f"- **{comment.get('author', 'unknown')}** ({comment.get('created_at', '')}): "
-                f"{comment.get('body', '')[:500]}"
+                f"- **{comment.get('author', 'unknown')}**: {body}"
             )
-            if comment.get("url"):
-                sections.append(f"  Link: {comment['url']}")
 
-    # Body of the PR
-    if metadata.body:
-        sections.append(f"\n## PR Body\n{metadata.body}")
-
-    sections.append("\n---\nPlease synthesize all the above data into the structured analysis note.")
-
+    sections.append("\n---\nSynthesize the above into the structured analysis note.")
     return "\n".join(sections)
 
 

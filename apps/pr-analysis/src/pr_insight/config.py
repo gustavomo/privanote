@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     github_token: str = ""
     openai_api_key: str = ""
     anthropic_api_key: str = ""
+    pr_analysis_model: str = "openai/o3"
     qodo_service_port: int = 8100
     note_callback_url: str = "http://127.0.0.1:4310/internal/pr-callback"
 

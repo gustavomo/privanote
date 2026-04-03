@@ -9,6 +9,8 @@ from __future__ import annotations
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 
+from pr_insight.config import get_settings
+
 SYNTHESIS_INSTRUCTION = """\
 You are a senior software engineer writing a structured PR analysis note.
 Your goal is to help a developer quickly understand WHAT this PR achieves
@@ -160,8 +162,9 @@ def create_pr_agent() -> LlmAgent:
     agent, to avoid ADK tool output size limits (RESEARCH.md Open
     Question 3).
     """
+    model = get_settings().pr_analysis_model
     return LlmAgent(
-        model=LiteLlm(model="openai/o3"),
+        model=LiteLlm(model=model),
         name="pr_analysis_agent",
         instruction=SYNTHESIS_INSTRUCTION,
     )

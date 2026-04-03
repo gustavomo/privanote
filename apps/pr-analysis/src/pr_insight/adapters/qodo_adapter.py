@@ -1,11 +1,15 @@
-"""Qodo PR-Agent adapter wrapping the pr-agent library (per D-09, D-11, D-03)."""
+"""Qodo/code-review adapter using the GitHub API for PR diff and file changes.
+
+pr-agent cannot be installed alongside google-adk due to a starlette version
+conflict (pr-agent pins fastapi==0.111.0 which requires starlette<0.38.0,
+while google-adk requires starlette>=0.49.1). This adapter fetches the same
+raw data (diff, file changes) directly from the GitHub REST API instead.
+The ADK agent handles AI synthesis from this raw data.
+"""
 
 from __future__ import annotations
 
-import asyncio
-
-from pr_agent import cli as pr_agent_cli
-from pr_agent.config_loader import get_settings
+import httpx
 
 from pr_insight.domain.models import (
     CodeReviewFinding,
@@ -17,111 +21,99 @@ from pr_insight.domain.ports import CodeReviewPort
 
 
 class QodoAdapter(CodeReviewPort):
-    """Wraps Qodo PR-Agent library for code review, describe, and improve.
+    """Fetches PR diff and file-change data from the GitHub API.
 
-    Uses ``asyncio.to_thread`` to avoid blocking the event loop
-    since pr-agent calls are synchronous (per Pitfall 2).
-    Settings are configured fresh before each call (per Pitfall 6).
+    Returns raw diff content that the ADK agent uses for analysis.
+    Constructor injection compatible with the original interface (per D-46).
+    The openai_api_key param is kept for interface compatibility but unused here
+    — the ADK agent owns model calls.
     """
 
     def __init__(self, github_token: str, openai_api_key: str) -> None:
-        self._github_token = github_token
-        self._openai_api_key = openai_api_key
+        self._headers = {
+            "Authorization": f"Bearer {github_token}",
+            "Accept": "application/vnd.github.v3.diff",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+        self._json_headers = {
+            "Authorization": f"Bearer {github_token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+        self._base_url = "https://api.github.com"
 
-    def _configure_qodo(self) -> None:
-        """Set Qodo global settings fresh before each call (per Pitfall 6)."""
-        settings = get_settings()
-        settings.set("CONFIG.git_provider", "github")
-        settings.set("openai.key", self._openai_api_key)
-        settings.set("github.user_token", self._github_token)
+    def _parse_pr_url(self, pr_url: str) -> tuple[str, str, int]:
+        """Extract owner, repo, number from a GitHub PR URL."""
+        parts = pr_url.rstrip("/").split("/")
+        # https://github.com/{owner}/{repo}/pull/{number}
+        number = int(parts[-1])
+        owner = parts[-4]
+        repo = parts[-3]
+        return owner, repo, number
 
     async def review(self, pr_url: str) -> CodeReviewResult:
+        """Fetch the full PR diff for code review analysis."""
         try:
-            self._configure_qodo()
-            result = await asyncio.to_thread(
-                pr_agent_cli.run_command, pr_url, "/review"
-            )
-            return self._parse_review_result(result)
+            owner, repo, number = self._parse_pr_url(pr_url)
+            url = f"{self._base_url}/repos/{owner}/{repo}/pulls/{number}"
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(url, headers=self._headers)
+                response.raise_for_status()
+                raw_diff = response.text
+            return CodeReviewResult(findings=[], raw_output=raw_diff)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                raise RuntimeError("Cannot access repo — check GITHUB_TOKEN permissions") from exc
+            raise RuntimeError(f"GitHub diff fetch failed: {exc}") from exc
         except Exception as exc:
-            raise RuntimeError(f"Qodo review failed: {exc}") from exc
+            raise RuntimeError(f"Code review fetch failed: {exc}") from exc
 
     async def describe(self, pr_url: str) -> PRDescription:
+        """Fetch the list of changed files for PR description context."""
         try:
-            self._configure_qodo()
-            result = await asyncio.to_thread(
-                pr_agent_cli.run_command, pr_url, "/describe"
-            )
-            return self._parse_describe_result(result)
+            owner, repo, number = self._parse_pr_url(pr_url)
+            url = f"{self._base_url}/repos/{owner}/{repo}/pulls/{number}/files"
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(url, headers=self._json_headers)
+                response.raise_for_status()
+                files_data = response.json()
+
+            changes: dict[str, list[str]] = {"modified": [], "added": [], "removed": []}
+            for f in files_data:
+                status = f.get("status", "modified")
+                filename = f.get("filename", "")
+                if status == "added":
+                    changes["added"].append(filename)
+                elif status == "removed":
+                    changes["removed"].append(filename)
+                else:
+                    changes["modified"].append(filename)
+
+            summary = f"PR modifies {len(files_data)} file(s)."
+            return PRDescription(summary=summary, changes=changes, raw_output=str(files_data))
         except Exception as exc:
-            raise RuntimeError(f"Qodo describe failed: {exc}") from exc
+            raise RuntimeError(f"PR files fetch failed: {exc}") from exc
 
     async def improve(self, pr_url: str) -> list[ImprovementSuggestion]:
+        """Fetch existing PR review comments as improvement context."""
         try:
-            self._configure_qodo()
-            result = await asyncio.to_thread(
-                pr_agent_cli.run_command, pr_url, "/improve"
-            )
-            return self._parse_improve_result(result)
-        except Exception as exc:
-            raise RuntimeError(f"Qodo improve failed: {exc}") from exc
+            owner, repo, number = self._parse_pr_url(pr_url)
+            url = f"{self._base_url}/repos/{owner}/{repo}/pulls/{number}/comments"
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(url, headers=self._json_headers)
+                response.raise_for_status()
+                comments = response.json()
 
-    # ------------------------------------------------------------------
-    # Result parsers – handle both string and dict returns gracefully.
-    # The exact return format of cli.run_command() is under-documented
-    # (per RESEARCH.md Open Question 2), so we store raw output when
-    # structured parsing is not possible.
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _parse_review_result(result: object) -> CodeReviewResult:
-        raw = str(result) if result is not None else ""
-        findings: list[CodeReviewFinding] = []
-
-        if isinstance(result, dict):
-            for item in result.get("findings", []):
-                findings.append(
-                    CodeReviewFinding(
-                        file=item.get("file", ""),
-                        line=item.get("line"),
-                        severity=item.get("severity", ""),
-                        description=item.get("description", ""),
-                        suggestion=item.get("suggestion", ""),
-                    )
-                )
-
-        return CodeReviewResult(findings=findings, raw_output=raw)
-
-    @staticmethod
-    def _parse_describe_result(result: object) -> PRDescription:
-        raw = str(result) if result is not None else ""
-        summary = ""
-        changes: dict[str, list[str]] = {}
-
-        if isinstance(result, dict):
-            summary = result.get("summary", "")
-            changes = result.get("changes", {})
-
-        return PRDescription(summary=summary, changes=changes, raw_output=raw)
-
-    @staticmethod
-    def _parse_improve_result(result: object) -> list[ImprovementSuggestion]:
-        raw = str(result) if result is not None else ""
-        suggestions: list[ImprovementSuggestion] = []
-
-        if isinstance(result, list):
-            for item in result:
+            suggestions: list[ImprovementSuggestion] = []
+            for comment in comments:
                 suggestions.append(
                     ImprovementSuggestion(
-                        file=item.get("file", "") if isinstance(item, dict) else "",
-                        suggestion=item.get("suggestion", "") if isinstance(item, dict) else str(item),
-                        code_snippet=item.get("code_snippet", "") if isinstance(item, dict) else "",
-                        raw_output=raw,
+                        file=comment.get("path", ""),
+                        suggestion=comment.get("body", ""),
+                        code_snippet=comment.get("diff_hunk", ""),
+                        raw_output=comment.get("body", ""),
                     )
                 )
-        else:
-            # Single string or dict -- wrap as one suggestion with raw output
-            suggestions.append(
-                ImprovementSuggestion(raw_output=raw)
-            )
-
-        return suggestions
+            return suggestions
+        except Exception as exc:
+            raise RuntimeError(f"PR comments fetch failed: {exc}") from exc

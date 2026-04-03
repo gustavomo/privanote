@@ -11,12 +11,12 @@
       overflow: hidden;
       -webkit-user-select: none;
       user-select: none;
-      width: 48px;
+      min-width: 48px;
       height: 72px;
-      transition: height 200ms ease-out;
+      transition: height 200ms ease-out, width 200ms ease-out;
     }
     .container {
-      width: 48px;
+      min-width: 48px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -24,6 +24,7 @@
       gap: 4px;
       -webkit-app-region: drag;
       transition: height 200ms ease-out;
+      position: relative;
     }
     .btn {
       -webkit-app-region: no-drag;
@@ -122,6 +123,110 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
+
+    /* PR analysis button states */
+    #prBtn { display: none; }
+    #prBtn.visible { display: flex; }
+    .btn.pr-analyzing { background: oklch(0.65 0.15 195); box-shadow: 0 1px 8px oklch(0.65 0.15 195 / 0.35); }
+    .btn.pr-analyzing svg { width: 15px; height: 15px; stroke: white; }
+    .btn.pr-finalizing { background: oklch(0.547 0.021 43.1); cursor: default; }
+    .btn.pr-finalizing svg { stroke: white; }
+
+    /* URL input popover */
+    .pr-popover {
+      display: none;
+      position: absolute;
+      right: 56px;
+      width: 280px;
+      background: oklch(0.214 0.009 43.1);
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.32);
+      padding: 8px;
+      z-index: 10;
+    }
+    .pr-popover.visible { display: block; }
+
+    .pr-popover input {
+      width: 100%;
+      height: 32px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      background: oklch(0.30 0.008 43.1);
+      border: 1px solid oklch(0.40 0.01 43.1);
+      border-radius: 6px;
+      padding: 0 8px;
+      color: oklch(0.95 0 0);
+      outline: none;
+      box-sizing: border-box;
+    }
+    .pr-popover input::placeholder { color: oklch(0.55 0.01 43.1); }
+    .pr-popover input:focus { border-color: oklch(0.65 0.15 195); box-shadow: 0 0 0 2px oklch(0.65 0.15 195 / 0.3); }
+
+    .pr-validation {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      color: oklch(0.75 0.18 25);
+      margin-top: 4px;
+      display: none;
+    }
+    .pr-validation.visible { display: block; }
+
+    .pr-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .pr-dismiss {
+      -webkit-app-region: no-drag;
+      padding: 4px 12px;
+      height: 28px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      background: transparent;
+      color: oklch(0.70 0.01 43.1);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .pr-dismiss:hover { background: oklch(0.30 0.008 43.1); }
+
+    .pr-submit {
+      -webkit-app-region: no-drag;
+      padding: 4px 12px;
+      height: 28px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      background: oklch(0.65 0.15 195);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .pr-submit:hover { background: oklch(0.70 0.15 195); }
+    .pr-submit:disabled { opacity: 0.5; pointer-events: none; }
+
+    /* Status text below PR button */
+    .pr-status {
+      display: none;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-align: center;
+      color: oklch(0.65 0.15 195);
+      width: 48px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 4px 0;
+    }
+    .pr-status.visible { display: block; }
   </style>
 </head>
 <body>
@@ -158,6 +263,24 @@
         <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
       </button>
     </div>
+    <button class="btn" id="prBtn" title="Analyze this PR" aria-label="Analyze this PR">
+      <svg id="prIcon" viewBox="0 0 24 24">
+        <circle cx="18" cy="18" r="3"/>
+        <circle cx="6" cy="6" r="3"/>
+        <path d="M6 9v12"/>
+        <path d="M18 9a9 9 0 0 0-9 9"/>
+        <line x1="2" y1="2" x2="22" y2="22"/>
+      </svg>
+      <div class="pr-popover" id="prPopover">
+        <input type="text" id="prUrlInput" placeholder="github.com/owner/repo/pull/123" />
+        <div class="pr-validation" id="prValidation">Enter a valid GitHub PR URL</div>
+        <div class="pr-actions">
+          <button class="pr-dismiss" id="prDismiss">Dismiss</button>
+          <button class="pr-submit" id="prSubmit">Analyze PR</button>
+        </div>
+      </div>
+    </button>
+    <div class="pr-status" id="prStatus"></div>
   </div>
 
   <script>
@@ -173,19 +296,25 @@
     let screenCaptureActive = false;
     let callRecActive = false;
 
+    let prVisible = false;
+    let prPopoverVisible = false;
+
     function recalcHeight() {
       // clipboard always visible = 1, plus conditional buttons
       let count = 1;
       if (captureVisible) count++;
       if (callVisible) count++;
+      if (prVisible) count++;
       let height = count * 44 + 4; // 40px button + 4px gap per button, plus 4px padding
       // Mode picker adds 2 small buttons (34px each + 6px gap + 4px spacing)
       if (modePickerVisible) height += 78;
+      if (prStatus.classList.contains('visible')) height += 16;
       document.body.style.height = height + 'px';
       container.style.height = height + 'px';
       // Notify main process to resize the window
       if (window.captureApi && window.captureApi.resizeOverlay) {
-        window.captureApi.resizeOverlay(48, height);
+        const width = prPopoverVisible ? 336 : 48;
+        window.captureApi.resizeOverlay(width, height);
       }
     }
 
@@ -498,6 +627,200 @@
       hideModePicker();
       await window.captureApi.startCallRecording('video');
     });
+
+    // --- PR analysis button ---
+    const prBtn = document.getElementById('prBtn');
+    const prIcon = document.getElementById('prIcon');
+    const prPopover = document.getElementById('prPopover');
+    const prUrlInput = document.getElementById('prUrlInput');
+    const prValidation = document.getElementById('prValidation');
+    const prSubmit = document.getElementById('prSubmit');
+    const prDismiss = document.getElementById('prDismiss');
+    const prStatus = document.getElementById('prStatus');
+    let prState = 'idle'; // idle, analyzing, finalizing
+    let detectedPrUrl = '';
+
+    const PR_ICONS = {
+      idle: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 9v12"/><path d="M18 9a9 9 0 0 0-9 9"/><line x1="2" y1="2" x2="22" y2="22"/>',
+      analyzing: '<path class="spinner" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>',
+      finalizing: '<path class="spinner" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>',
+    };
+
+    const PR_STATUS_TEXT = {
+      pending: 'Analyzing...',
+      analyzing: 'Analyzing...',
+      fetching_reviews: 'Fetching reviews...',
+      generating_note: 'Generating note...',
+    };
+
+    const PR_URL_RE = /github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/;
+
+    function showPrButton() {
+      if (!prVisible) {
+        prVisible = true;
+        prBtn.classList.add('visible');
+        recalcHeight();
+      }
+    }
+
+    function hidePrButton() {
+      if (prState !== 'idle') return; // don't hide during analysis
+      if (prVisible) {
+        prVisible = false;
+        prBtn.classList.remove('visible');
+        hidePrPopover();
+        hidePrStatus();
+        recalcHeight();
+      }
+    }
+
+    function setPrState(state) {
+      prState = state;
+      const vis = prBtn.classList.contains('visible') ? ' visible' : '';
+      if (state === 'idle') {
+        prBtn.className = 'btn' + vis;
+        prIcon.innerHTML = PR_ICONS.idle;
+        prBtn.title = 'Analyze this PR';
+        prBtn.setAttribute('aria-label', 'Analyze this PR');
+      } else if (state === 'analyzing') {
+        prBtn.className = 'btn pr-analyzing' + vis;
+        prIcon.innerHTML = PR_ICONS.analyzing;
+        prBtn.title = 'Analyzing PR...';
+        prBtn.setAttribute('aria-label', 'Analyzing PR...');
+      } else if (state === 'finalizing') {
+        prBtn.className = 'btn pr-finalizing' + vis;
+        prIcon.innerHTML = PR_ICONS.finalizing;
+        prBtn.title = 'Creating note...';
+        prBtn.setAttribute('aria-label', 'Creating note...');
+      }
+    }
+
+    function showPrPopover() {
+      prPopoverVisible = true;
+      prPopover.classList.add('visible');
+      prUrlInput.value = detectedPrUrl;
+      validatePrUrl();
+      prUrlInput.focus();
+      recalcHeight();
+    }
+
+    function hidePrPopover() {
+      prPopoverVisible = false;
+      prPopover.classList.remove('visible');
+      prValidation.classList.remove('visible');
+      recalcHeight();
+    }
+
+    function showPrStatus(text) {
+      prStatus.textContent = text;
+      prStatus.classList.add('visible');
+      recalcHeight();
+    }
+
+    function hidePrStatus() {
+      prStatus.classList.remove('visible');
+      prStatus.textContent = '';
+      recalcHeight();
+    }
+
+    function validatePrUrl() {
+      const valid = PR_URL_RE.test(prUrlInput.value.trim());
+      if (!valid && prUrlInput.value.trim().length > 0) {
+        prValidation.classList.add('visible');
+      } else {
+        prValidation.classList.remove('visible');
+      }
+      prSubmit.disabled = !valid;
+      return valid;
+    }
+
+    prUrlInput.addEventListener('input', validatePrUrl);
+    prUrlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && validatePrUrl()) {
+        startPrAnalysis();
+      } else if (e.key === 'Escape') {
+        hidePrPopover();
+      }
+    });
+
+    // Prevent click on popover from bubbling to button
+    prPopover.addEventListener('click', (e) => e.stopPropagation());
+
+    prBtn.addEventListener('click', () => {
+      if (prState === 'analyzing' || prState === 'finalizing') return;
+      if (prPopoverVisible) {
+        hidePrPopover();
+      } else {
+        showPrPopover();
+      }
+    });
+
+    prDismiss.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hidePrPopover();
+    });
+
+    prSubmit.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!validatePrUrl()) return;
+      await startPrAnalysis();
+    });
+
+    async function startPrAnalysis() {
+      if (!window.captureApi) return;
+      const url = prUrlInput.value.trim();
+      hidePrPopover();
+      setPrState('analyzing');
+      showPrStatus('Analyzing...');
+
+      const result = await window.captureApi.startPrAnalysis(url);
+      if (!result.success) {
+        setPrState('idle');
+        hidePrStatus();
+      }
+    }
+
+    // Close popover on outside click
+    document.addEventListener('click', (e) => {
+      if (prPopoverVisible && !prBtn.contains(e.target)) {
+        hidePrPopover();
+      }
+    });
+
+    if (window.captureApi) {
+      // Check if feature is enabled
+      window.captureApi.isPrAnalysisEnabled().then(enabled => {
+        if (!enabled) return;
+
+        window.captureApi.onPrUrlDetected((data) => {
+          detectedPrUrl = data.url;
+          showPrButton();
+        });
+
+        window.captureApi.onPrUrlCleared(() => {
+          detectedPrUrl = '';
+          hidePrButton();
+        });
+
+        window.captureApi.onPrStatusUpdate((data) => {
+          const text = PR_STATUS_TEXT[data.status] || 'Analyzing...';
+          showPrStatus(text);
+          if (data.status === 'generating_note') {
+            setPrState('finalizing');
+          }
+        });
+
+        window.captureApi.onPrAnalysisComplete(() => {
+          setPrState('idle');
+          hidePrStatus();
+        });
+
+        window.captureApi.onPrAnalysisError((data) => {
+          setPrState('idle');
+          hidePrStatus();
+        });
+      });
+    }
 
     // Initial height for clipboard-only
     recalcHeight();

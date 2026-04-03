@@ -78,12 +78,12 @@ function getBrowserTabUrl(bundleId) {
  * Returns true when any enabled whitelist app matches the foreground window.
  * Returns false when whitelist is empty, has no enabled entries, or no match.
  */
-async function shouldShowOverlay(windowInfo, whitelist) {
-  if (!windowInfo || !whitelist) return false;
+async function shouldShowOverlay(windowInfo, whitelist, prefetchedUrl) {
+  if (!windowInfo || !whitelist) return { show: false, url: '', isBrowser: false };
 
   // Collect enabled app IDs
   const enabledIds = Object.keys(whitelist).filter((id) => whitelist[id] && PRESET_APPS[id]);
-  if (enabledIds.length === 0) return false;
+  if (enabledIds.length === 0) return { show: false, url: '', isBrowser: false };
 
   const isBrowser = BROWSER_BUNDLE_IDS.has(windowInfo.bundleId);
 
@@ -91,19 +91,19 @@ async function shouldShowOverlay(windowInfo, whitelist) {
   for (const id of enabledIds) {
     const preset = PRESET_APPS[id];
     if (preset.match && preset.match(windowInfo)) {
-      return true;
+      return { show: true, url: '', isBrowser };
     }
   }
 
   // 2. If active window is a browser, try URL matching then title fallback
   if (isBrowser) {
-    const url = await getBrowserTabUrl(windowInfo.bundleId);
+    const url = prefetchedUrl !== undefined ? prefetchedUrl : await getBrowserTabUrl(windowInfo.bundleId);
 
     if (url) {
       for (const id of enabledIds) {
         const preset = PRESET_APPS[id];
         if (preset.matchUrl && preset.matchUrl(url)) {
-          return true;
+          return { show: true, url, isBrowser };
         }
       }
     }
@@ -113,23 +113,23 @@ async function shouldShowOverlay(windowInfo, whitelist) {
       for (const id of enabledIds) {
         const preset = PRESET_APPS[id];
         if (preset.matchTitle && preset.matchTitle(windowInfo.windowTitle || '')) {
-          return true;
+          return { show: true, url: '', isBrowser };
         }
       }
     }
 
-    return false;
+    return { show: false, url: url || '', isBrowser };
   }
 
   // 3. Non-browser window — check title matchers (e.g. Notion desktop)
   for (const id of enabledIds) {
     const preset = PRESET_APPS[id];
     if (preset.matchTitle && preset.matchTitle(windowInfo.windowTitle || '')) {
-      return true;
+      return { show: true, url: '', isBrowser };
     }
   }
 
-  return false;
+  return { show: false, url: '', isBrowser };
 }
 
-module.exports = { PRESET_APPS, shouldShowOverlay, getBrowserTabUrl };
+module.exports = { PRESET_APPS, BROWSER_BUNDLE_IDS, shouldShowOverlay, getBrowserTabUrl };

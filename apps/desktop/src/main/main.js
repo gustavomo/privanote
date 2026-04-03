@@ -7,7 +7,7 @@ const { startBackendProcess, stopBackendProcess } = require('./backend-process')
 const { CaptureSession } = require('./capture-session');
 const { ClipboardSession } = require('./clipboard-session');
 const { checkScreenPermission } = require('./screen-capture');
-const { PRESET_APPS, shouldShowOverlay } = require('./app-detector');
+const { PRESET_APPS, shouldShowOverlay, getBrowserTabUrl, BROWSER_BUNDLE_IDS } = require('./app-detector');
 const { startPrService, stopPrService } = require('./pr-service-process');
 
 app.commandLine.appendSwitch('enable-features', 'MacSckSystemAudioLoopbackOverride');
@@ -35,6 +35,11 @@ let callRecordingAppName = '';    // App name when recording started
 let callRecordingStartTime = 0;  // Timestamp when recording started
 let mediaDetectionCounter = 0;    // Counter to throttle media detection to every ~2.5s
 
+const PR_URL_PATTERN = /github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/;
+let prAnalysisJobId = null;
+let prAnalysisPolling = null;
+let lastDetectedPrUrl = null;
+
 function resolveDataRoot() {
   const configuredRoot = String(process.env.PRIVANOTE_DATA_DIR || '').trim();
   return configuredRoot ? path.resolve(configuredRoot) : path.join(app.getPath('userData'), 'privanote');
@@ -48,7 +53,8 @@ function resolveOperationPath(operation, payload = {}) {
   return operation.path
     .replace(':nodeId', Number.isFinite(nodeId) ? String(nodeId) : ':nodeId')
     .replace(':attachmentId', Number.isFinite(attachmentId) ? String(attachmentId) : ':attachmentId')
-    .replace(':provider', provider || ':provider');
+    .replace(':provider', provider || ':provider')
+    .replace(':jobId', String(payload.jobId || ':jobId'));
 }
 
 async function parseBackendResponse(response) {
@@ -687,11 +693,36 @@ function startAppDetection() {
               updateOverlayForMedia(true);
             }
           }
+          // Pre-fetch browser URL once to share between whitelist check and PR detection
+          const isBrowser = BROWSER_BUNDLE_IDS.has(windowInfo.bundleId);
+          const url = isBrowser ? await getBrowserTabUrl(windowInfo.bundleId) : '';
+
           // Tell overlay whether current app is whitelisted (for screen capture button)
           const whitelist = loadWhitelist();
-          const isWhitelisted = await shouldShowOverlay(windowInfo, whitelist);
+          const overlayResult = await shouldShowOverlay(windowInfo, whitelist, url);
           if (captureOverlay && !captureOverlay.isDestroyed()) {
-            captureOverlay.webContents.send('overlay:whitelist-state', isWhitelisted);
+            captureOverlay.webContents.send('overlay:whitelist-state', overlayResult.show);
+          }
+
+          // PR URL detection (per D-18, D-19) -- only when feature is enabled
+          if (prAnalysisEnabled && isBrowser) {
+            const prMatch = url ? url.match(PR_URL_PATTERN) : null;
+            if (prMatch && prMatch[0] !== lastDetectedPrUrl) {
+              lastDetectedPrUrl = prMatch[0];
+              if (captureOverlay && !captureOverlay.isDestroyed()) {
+                captureOverlay.webContents.send('pr:url-detected', {
+                  url: url,
+                  owner: prMatch[1],
+                  repo: prMatch[2],
+                  number: parseInt(prMatch[3]),
+                });
+              }
+            } else if (!prMatch && lastDetectedPrUrl) {
+              lastDetectedPrUrl = null;
+              if (captureOverlay && !captureOverlay.isDestroyed()) {
+                captureOverlay.webContents.send('pr:url-cleared');
+              }
+            }
           }
         }
       } catch {
@@ -942,6 +973,102 @@ function registerIpcHandlers() {
 
     return result.filePaths[0];
   });
+
+  // --- PR analysis IPC handlers ---
+  ipcMain.handle('pr:is-enabled', () => prAnalysisEnabled);
+
+  ipcMain.handle('pr:start-analysis', async (_event, prUrl) => {
+    if (!prAnalysisEnabled) return { success: false, error: 'PR analysis not enabled' };
+    if (!prUrl || !PR_URL_PATTERN.test(prUrl)) {
+      return { success: false, error: 'Enter a valid GitHub PR URL' };
+    }
+
+    try {
+      const result = await proxyBackendRequest({
+        operationId: v1.analyze.startAnalysis.id,
+        payload: { url: prUrl },
+      });
+
+      prAnalysisJobId = result.job_id;
+
+      // Start polling for status updates (per D-20)
+      startPrAnalysisPolling(result.job_id);
+
+      return { success: true, jobId: result.job_id };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('pr:get-status', async (_event, jobId) => {
+    if (!prAnalysisEnabled) return null;
+    try {
+      return await proxyBackendRequest({
+        operationId: v1.analyze.getAnalysisStatus.id,
+        payload: { jobId },
+      });
+    } catch {
+      return null;
+    }
+  });
+}
+
+function startPrAnalysisPolling(jobId) {
+  if (prAnalysisPolling) clearInterval(prAnalysisPolling);
+
+  prAnalysisPolling = setInterval(async () => {
+    try {
+      const status = await proxyBackendRequest({
+        operationId: v1.analyze.getAnalysisStatus.id,
+        payload: { jobId },
+      });
+
+      // Send status update to overlay (per D-20)
+      if (captureOverlay && !captureOverlay.isDestroyed()) {
+        captureOverlay.webContents.send('pr:status-update', {
+          status: status.status,
+          phase: status.status,
+        });
+      }
+
+      if (status.status === 'completed') {
+        clearInterval(prAnalysisPolling);
+        prAnalysisPolling = null;
+        prAnalysisJobId = null;
+
+        // Notify overlay (per D-21)
+        if (captureOverlay && !captureOverlay.isDestroyed()) {
+          captureOverlay.webContents.send('pr:analysis-complete');
+        }
+
+        // Toast + auto-select in main window (per D-21)
+        // NOTE: Python API returns snake_case fields (node_id, not nodeId)
+        // via Pydantic model_dump(). We normalize to camelCase for the renderer.
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('pr:analysis-complete', {
+            title: status.result?.title || 'PR Analysis',
+            nodeId: status.result?.node_id,
+          });
+        }
+      } else if (status.status === 'failed') {
+        clearInterval(prAnalysisPolling);
+        prAnalysisPolling = null;
+        prAnalysisJobId = null;
+
+        const errorMsg = status.error || 'Analysis failed. Retry from the overlay button.';
+
+        if (captureOverlay && !captureOverlay.isDestroyed()) {
+          captureOverlay.webContents.send('pr:analysis-error', { error: errorMsg });
+        }
+
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('pr:analysis-error', { error: errorMsg });
+        }
+      }
+    } catch {
+      // Polling failure -- ignore, try next cycle
+    }
+  }, 2000); // Poll every 2 seconds
 }
 
 async function createWindow() {
@@ -1078,6 +1205,10 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  if (prAnalysisPolling) {
+    clearInterval(prAnalysisPolling);
+    prAnalysisPolling = null;
+  }
   if (prServiceContext) {
     stopPrService(prServiceContext);
     prServiceContext = null;

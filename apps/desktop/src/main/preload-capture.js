@@ -55,4 +55,34 @@ contextBridge.exposeInMainWorld('captureApi', {
     ipcRenderer.on('overlay:whitelist-state', handler);
     return () => ipcRenderer.removeListener('overlay:whitelist-state', handler);
   },
+
+  // --- PR analysis ---
+  startPrAnalysis: (url) => ipcRenderer.invoke('pr:start-analysis', url),
+  getPrAnalysisStatus: (jobId) => ipcRenderer.invoke('pr:get-status', jobId),
+  onPrUrlDetected: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('pr:url-detected', handler);
+    return () => ipcRenderer.removeListener('pr:url-detected', handler);
+  },
+  onPrUrlCleared: (callback) => {
+    const handler = (_event) => callback();
+    ipcRenderer.on('pr:url-cleared', handler);
+    return () => ipcRenderer.removeListener('pr:url-cleared', handler);
+  },
+  onPrStatusUpdate: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('pr:status-update', handler);
+    return () => ipcRenderer.removeListener('pr:status-update', handler);
+  },
+  onPrAnalysisComplete: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('pr:analysis-complete', handler);
+    return () => ipcRenderer.removeListener('pr:analysis-complete', handler);
+  },
+  onPrAnalysisError: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('pr:analysis-error', handler);
+    return () => ipcRenderer.removeListener('pr:analysis-error', handler);
+  },
+  isPrAnalysisEnabled: () => ipcRenderer.invoke('pr:is-enabled'),
 });

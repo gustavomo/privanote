@@ -5,7 +5,7 @@ const path = require('path');
 const DEFAULT_PR_SERVICE_PORT = Number(process.env.QODO_SERVICE_PORT || 8100);
 
 function resolvePrServiceDir() {
-  return path.resolve(__dirname, '..', '..', '..', '..', 'pr-analysis');
+  return path.resolve(__dirname, '..', '..', '..', 'pr-analysis');
 }
 
 function resolveVenvPython(serviceDir) {
@@ -13,8 +13,8 @@ function resolveVenvPython(serviceDir) {
 }
 
 function findPython3() {
-  // Try python3.12, python3.11, python3 in order
-  for (const cmd of ['python3.12', 'python3.11', 'python3']) {
+  // Try versioned binaries first (fastest path), then fall back to generic python3
+  for (const cmd of ['python3.12', 'python3.13', 'python3']) {
     try {
       const version = execSync(`${cmd} --version 2>&1`, { timeout: 5000 }).toString().trim();
       const match = version.match(/Python (\d+)\.(\d+)/);
@@ -28,11 +28,25 @@ function findPython3() {
 
 async function ensureVenvReady(serviceDir) {
   const venvPython = resolveVenvPython(serviceDir);
-  if (fs.existsSync(venvPython)) return true;
+  if (fs.existsSync(venvPython)) {
+    // Verify core packages are actually installed (guards against partial venv state)
+    try {
+      execSync(`"${venvPython}" -c "import uvicorn"`, { timeout: 5000 });
+      return true;
+    } catch {
+      console.log('[pr-insight] Venv exists but packages missing — reinstalling...');
+      // Fall through to reinstall
+    }
+  }
 
   const python3 = findPython3();
   if (!python3) {
-    console.warn('[pr-insight] Python 3.12+ not found in PATH. PR analysis will not be available.');
+    console.warn(
+      '[pr-insight] Python 3.12+ not found in PATH. PR analysis will not be available.\n' +
+      '[pr-insight] To enable PR analysis, install Python 3.12 via Homebrew:\n' +
+      '[pr-insight]   brew install python@3.12\n' +
+      '[pr-insight] Then restart the app. Homebrew installer: https://brew.sh'
+    );
     return false;
   }
 

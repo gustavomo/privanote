@@ -8,6 +8,7 @@ captures the returned nodeId for auto-select (D-21).
 from __future__ import annotations
 
 import logging
+import re
 import traceback
 
 from pr_insight.domain.agent import create_pr_agent
@@ -236,6 +237,12 @@ def _build_data_prompt(
         f"- **Labels:** {', '.join(metadata.labels) if metadata.labels else 'None'}",
     ]
 
+    # Build full-diff index keyed by filename for fallback (GitHub truncates
+    # per-file patches for large files; the full diff blob has no such limit)
+    full_diff_by_file: dict[str, str] = {}
+    if review_result and review_result.raw_output:
+        full_diff_by_file = _extract_per_file_diffs(review_result.raw_output)
+
     # Changed files with per-file diffs (patch from GitHub API)
     if metadata.files:
         sections.append("\n## Changed Files with Diffs")
@@ -244,7 +251,7 @@ def _build_data_prompt(
             status = f.get("status", "modified")
             additions = f.get("additions", 0)
             deletions = f.get("deletions", 0)
-            patch = f.get("patch", "")
+            patch = f.get("patch", "") or full_diff_by_file.get(filename, "")
             file_url = f"{metadata.html_url}/files"
 
             sections.append(
@@ -254,7 +261,7 @@ def _build_data_prompt(
             if patch:
                 sections.append(f"```diff\n{patch}\n```")
             else:
-                sections.append("_(binary file or patch not available)_")
+                sections.append("_(binary file — no diff available)_")
 
     # PR Description from Qodo
     if pr_description:
@@ -385,3 +392,27 @@ def _format_fallback_note(
     # can evaluate whether a diagram is meaningful for this PR.
 
     return "\n".join(sections)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+_DIFF_FILE_HEADER = re.compile(r"^diff --git a/.+ b/(.+)$", re.MULTILINE)
+
+
+def _extract_per_file_diffs(full_diff: str) -> dict[str, str]:
+    """Split a unified diff blob into a dict keyed by filename.
+
+    GitHub's per-file ``patch`` field is capped at ~256 changed lines.
+    The full diff fetched via Accept: application/vnd.github.v3.diff has no
+    such cap, so we parse it as a fallback for files whose patch was empty.
+    """
+    result: dict[str, str] = {}
+    matches = list(_DIFF_FILE_HEADER.finditer(full_diff))
+    for i, match in enumerate(matches):
+        filename = match.group(1)
+        start = match.start()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(full_diff)
+        result[filename] = full_diff[start:end].strip()
+    return result

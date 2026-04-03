@@ -232,3 +232,13 @@ Plans:
 - [x] 15-04-PLAN.md — Create Python process lifecycle manager, Fastify proxy routes, and internal callback endpoint
 - [x] 15-05-PLAN.md — Add 4th overlay button with URL detection, popover, status text, and IPC wiring
 - [x] 15-06-PLAN.md — Wire toast notifications, auto-select, backend tests, and end-to-end verification
+
+### Phase 16: AI agent for note search and insights: semantic search with sqlite-vec embeddings and RAG-powered conversational insights over all notes using ADK
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 15
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 16 to break down)

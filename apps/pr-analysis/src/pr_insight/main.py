@@ -18,6 +18,8 @@ def create_app() -> FastAPI:
     # so they're available even when uvicorn doesn't inherit them from the shell.
     if settings.openai_api_key:
         os.environ["OPENAI_API_KEY"] = settings.openai_api_key
+    if settings.anthropic_api_key:
+        os.environ["ANTHROPIC_API_KEY"] = settings.anthropic_api_key
     app = FastAPI(
         title="PR Insight",
         version="0.1.0",

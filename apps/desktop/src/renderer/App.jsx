@@ -1133,6 +1133,38 @@ export default function App({ api }) {
     }
   }, []);
 
+  // PR analysis completion toast and auto-select (per D-21, UI-SPEC)
+  useEffect(() => {
+    if (!window.api?.onPrAnalysisComplete) return;
+    const cleanup = window.api.onPrAnalysisComplete((data) => {
+      const description = data.title
+        ? (data.title.length > 60 ? data.title.slice(0, 57) + '...' : data.title)
+        : 'Analysis complete';
+      toast.success('PR analysis complete', { description, duration: 5000 });
+
+      if (data.nodeId) {
+        loadNodes().then(() => {
+          setSelectedNodeId(data.nodeId);
+        });
+      } else {
+        loadNodes();
+      }
+    });
+    return cleanup;
+  }, []);
+
+  // PR analysis error toast (per UI-SPEC)
+  useEffect(() => {
+    if (!window.api?.onPrAnalysisError) return;
+    const cleanup = window.api.onPrAnalysisError((data) => {
+      toast.error('PR analysis failed', {
+        description: data.error || 'Analysis failed. Retry from the overlay button.',
+        duration: 8000,
+      });
+    });
+    return cleanup;
+  }, []);
+
   useEffect(() => {
     selectedNodeIdRef.current = selectedNodeId;
   }, [selectedNodeId]);

@@ -61,4 +61,14 @@ contextBridge.exposeInMainWorld('api', {
   getCaptureAppPresets: () => ipcRenderer.invoke('capture-apps:get-presets'),
   getCaptureApps: () => ipcRenderer.invoke('capture-apps:get'),
   updateCaptureApps: (whitelist) => ipcRenderer.invoke('capture-apps:update', whitelist),
+  onPrAnalysisComplete: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('pr:analysis-complete', handler);
+    return () => ipcRenderer.removeListener('pr:analysis-complete', handler);
+  },
+  onPrAnalysisError: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('pr:analysis-error', handler);
+    return () => ipcRenderer.removeListener('pr:analysis-error', handler);
+  },
 });

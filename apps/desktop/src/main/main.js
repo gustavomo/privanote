@@ -831,7 +831,20 @@ function registerIpcHandlers() {
   ipcMain.on('overlay:resize', (_event, { width, height }) => {
     if (captureOverlay && !captureOverlay.isDestroyed()) {
       const bounds = captureOverlay.getBounds();
-      captureOverlay.setBounds({ x: bounds.x, y: bounds.y, width, height });
+      // Keep the right edge of the overlay fixed when width changes so that
+      // any popover extending leftward stays on-screen (overlay is docked to
+      // the right side of the screen).
+      const x = bounds.x + bounds.width - width;
+      captureOverlay.setBounds({ x, y: bounds.y, width, height });
+    }
+  });
+
+  ipcMain.on('overlay:set-focusable', (_event, focusable) => {
+    if (captureOverlay && !captureOverlay.isDestroyed()) {
+      captureOverlay.setFocusable(focusable);
+      if (focusable) {
+        captureOverlay.focus();
+      }
     }
   });
 

@@ -50,6 +50,7 @@ contextBridge.exposeInMainWorld('captureApi', {
 
   // --- Overlay layout ---
   resizeOverlay: (width, height) => ipcRenderer.send('overlay:resize', { width, height }),
+  setOverlayFocusable: (focusable) => ipcRenderer.send('overlay:set-focusable', focusable),
   onWhitelistState: (callback) => {
     const handler = (_event, whitelisted) => callback(whitelisted);
     ipcRenderer.on('overlay:whitelist-state', handler);

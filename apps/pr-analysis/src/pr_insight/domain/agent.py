@@ -15,10 +15,12 @@ Your goal is to help a developer quickly understand WHAT this PR achieves
 and WHY the changes matter — not just list what files changed.
 
 You will receive pre-fetched data about a GitHub pull request including:
-- PR metadata (title, author, branches, files changed, diff)
-- PR description/summary
-- Changed files list
-- Review comments from GitHub
+- PR metadata (title, author, branches, stats)
+- PR description / body written by the author
+- **Per-file diffs** in ```diff blocks — one section per changed file, each
+  labelled with filename, status, and +/- line counts
+- Review comments from GitHub (line-level, issue, and review-level)
+- Improvement suggestions
 
 Synthesize all this information into a structured analysis note with
 these sections (in order):
@@ -53,41 +55,50 @@ Include full GitHub PR file links where available.
 
 ## Key Code Changes
 
-Show a before/after snippet for **every changed file** that has meaningful logic
-changes. Skip files that only have import additions, whitespace, or trivial renames.
+For **every changed file** with meaningful logic changes, show a before/after
+snippet extracted from the per-file diff provided in the data.
 
-Format each file like this:
+The diff uses standard unified diff format:
+- Lines starting with `-` were **removed** (the "before")
+- Lines starting with `+` were **added** (the "after")
+- Lines with no prefix are context (unchanged surrounding code)
 
-**`path/to/file.ts`** — one sentence on what this specific change accomplishes
+Format each file as:
+
+---
+
+**[`path/to/file.ts`](github_file_link)** — one sentence on what this change achieves
 
 _Before_
 ```language
-// old code — annotate each key line with a detailed comment explaining:
-// - what this line/block was doing
-// - why it was a problem or limitation
-old code here
+// Reconstruct the old code by taking context lines + removed (-) lines.
+// Annotate each changed line with a detailed comment:
+// - what this line was doing and why it was a problem or limitation
+removed lines shown without the leading minus
 ```
 
 _After_
 ```language
-// new code — annotate each key line with a detailed comment explaining:
-// - exactly what changed (new condition, new call, new guard, etc.)
-// - why this is the correct behavior now
-// - how it connects to the PR's stated goal (reference the description if available)
-new code here
+// Reconstruct the new code by taking context lines + added (+) lines.
+// Annotate each changed line with a detailed comment:
+// - exactly what changed and why this is now correct
+// - connect to the PR goal (quote the PR description if it explains the motivation)
+added lines shown without the leading plus
 ```
 
-Rules for this section:
-- Cover ALL changed files with substantive logic changes, not just the top 2–4.
-- Comments must be DETAILED. Don't write "handles error" — write "detects transient
-  faults (e.g. temporary network unavailability) and re-throws them so the retry
-  mechanism upstream can handle them, instead of persisting a false failure record."
-- If the PR description explains the motivation, weave it into the comments
-  (e.g. "// prevents false failure records as called out in the PR description").
-- Keep each snippet focused on the changed lines — 3–12 lines per block.
-  Include just enough surrounding context to make the change readable.
-- Use the correct language tag for syntax highlighting.
-- If there is no diff data available, omit this section entirely.
+Rules:
+- Cover ALL files with substantive logic changes. Skip files that are only
+  import additions, whitespace changes, or trivial renames.
+- Extract the changed lines from the diff — do NOT copy the raw diff format
+  (no leading +/- in the rendered snippets, reconstruct readable code).
+- Comments must be DETAILED. Not "handles error" but "detects transient faults
+  (e.g. temporary network unavailability) and re-throws so the retry mechanism
+  upstream can recover, preventing false failure records from being persisted."
+- If the PR description explains the motivation, reference it explicitly in
+  the comment (e.g. "// as described in PR: prevents polluting error logs").
+- Keep each snippet to the changed lines + minimal context (3–15 lines total).
+- Use the correct language tag matching the file extension.
+- If no diff data is provided for a file, skip that file.
 
 ## Code Review Findings
 Findings from review comments (if any). Group by severity: critical, warning,
@@ -150,7 +161,7 @@ def create_pr_agent() -> LlmAgent:
     Question 3).
     """
     return LlmAgent(
-        model=LiteLlm(model="openai/gpt-4o"),
+        model=LiteLlm(model="openai/o3"),
         name="pr_analysis_agent",
         instruction=SYNTHESIS_INSTRUCTION,
     )

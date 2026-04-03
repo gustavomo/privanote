@@ -236,11 +236,25 @@ def _build_data_prompt(
         f"- **Labels:** {', '.join(metadata.labels) if metadata.labels else 'None'}",
     ]
 
-    # Changed files
+    # Changed files with per-file diffs (patch from GitHub API)
     if metadata.files:
-        sections.append("\n## Changed Files")
+        sections.append("\n## Changed Files with Diffs")
         for f in metadata.files:
-            sections.append(f"- `{f.get('filename', '')}` ({f.get('status', '')}) +{f.get('additions', 0)}/-{f.get('deletions', 0)}")
+            filename = f.get("filename", "")
+            status = f.get("status", "modified")
+            additions = f.get("additions", 0)
+            deletions = f.get("deletions", 0)
+            patch = f.get("patch", "")
+            file_url = f"{metadata.html_url}/files"
+
+            sections.append(
+                f"\n### `{filename}` ({status}) +{additions}/-{deletions}"
+                f"\n[View on GitHub]({file_url})"
+            )
+            if patch:
+                sections.append(f"```diff\n{patch}\n```")
+            else:
+                sections.append("_(binary file or patch not available)_")
 
     # PR Description from Qodo
     if pr_description:
@@ -252,9 +266,10 @@ def _build_data_prompt(
                 for item in items:
                     sections.append(f"  - {item}")
 
-    # Code Review Findings from Qodo
+    # Code Review Findings from Qodo (structured findings only — per-file diffs
+    # are already included above in Changed Files with Diffs)
     if review_result and review_result.findings:
-        sections.append("\n## Code Review Findings (from Qodo)")
+        sections.append("\n## Code Review Findings")
         for finding in review_result.findings:
             sections.append(
                 f"- [{finding.severity}] `{finding.file}`"
@@ -263,12 +278,6 @@ def _build_data_prompt(
             )
             if finding.suggestion:
                 sections.append(f"  Suggestion: {finding.suggestion}")
-    elif review_result and review_result.raw_output:
-        # Truncate diff to avoid overwhelming the agent context window
-        diff_text = review_result.raw_output
-        if len(diff_text) > 8000:
-            diff_text = diff_text[:8000] + "\n\n[... diff truncated for brevity ...]"
-        sections.append(f"\n## PR Diff\n```diff\n{diff_text}\n```")
 
     # Improvement Suggestions from Qodo
     if improvements:

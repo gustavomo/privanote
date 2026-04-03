@@ -12,14 +12,14 @@
       -webkit-user-select: none;
       user-select: none;
       min-width: 48px;
-      height: 72px;
+      height: auto;
       transition: height 200ms ease-out, width 200ms ease-out;
     }
     .container {
       min-width: 48px;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       gap: 4px;
       -webkit-app-region: drag;
@@ -56,7 +56,11 @@
     .btn.recording svg { width: 15px; height: 15px; stroke: white; }
     .btn.finalizing svg { stroke: white; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner { animation: spin 1s linear infinite; }
+    .spinner {
+      animation: spin 1s linear infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
     .btn.monitoring { background: oklch(0.65 0.15 195); box-shadow: 0 1px 8px oklch(0.65 0.15 195 / 0.35); }
     .btn.monitoring svg { width: 15px; height: 15px; stroke: white; }
     .btn.clip-finalizing { background: oklch(0.547 0.021 43.1); cursor: default; }
@@ -136,13 +140,14 @@
     .pr-popover {
       display: none;
       position: absolute;
-      right: 56px;
+      right: 52px;
       width: 280px;
       background: oklch(0.214 0.009 43.1);
       border-radius: 8px;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.32);
       padding: 8px;
       z-index: 10;
+      -webkit-app-region: no-drag;
     }
     .pr-popover.visible { display: block; }
 
@@ -271,15 +276,15 @@
         <path d="M18 9a9 9 0 0 0-9 9"/>
         <line x1="2" y1="2" x2="22" y2="22"/>
       </svg>
-      <div class="pr-popover" id="prPopover">
-        <input type="text" id="prUrlInput" placeholder="github.com/owner/repo/pull/123" />
-        <div class="pr-validation" id="prValidation">Enter a valid GitHub PR URL</div>
-        <div class="pr-actions">
-          <button class="pr-dismiss" id="prDismiss">Dismiss</button>
-          <button class="pr-submit" id="prSubmit">Analyze PR</button>
-        </div>
-      </div>
     </button>
+    <div class="pr-popover" id="prPopover">
+      <input type="text" id="prUrlInput" placeholder="github.com/owner/repo/pull/123" />
+      <div class="pr-validation" id="prValidation">Enter a valid GitHub PR URL</div>
+      <div class="pr-actions">
+        <button class="pr-dismiss" id="prDismiss">Dismiss</button>
+        <button class="pr-submit" id="prSubmit">Analyze PR</button>
+      </div>
+    </div>
     <div class="pr-status" id="prStatus"></div>
   </div>
 
@@ -700,8 +705,15 @@
       prPopover.classList.add('visible');
       prUrlInput.value = detectedPrUrl;
       validatePrUrl();
-      prUrlInput.focus();
       recalcHeight();
+      // Make the overlay window focusable so the URL input can receive keyboard
+      // events (including Cmd+V paste). The window is normally non-focusable to
+      // avoid stealing focus from the user's active application.
+      if (window.captureApi && window.captureApi.setOverlayFocusable) {
+        window.captureApi.setOverlayFocusable(true);
+      }
+      // Focus the input after the window becomes focusable
+      requestAnimationFrame(() => prUrlInput.focus());
     }
 
     function hidePrPopover() {
@@ -709,6 +721,10 @@
       prPopover.classList.remove('visible');
       prValidation.classList.remove('visible');
       recalcHeight();
+      // Return the overlay window to non-focusable so it doesn't steal focus
+      if (window.captureApi && window.captureApi.setOverlayFocusable) {
+        window.captureApi.setOverlayFocusable(false);
+      }
     }
 
     function showPrStatus(text) {
@@ -748,6 +764,12 @@
 
     prBtn.addEventListener('click', () => {
       if (prState === 'analyzing' || prState === 'finalizing') return;
+      // If we're on a GitHub PR page, immediately start analysis without showing popover
+      if (detectedPrUrl && PR_URL_RE.test(detectedPrUrl)) {
+        startPrAnalysis(detectedPrUrl);
+        return;
+      }
+      // Otherwise toggle the URL input popover
       if (prPopoverVisible) {
         hidePrPopover();
       } else {
@@ -766,9 +788,9 @@
       await startPrAnalysis();
     });
 
-    async function startPrAnalysis() {
+    async function startPrAnalysis(directUrl) {
       if (!window.captureApi) return;
-      const url = prUrlInput.value.trim();
+      const url = directUrl ? directUrl.trim() : prUrlInput.value.trim();
       hidePrPopover();
       setPrState('analyzing');
       showPrStatus('Analyzing...');
@@ -782,7 +804,7 @@
 
     // Close popover on outside click
     document.addEventListener('click', (e) => {
-      if (prPopoverVisible && !prBtn.contains(e.target)) {
+      if (prPopoverVisible && !prBtn.contains(e.target) && !prPopover.contains(e.target)) {
         hidePrPopover();
       }
     });
@@ -792,14 +814,15 @@
       window.captureApi.isPrAnalysisEnabled().then(enabled => {
         if (!enabled) return;
 
+        // Always show PR button when feature is enabled
+        showPrButton();
+
         window.captureApi.onPrUrlDetected((data) => {
           detectedPrUrl = data.url;
-          showPrButton();
         });
 
         window.captureApi.onPrUrlCleared(() => {
           detectedPrUrl = '';
-          hidePrButton();
         });
 
         window.captureApi.onPrStatusUpdate((data) => {

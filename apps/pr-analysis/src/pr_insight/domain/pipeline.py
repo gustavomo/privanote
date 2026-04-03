@@ -195,7 +195,11 @@ class AnalysisPipeline:
             )
 
         except Exception as exc:
-            logger.warning("Agent synthesis failed (%s), using template fallback", exc)
+            logger.warning(
+                "Agent synthesis failed (%s), using template fallback\n%s",
+                exc,
+                traceback.format_exc(),
+            )
             return _format_fallback_note(
                 pr_url, pr_info, metadata, review_result,
                 pr_description, improvements, review_comments,
@@ -260,7 +264,11 @@ def _build_data_prompt(
             if finding.suggestion:
                 sections.append(f"  Suggestion: {finding.suggestion}")
     elif review_result and review_result.raw_output:
-        sections.append(f"\n## Code Review (raw)\n{review_result.raw_output}")
+        # Truncate diff to avoid overwhelming the agent context window
+        diff_text = review_result.raw_output
+        if len(diff_text) > 8000:
+            diff_text = diff_text[:8000] + "\n\n[... diff truncated for brevity ...]"
+        sections.append(f"\n## PR Diff\n```diff\n{diff_text}\n```")
 
     # Improvement Suggestions from Qodo
     if improvements:
@@ -304,14 +312,24 @@ def _format_fallback_note(
 
     # Executive Summary
     sections.append("## Executive Summary\n")
-    sections.append(
-        f"Pull request [{metadata.title}]({metadata.html_url}) by "
-        f"**{metadata.author}** in `{pr_info.owner}/{pr_info.repo}`. "
-        f"Changes: +{metadata.additions}/-{metadata.deletions} across "
-        f"{metadata.changed_files} files."
-    )
-    if pr_description and pr_description.summary:
-        sections.append(f"\n{pr_description.summary}")
+    changed_files_list = [f.get("filename", "") for f in (metadata.files or [])]
+    files_preview = ", ".join(f"`{f}`" for f in changed_files_list[:5])
+    if len(changed_files_list) > 5:
+        files_preview += f" and {len(changed_files_list) - 5} more"
+
+    if metadata.body and len(metadata.body.strip()) > 20:
+        # Use the PR author's own description as the basis for the summary
+        sections.append(
+            f"[{metadata.title}]({metadata.html_url}) by **{metadata.author}** "
+            f"(+{metadata.additions}/-{metadata.deletions} across {metadata.changed_files} files).\n"
+        )
+        sections.append(metadata.body.strip()[:600])
+    else:
+        sections.append(
+            f"[{metadata.title}]({metadata.html_url}) by **{metadata.author}** — "
+            f"+{metadata.additions}/-{metadata.deletions} across {metadata.changed_files} files. "
+            f"Changed files: {files_preview}."
+        )
 
     # Code Review Findings
     sections.append("\n## Code Review Findings\n")
@@ -322,10 +340,13 @@ def _format_fallback_note(
                 f"{f' L{finding.line}' if finding.line else ''}: "
                 f"{finding.description}"
             )
-    elif review_result and review_result.raw_output:
-        sections.append(review_result.raw_output[:2000])
+    elif review_comments:
+        for comment in review_comments:
+            sections.append(
+                f"- **{comment.get('author', 'unknown')}**: {comment.get('body', '')[:300]}"
+            )
     else:
-        sections.append("No code review findings available.")
+        sections.append("No review comments on this PR.")
 
     # Categorized Changes
     sections.append("\n## Categorized Changes\n")
@@ -351,8 +372,7 @@ def _format_fallback_note(
     sections.append(f"- **Lines deleted:** {metadata.deletions}")
     sections.append(f"- **Files changed:** {metadata.changed_files}")
 
-    # Architecture Diagram
-    sections.append("\n## Architecture Diagram\n")
-    sections.append("```mermaid\ngraph TD\n    PR[Pull Request] --> REPO[Repository]\n```")
+    # Note: Architecture Diagram omitted in fallback — only the ADK agent
+    # can evaluate whether a diagram is meaningful for this PR.
 
     return "\n".join(sections)

@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 
 from pr_insight.adapters.github_adapter import GitHubAdapter
@@ -11,6 +13,11 @@ from pr_insight.domain.pipeline import AnalysisPipeline
 
 def create_app() -> FastAPI:
     settings = get_settings()
+
+    # LiteLlm reads API keys from env vars — set them from pydantic-settings
+    # so they're available even when uvicorn doesn't inherit them from the shell.
+    if settings.openai_api_key:
+        os.environ["OPENAI_API_KEY"] = settings.openai_api_key
     app = FastAPI(
         title="PR Insight",
         version="0.1.0",

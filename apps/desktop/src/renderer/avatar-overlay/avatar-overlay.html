@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nota Avatar</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 80px;
+      height: 80px;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    body {
+      -webkit-app-region: no-drag;
+      user-select: none;
+    }
+
+    .container {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      -webkit-app-region: drag;
+    }
+
+    .bubble {
+      display: none;
+      position: absolute;
+      bottom: 72px;
+      left: 0;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 4px 10px;
+      font: 11px/1.4 system-ui, sans-serif;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      color: #1e293b;
+      z-index: 10;
+    }
+
+    .avatar-btn {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 80px;
+      height: 80px;
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      outline: none;
+      -webkit-app-region: no-drag;
+    }
+
+    .avatar-btn svg {
+      width: 80px;
+      height: 80px;
+      display: block;
+    }
+
+    @keyframes bounce {
+      0%   { transform: translateY(0); }
+      30%  { transform: translateY(-8px); }
+      60%  { transform: translateY(0); }
+      80%  { transform: translateY(-4px); }
+      100% { transform: translateY(0); }
+    }
+
+    .avatar-btn.bouncing {
+      animation: bounce 600ms ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="bubble" id="bubble"></div>
+    <button class="avatar-btn" id="avatarBtn" type="button" aria-label="Avatar de Privanote">
+      <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="avatar-body" cx="50%" cy="38%" r="65%">
+            <stop offset="0%" stop-color="oklch(0.82 0.12 245)" />
+            <stop offset="60%" stop-color="oklch(0.62 0.17 258)" />
+            <stop offset="100%" stop-color="oklch(0.48 0.18 270)" />
+          </radialGradient>
+          <radialGradient id="avatar-cheek" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="oklch(0.82 0.14 25 / 0.85)" />
+            <stop offset="100%" stop-color="oklch(0.82 0.14 25 / 0)" />
+          </radialGradient>
+        </defs>
+
+        <!-- Body -->
+        <circle cx="40" cy="42" r="26" fill="url(#avatar-body)" />
+
+        <!-- Top highlight -->
+        <ellipse cx="30" cy="26" rx="9" ry="5" fill="white" opacity="0.35" />
+
+        <!-- Cheeks -->
+        <circle cx="26" cy="46" r="4" fill="url(#avatar-cheek)" />
+        <circle cx="54" cy="46" r="4" fill="url(#avatar-cheek)" />
+
+        <!-- Eyes -->
+        <ellipse id="eye-left" cx="32" cy="40" rx="2.6" ry="3.2" fill="#0b1020" />
+        <ellipse id="eye-right" cx="48" cy="40" rx="2.6" ry="3.2" fill="#0b1020" />
+        <circle id="shine-left" cx="33" cy="39" r="0.9" fill="white" />
+        <circle id="shine-right" cx="49" cy="39" r="0.9" fill="white" />
+
+        <!-- Mouth — switches on hover -->
+        <path id="mouth-closed" d="M33 51 Q40 56 47 51"
+          stroke="#0b1020" stroke-width="2" stroke-linecap="round" fill="none" />
+        <path id="mouth-open" d="M32 50 Q40 59 48 50 Q40 56 32 50 Z"
+          fill="#0b1020" opacity="0.85" style="display:none;" />
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    'use strict';
+
+    const greetings = [
+      '¡Hola! Soy Nota.',
+      '¿Listos para grabar?',
+      'Tus notas están seguras.',
+      'Local first, siempre.',
+      '¿Necesitas ayuda?',
+    ];
+
+    const btn = document.getElementById('avatarBtn');
+    const bubble = document.getElementById('bubble');
+    const eyeLeft = document.getElementById('eye-left');
+    const eyeRight = document.getElementById('eye-right');
+    const shineLeft = document.getElementById('shine-left');
+    const shineRight = document.getElementById('shine-right');
+    const mouthClosed = document.getElementById('mouth-closed');
+    const mouthOpen = document.getElementById('mouth-open');
+
+    let bubbleTimer = null;
+    let hovered = false;
+
+    // --- Blinking ---
+    function scheduleBlink() {
+      const delay = 2000 + Math.random() * 3000;
+      setTimeout(() => {
+        // Close eyes
+        eyeLeft.setAttribute('ry', '0.3');
+        eyeRight.setAttribute('ry', '0.3');
+        shineLeft.style.display = 'none';
+        shineRight.style.display = 'none';
+
+        setTimeout(() => {
+          // Open eyes
+          eyeLeft.setAttribute('ry', '3.2');
+          eyeRight.setAttribute('ry', '3.2');
+          shineLeft.style.display = '';
+          shineRight.style.display = '';
+          scheduleBlink();
+        }, 160);
+      }, delay);
+    }
+
+    scheduleBlink();
+
+    // --- Hover mouth ---
+    btn.addEventListener('mouseover', () => {
+      hovered = true;
+      mouthClosed.style.display = 'none';
+      mouthOpen.style.display = '';
+    });
+
+    btn.addEventListener('mouseleave', () => {
+      hovered = false;
+      mouthClosed.style.display = '';
+      mouthOpen.style.display = 'none';
+    });
+
+    // --- Click: bounce + greeting ---
+    btn.addEventListener('click', () => {
+      // Bounce
+      btn.classList.remove('bouncing');
+      // Force reflow to restart animation
+      void btn.offsetWidth;
+      btn.classList.add('bouncing');
+      btn.addEventListener('animationend', () => {
+        btn.classList.remove('bouncing');
+      }, { once: true });
+
+      // Greeting bubble
+      const text = greetings[Math.floor(Math.random() * greetings.length)];
+      bubble.textContent = text;
+      bubble.style.display = 'block';
+
+      if (bubbleTimer) clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(() => {
+        bubble.style.display = 'none';
+      }, 3000);
+    });
+  </script>
+</body>
+</html>

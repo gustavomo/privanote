@@ -12,7 +12,7 @@
     }
 
     html, body {
-      width: 80px;
+      width: 220px;
       height: 160px;
       background: transparent;
       overflow: hidden;
@@ -25,7 +25,7 @@
 
     .container {
       position: relative;
-      width: 80px;
+      width: 220px;
       height: 160px;
       -webkit-app-region: drag;
     }
@@ -33,8 +33,8 @@
     .bubble {
       display: none;
       position: absolute;
-      bottom: 88px; /* sits just above the avatar */
-      left: 0;
+      bottom: 24px; /* vertically centered on the avatar */
+      left: 88px;   /* to the right of the 80px avatar + 8px gap */
       background: white;
       border: 1px solid #e2e8f0;
       border-radius: 12px;

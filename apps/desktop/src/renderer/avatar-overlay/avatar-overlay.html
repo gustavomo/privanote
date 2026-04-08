@@ -12,7 +12,7 @@
     }
 
     html, body {
-      width: 220px;
+      width: 300px;
       height: 160px;
       background: transparent;
       overflow: hidden;
@@ -25,7 +25,7 @@
 
     .container {
       position: relative;
-      width: 220px;
+      width: 300px;
       height: 160px;
       -webkit-app-region: drag;
     }
@@ -33,15 +33,17 @@
     .bubble {
       display: none;
       position: absolute;
-      bottom: 24px; /* vertically centered on the avatar */
-      left: 88px;   /* to the right of the 80px avatar + 8px gap */
+      bottom: 28px;
+      left: 88px;
+      max-width: 200px;
       background: white;
       border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 4px 10px;
-      font: 11px/1.4 system-ui, sans-serif;
-      white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      border-radius: 14px;
+      padding: 8px 14px;
+      font: 12px/1.5 system-ui, sans-serif;
+      white-space: normal;
+      word-break: break-word;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
       color: #1e293b;
       z-index: 10;
     }
@@ -86,37 +88,37 @@
       <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="avatar-body" cx="50%" cy="38%" r="65%">
-            <stop offset="0%" stop-color="oklch(0.82 0.12 245)" />
-            <stop offset="60%" stop-color="oklch(0.62 0.17 258)" />
-            <stop offset="100%" stop-color="oklch(0.48 0.18 270)" />
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="60%" stop-color="#f1f1f1" />
+            <stop offset="100%" stop-color="#d4d4d4" />
           </radialGradient>
           <radialGradient id="avatar-cheek" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="oklch(0.82 0.14 25 / 0.85)" />
+            <stop offset="0%" stop-color="oklch(0.82 0.14 25 / 0.75)" />
             <stop offset="100%" stop-color="oklch(0.82 0.14 25 / 0)" />
           </radialGradient>
         </defs>
 
         <!-- Body -->
-        <circle cx="40" cy="42" r="26" fill="url(#avatar-body)" />
+        <circle cx="40" cy="42" r="26" fill="url(#avatar-body)" stroke="#c8c8c8" stroke-width="1" />
 
         <!-- Top highlight -->
-        <ellipse cx="30" cy="26" rx="9" ry="5" fill="white" opacity="0.35" />
+        <ellipse cx="30" cy="28" rx="9" ry="5" fill="white" opacity="0.6" />
 
         <!-- Cheeks -->
-        <circle cx="26" cy="46" r="4" fill="url(#avatar-cheek)" />
-        <circle cx="54" cy="46" r="4" fill="url(#avatar-cheek)" />
+        <circle cx="26" cy="46" r="5" fill="url(#avatar-cheek)" />
+        <circle cx="54" cy="46" r="5" fill="url(#avatar-cheek)" />
 
         <!-- Eyes -->
-        <ellipse id="eye-left" cx="32" cy="40" rx="2.6" ry="3.2" fill="#0b1020" />
-        <ellipse id="eye-right" cx="48" cy="40" rx="2.6" ry="3.2" fill="#0b1020" />
-        <circle id="shine-left" cx="33" cy="39" r="0.9" fill="white" />
-        <circle id="shine-right" cx="49" cy="39" r="0.9" fill="white" />
+        <ellipse id="eye-left"  cx="32" cy="40" rx="2.6" ry="3.2" fill="#1e293b" />
+        <ellipse id="eye-right" cx="48" cy="40" rx="2.6" ry="3.2" fill="#1e293b" />
+        <circle  id="shine-left"  cx="33" cy="39" r="0.9" fill="white" />
+        <circle  id="shine-right" cx="49" cy="39" r="0.9" fill="white" />
 
-        <!-- Mouth — switches on hover -->
+        <!-- Mouth — closed smile / open talking -->
         <path id="mouth-closed" d="M33 51 Q40 56 47 51"
-          stroke="#0b1020" stroke-width="2" stroke-linecap="round" fill="none" />
+          stroke="#1e293b" stroke-width="2" stroke-linecap="round" fill="none" />
         <path id="mouth-open" d="M32 50 Q40 59 48 50 Q40 56 32 50 Z"
-          fill="#0b1020" opacity="0.85" style="display:none;" />
+          fill="#1e293b" opacity="0.8" style="display:none;" />
       </svg>
     </button>
   </div>
@@ -130,32 +132,30 @@
       'Tus notas están seguras.',
       'Local first, siempre.',
       '¿Necesitas ayuda?',
+      'Captura, no olvides nada.',
     ];
 
-    const btn = document.getElementById('avatarBtn');
-    const bubble = document.getElementById('bubble');
-    const eyeLeft = document.getElementById('eye-left');
-    const eyeRight = document.getElementById('eye-right');
-    const shineLeft = document.getElementById('shine-left');
+    const btn        = document.getElementById('avatarBtn');
+    const bubble     = document.getElementById('bubble');
+    const eyeLeft    = document.getElementById('eye-left');
+    const eyeRight   = document.getElementById('eye-right');
+    const shineLeft  = document.getElementById('shine-left');
     const shineRight = document.getElementById('shine-right');
     const mouthClosed = document.getElementById('mouth-closed');
-    const mouthOpen = document.getElementById('mouth-open');
+    const mouthOpen   = document.getElementById('mouth-open');
 
     let bubbleTimer = null;
-    let hovered = false;
+    let talkInterval = null;
 
     // --- Blinking ---
     function scheduleBlink() {
       const delay = 2000 + Math.random() * 3000;
       setTimeout(() => {
-        // Close eyes
         eyeLeft.setAttribute('ry', '0.3');
         eyeRight.setAttribute('ry', '0.3');
         shineLeft.style.display = 'none';
         shineRight.style.display = 'none';
-
         setTimeout(() => {
-          // Open eyes
           eyeLeft.setAttribute('ry', '3.2');
           eyeRight.setAttribute('ry', '3.2');
           shineLeft.style.display = '';
@@ -167,38 +167,60 @@
 
     scheduleBlink();
 
+    // --- Talking animation ---
+    function startTalking() {
+      let open = false;
+      talkInterval = setInterval(() => {
+        open = !open;
+        mouthClosed.style.display = open ? 'none' : '';
+        mouthOpen.style.display   = open ? ''     : 'none';
+      }, 140);
+    }
+
+    function stopTalking() {
+      if (talkInterval) {
+        clearInterval(talkInterval);
+        talkInterval = null;
+      }
+      mouthClosed.style.display = '';
+      mouthOpen.style.display   = 'none';
+    }
+
     // --- Hover mouth ---
     btn.addEventListener('mouseover', () => {
-      hovered = true;
-      mouthClosed.style.display = 'none';
-      mouthOpen.style.display = '';
+      if (!talkInterval) {
+        mouthClosed.style.display = 'none';
+        mouthOpen.style.display = '';
+      }
     });
 
     btn.addEventListener('mouseleave', () => {
-      hovered = false;
-      mouthClosed.style.display = '';
-      mouthOpen.style.display = 'none';
+      if (!talkInterval) {
+        mouthClosed.style.display = '';
+        mouthOpen.style.display = 'none';
+      }
     });
 
-    // --- Click: bounce + greeting ---
+    // --- Click: bounce + greeting + talk ---
     btn.addEventListener('click', () => {
       // Bounce
       btn.classList.remove('bouncing');
-      // Force reflow to restart animation
       void btn.offsetWidth;
       btn.classList.add('bouncing');
-      btn.addEventListener('animationend', () => {
-        btn.classList.remove('bouncing');
-      }, { once: true });
+      btn.addEventListener('animationend', () => btn.classList.remove('bouncing'), { once: true });
 
-      // Greeting bubble
+      // Show bubble
       const text = greetings[Math.floor(Math.random() * greetings.length)];
       bubble.textContent = text;
       bubble.style.display = 'block';
 
+      // Talk while bubble is visible
+      startTalking();
+
       if (bubbleTimer) clearTimeout(bubbleTimer);
       bubbleTimer = setTimeout(() => {
         bubble.style.display = 'none';
+        stopTalking();
       }, 3000);
     });
   </script>

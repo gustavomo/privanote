@@ -290,7 +290,7 @@ function createAvatarOverlay() {
   const overlayHeight = 160; // avatar (80) + bubble space above (80)
 
   avatarOverlay = new BrowserWindow({
-    width: 220,
+    width: 300,
     height: overlayHeight,
     x: 16,
     y: screenHeight - overlayHeight - 16,

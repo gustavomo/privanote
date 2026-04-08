@@ -845,34 +845,31 @@
       });
     }
 
-    // ── Long-press drag to reposition the overlay ─────────
+    // ── Long-press drag (main-process polling — reliable on panel/alwaysOnTop windows) ──
     {
-      let dragState      = null;
       let longPressTimer = null;
+      let dragging       = false;
 
-      const container = document.querySelector('.container');
-
-      container.addEventListener('mousedown', async (e) => {
-        // Only on the container background, not buttons
-        if (e.target !== container) return;
+      document.addEventListener('mousedown', async (e) => {
         if (e.button !== 0) return;
         const bounds = await window.captureApi.getBounds();
+        const offsetX = e.screenX - bounds.x;
+        const offsetY = e.screenY - bounds.y;
         longPressTimer = setTimeout(() => {
           longPressTimer = null;
-          dragState = { sx: e.screenX, sy: e.screenY, wx: bounds.x, wy: bounds.y };
-          container.style.cursor = 'grabbing';
-        }, 300);
-      });
-
-      document.addEventListener('mousemove', (e) => {
-        if (!dragState) return;
-        window.captureApi.moveTo(dragState.wx + e.screenX - dragState.sx,
-                                 dragState.wy + e.screenY - dragState.sy);
+          dragging = true;
+          document.body.style.cursor = 'grabbing';
+          window.captureApi.startDrag(offsetX, offsetY);
+        }, 280);
       });
 
       document.addEventListener('mouseup', () => {
         if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-        if (dragState) { dragState = null; container.style.cursor = ''; }
+        if (dragging) {
+          dragging = false;
+          document.body.style.cursor = '';
+          window.captureApi.stopDrag();
+        }
       });
     }
 

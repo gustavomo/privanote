@@ -87,7 +87,8 @@ contextBridge.exposeInMainWorld('captureApi', {
   },
   isPrAnalysisEnabled: () => ipcRenderer.invoke('pr:is-enabled'),
 
-  // --- Drag to reposition ---
-  moveTo:    (x, y) => ipcRenderer.send('overlay:move', { windowName: 'capture', x, y }),
-  getBounds: ()     => ipcRenderer.invoke('overlay:get-bounds', 'capture'),
+  // --- Drag to reposition (polling-based via main process) ---
+  getBounds:  ()           => ipcRenderer.invoke('overlay:get-bounds', 'capture'),
+  startDrag:  (ox, oy)     => ipcRenderer.send('overlay:start-drag', { windowName: 'capture', offsetX: ox, offsetY: oy }),
+  stopDrag:   ()           => ipcRenderer.send('overlay:stop-drag'),
 });

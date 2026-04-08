@@ -849,15 +849,35 @@ function registerIpcHandlers() {
     }
   });
 
-  // Drag any overlay window by position
-  ipcMain.on('overlay:move', (_event, { windowName, x, y }) => {
-    const win = windowName === 'avatar' ? avatarOverlay : captureOverlay;
-    if (win && !win.isDestroyed()) win.setPosition(Math.round(x), Math.round(y));
+  // Drag any overlay window — polling-based so it works regardless of focusable/region settings
+  let _dragPoll = null;
+  ipcMain.on('overlay:start-drag', (_event, { windowName, offsetX, offsetY }) => {
+    const win = windowName === 'capture' ? captureOverlay : avatarOverlay;
+    if (!win || win.isDestroyed()) return;
+    if (_dragPoll) clearInterval(_dragPoll);
+    _dragPoll = setInterval(() => {
+      if (!win || win.isDestroyed()) { clearInterval(_dragPoll); _dragPoll = null; return; }
+      const c = screen.getCursorScreenPoint();
+      win.setPosition(Math.round(c.x - offsetX), Math.round(c.y - offsetY));
+    }, 16);
+  });
+  ipcMain.on('overlay:stop-drag', () => {
+    if (_dragPoll) { clearInterval(_dragPoll); _dragPoll = null; }
   });
 
   ipcMain.handle('overlay:get-bounds', (_event, windowName) => {
     const win = windowName === 'avatar' ? avatarOverlay : captureOverlay;
     return (win && !win.isDestroyed()) ? win.getBounds() : null;
+  });
+
+  // Avatar walk: move by delta each tick
+  ipcMain.on('avatar:move-by', (_event, { dx, dy }) => {
+    if (avatarOverlay && !avatarOverlay.isDestroyed()) {
+      const [x, y] = avatarOverlay.getPosition();
+      const { width: sw } = screen.getPrimaryDisplay().workAreaSize;
+      const nx = Math.min(sw - 300, Math.max(0, x + dx));
+      avatarOverlay.setPosition(nx, y);
+    }
   });
   ipcMain.handle('backend:upload', (_event, request) => proxyBackendUpload(request));
   ipcMain.handle('attachments:get-content-url', async (_event, attachmentId) => {

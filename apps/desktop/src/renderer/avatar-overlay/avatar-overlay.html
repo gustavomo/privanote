@@ -131,6 +131,34 @@
       animation: arm-idle-r 4s ease-in-out infinite;
     }
 
+    /* ── Leg idle (none — legs are static when not walking) */
+    #leg-left, #leg-right {
+      transform-box: fill-box;
+      transform-origin: top center;
+    }
+
+    /* ── Walk ──────────────────────────────────────────── */
+    @keyframes step-leg-l {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(-22deg); }
+    }
+    @keyframes step-leg-r {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(22deg); }
+    }
+    @keyframes step-arm-l {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(22deg); }
+    }
+    @keyframes step-arm-r {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(-22deg); }
+    }
+    .avatar-btn.walking #leg-left  { animation: step-leg-l 380ms ease-in-out infinite !important; }
+    .avatar-btn.walking #leg-right { animation: step-leg-r 380ms ease-in-out infinite -190ms !important; }
+    .avatar-btn.walking #arm-left  { animation: step-arm-l 380ms ease-in-out infinite -190ms !important; }
+    .avatar-btn.walking #arm-right { animation: step-arm-r 380ms ease-in-out infinite !important; }
+
     /* ── Wave ──────────────────────────────────────────── */
     @keyframes wave {
       0%   { transform: rotate(0deg); }
@@ -173,11 +201,14 @@
           </defs>
 
           <!-- ── Legs ── -->
-          <rect x="24" y="102" width="12" height="38" rx="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
-          <rect x="44" y="102" width="12" height="38" rx="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
-          <!-- Feet -->
-          <ellipse cx="30" cy="140" rx="10" ry="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
-          <ellipse cx="50" cy="140" rx="10" ry="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+          <g id="leg-left">
+            <rect x="24" y="102" width="12" height="38" rx="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+            <ellipse cx="30" cy="140" rx="10" ry="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+          </g>
+          <g id="leg-right">
+            <rect x="44" y="102" width="12" height="38" rx="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+            <ellipse cx="50" cy="140" rx="10" ry="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+          </g>
 
           <!-- ── Torso ── -->
           <rect id="torso" x="17" y="44" width="46" height="64" rx="18"
@@ -355,12 +386,36 @@
       if (!ok) speakFallback(greeting);
     }
 
-    // ── Click-through: pass mouse to windows below except over the avatar ──
+    // ── Click-through + walking ───────────────────────────
+    let isWalking    = false;
+    let walkInterval = null;
+
+    function startWalking() {
+      if (isWalking) return;
+      isWalking = true;
+      btn.classList.add('walking');
+      walkInterval = setInterval(() => window.avatarAPI.moveBy(4, 0), 40);
+    }
+
+    function stopWalking() {
+      if (!isWalking) return;
+      isWalking = false;
+      btn.classList.remove('walking');
+      clearInterval(walkInterval);
+      walkInterval = null;
+    }
+
     document.addEventListener('mousemove', (e) => {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const el  = document.elementFromPoint(e.clientX, e.clientY);
       const over = !!(el && el.closest('#avatarBtn'));
       window.avatarAPI.setIgnoreMouse(!over);
+
+      // Walk right when cursor enters the window area but is NOT on the button
+      if (!over) startWalking();
+      else        stopWalking();   // cursor reached the avatar — stop, let user click
     });
+
+    document.addEventListener('mouseleave', stopWalking);
 
     // ── Hover ─────────────────────────────────────────────
     btn.addEventListener('mouseover', () => {

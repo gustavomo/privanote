@@ -386,36 +386,30 @@
       if (!ok) speakFallback(greeting);
     }
 
-    // ── Click-through + walking ───────────────────────────
-    let isWalking    = false;
-    let walkInterval = null;
-
-    function startWalking() {
-      if (isWalking) return;
-      isWalking = true;
-      btn.classList.add('walking');
-      walkInterval = setInterval(() => window.avatarAPI.moveBy(4, 0), 40);
-    }
-
-    function stopWalking() {
-      if (!isWalking) return;
-      isWalking = false;
-      btn.classList.remove('walking');
-      clearInterval(walkInterval);
-      walkInterval = null;
-    }
-
+    // ── Click-through (mousemove inside window bounds) ───
     document.addEventListener('mousemove', (e) => {
       const el  = document.elementFromPoint(e.clientX, e.clientY);
       const over = !!(el && el.closest('#avatarBtn'));
       window.avatarAPI.setIgnoreMouse(!over);
-
-      // Walk right when cursor enters the window area but is NOT on the button
-      if (!over) startWalking();
-      else        stopWalking();   // cursor reached the avatar — stop, let user click
     });
 
-    document.addEventListener('mouseleave', stopWalking);
+    // ── Walking — driven by main-process proximity polling ──
+    const svg = btn.querySelector('svg');
+
+    function startWalking(dir) {
+      btn.classList.add('walking');
+      svg.style.transform = dir === 'left' ? 'scaleX(-1)' : '';
+    }
+
+    function stopWalking() {
+      btn.classList.remove('walking');
+      svg.style.transform = '';
+    }
+
+    window.avatarAPI.onWalk((dir) => {
+      if (dir === 'none') stopWalking();
+      else                startWalking(dir);
+    });
 
     // ── Hover ─────────────────────────────────────────────
     btn.addEventListener('mouseover', () => {

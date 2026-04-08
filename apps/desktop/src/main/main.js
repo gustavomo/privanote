@@ -25,6 +25,7 @@ let backendStartupPromise = null;
 let isQuitting = false;
 let captureOverlay = null;
 let avatarOverlay = null;
+let avatarProximityPoll = null;
 let captureSession = null;
 let clipboardSession = null;
 let mainWindow = null;
@@ -317,6 +318,8 @@ function createAvatarOverlay() {
   avatarOverlay.setIgnoreMouseEvents(true, { forward: true });
   avatarOverlay.loadFile(path.join(__dirname, '..', 'renderer', 'avatar-overlay', 'avatar-overlay.html'));
   avatarOverlay.on('closed', () => { avatarOverlay = null; });
+
+  startAvatarProximityDetection();
 
   return avatarOverlay;
 }
@@ -812,6 +815,43 @@ function stopAppDetection() {
   }
 }
 
+function startAvatarProximityDetection() {
+  if (avatarProximityPoll) return;
+  const H_PROX = 300; // horizontal detection radius (px)
+  const V_PROX = 220; // vertical detection radius (px)
+  const STEP   = 5;   // px per tick
+  let lastDir  = 'none';
+
+  avatarProximityPoll = setInterval(() => {
+    if (!avatarOverlay || avatarOverlay.isDestroyed()) return;
+
+    const cursor = screen.getCursorScreenPoint();
+    const b      = avatarOverlay.getBounds();
+    const { width: sw } = screen.getPrimaryDisplay().workAreaSize;
+
+    // Distance from cursor to nearest point on avatar window
+    const nearX  = Math.max(b.x, Math.min(b.x + b.width,  cursor.x));
+    const nearY  = Math.max(b.y, Math.min(b.y + b.height, cursor.y));
+    const hDist  = Math.abs(cursor.x - nearX);
+    const vDist  = Math.abs(cursor.y - nearY);
+
+    if (hDist < H_PROX && vDist < V_PROX) {
+      const dir = cursor.x < (b.x + b.width / 2) ? 'right' : 'left';
+      const newX = dir === 'right'
+        ? Math.min(sw - b.width, b.x + STEP)
+        : Math.max(0,            b.x - STEP);
+      avatarOverlay.setPosition(Math.round(newX), b.y);
+      if (dir !== lastDir) {
+        lastDir = dir;
+        avatarOverlay.webContents.send('avatar:walk', dir);
+      }
+    } else if (lastDir !== 'none') {
+      lastDir = 'none';
+      avatarOverlay.webContents.send('avatar:walk', 'none');
+    }
+  }, 40);
+}
+
 async function handleAvatarSpeak(_event, text) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) return null;
@@ -870,15 +910,6 @@ function registerIpcHandlers() {
     return (win && !win.isDestroyed()) ? win.getBounds() : null;
   });
 
-  // Avatar walk: move by delta each tick
-  ipcMain.on('avatar:move-by', (_event, { dx, dy }) => {
-    if (avatarOverlay && !avatarOverlay.isDestroyed()) {
-      const [x, y] = avatarOverlay.getPosition();
-      const { width: sw } = screen.getPrimaryDisplay().workAreaSize;
-      const nx = Math.min(sw - 300, Math.max(0, x + dx));
-      avatarOverlay.setPosition(nx, y);
-    }
-  });
   ipcMain.handle('backend:upload', (_event, request) => proxyBackendUpload(request));
   ipcMain.handle('attachments:get-content-url', async (_event, attachmentId) => {
     const backend = await ensureBackendReady();
@@ -1323,6 +1354,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  if (avatarProximityPoll) { clearInterval(avatarProximityPoll); avatarProximityPoll = null; }
   if (prAnalysisPolling) {
     clearInterval(prAnalysisPolling);
     prAnalysisPolling = null;

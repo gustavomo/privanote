@@ -1,2 +1,5 @@
-// Avatar overlay preload — no IPC required for initial version.
-// Reserved for future: open main window on click, etc.
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('avatarAPI', {
+  speak: (text) => ipcRenderer.invoke('avatar:speak', text),
+});

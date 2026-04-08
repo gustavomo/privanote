@@ -2,10 +2,9 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nota Avatar</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       width: 300px;
@@ -14,10 +13,7 @@
       overflow: hidden;
     }
 
-    body {
-      -webkit-app-region: no-drag;
-      user-select: none;
-    }
+    body { -webkit-app-region: no-drag; user-select: none; }
 
     .container {
       position: relative;
@@ -26,10 +22,11 @@
       -webkit-app-region: drag;
     }
 
+    /* ── Bubble ──────────────────────────────────────── */
     .bubble {
       display: none;
       position: absolute;
-      bottom: 80px;      /* centered on torso */
+      bottom: 90px;
       left: 92px;
       max-width: 196px;
       background: white;
@@ -39,123 +36,206 @@
       font: 12px/1.5 system-ui, sans-serif;
       white-space: normal;
       word-break: break-word;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+      box-shadow: 0 4px 16px rgba(0,0,0,.14);
       color: #1e293b;
       z-index: 10;
     }
 
-    .avatar-btn {
+    /* ── Float wrapper — continuous idle float ────────── */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-5px); }
+    }
+
+    .float-wrap {
       position: absolute;
       bottom: 0;
       left: 0;
       width: 80px;
-      height: 140px;
+      height: 150px;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    /* ── Avatar button ────────────────────────────────── */
+    .avatar-btn {
+      position: relative;
+      width: 80px;
+      height: 150px;
       background: transparent;
       border: none;
       padding: 0;
       cursor: pointer;
       outline: none;
       -webkit-app-region: no-drag;
+      transform-origin: bottom center;
     }
 
     .avatar-btn svg {
       width: 80px;
-      height: 140px;
+      height: 150px;
       display: block;
+      overflow: visible;
     }
 
+    /* ── Bounce ────────────────────────────────────────── */
     @keyframes bounce {
       0%   { transform: translateY(0); }
-      30%  { transform: translateY(-10px); }
-      60%  { transform: translateY(0); }
-      80%  { transform: translateY(-5px); }
+      25%  { transform: translateY(-12px); }
+      50%  { transform: translateY(0); }
+      70%  { transform: translateY(-6px); }
+      85%  { transform: translateY(0); }
       100% { transform: translateY(0); }
     }
+    .avatar-btn.bouncing {
+      animation: bounce 700ms cubic-bezier(.36,.07,.19,.97);
+    }
 
-    .avatar-btn.bouncing { animation: bounce 600ms ease; }
+    /* ── Talk sway ─────────────────────────────────────── */
+    @keyframes talk-sway {
+      0%, 100% { transform: rotate(0deg); }
+      30%       { transform: rotate(1.8deg); }
+      70%       { transform: rotate(-1.8deg); }
+    }
+    .avatar-btn.talking {
+      animation: talk-sway 480ms ease-in-out infinite;
+    }
+
+    /* ── Torso breathing ───────────────────────────────── */
+    @keyframes breathe {
+      0%, 100% { transform: scaleY(1) translateY(0); }
+      50%       { transform: scaleY(1.025) translateY(-1px); }
+    }
+    #torso {
+      transform-box: fill-box;
+      transform-origin: bottom center;
+      animation: breathe 3.8s ease-in-out infinite;
+    }
+
+    /* ── Arm idle swing ────────────────────────────────── */
+    @keyframes arm-idle-l {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(-4deg); }
+    }
+    @keyframes arm-idle-r {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(4deg); }
+    }
+    #arm-left {
+      transform-box: fill-box;
+      transform-origin: top center;
+      animation: arm-idle-l 4s ease-in-out infinite;
+    }
+    #arm-right {
+      transform-box: fill-box;
+      transform-origin: top center;
+      animation: arm-idle-r 4s ease-in-out infinite;
+    }
+
+    /* ── Wave ──────────────────────────────────────────── */
+    @keyframes wave {
+      0%   { transform: rotate(0deg); }
+      15%  { transform: rotate(-55deg); }
+      35%  { transform: rotate(-25deg); }
+      55%  { transform: rotate(-55deg); }
+      75%  { transform: rotate(-20deg); }
+      100% { transform: rotate(0deg); }
+    }
+    #arm-right.waving {
+      animation: wave 900ms ease forwards !important;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="bubble" id="bubble"></div>
 
-    <button class="avatar-btn" id="avatarBtn" type="button" aria-label="Avatar de Privanote">
-      <svg viewBox="0 0 80 140" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="g-head" cx="50%" cy="38%" r="65%">
-            <stop offset="0%"   stop-color="#ffffff" />
-            <stop offset="60%"  stop-color="#f1f1f1" />
-            <stop offset="100%" stop-color="#d8d8d8" />
-          </radialGradient>
-          <radialGradient id="g-body" cx="50%" cy="30%" r="70%">
-            <stop offset="0%"   stop-color="#f7f7f7" />
-            <stop offset="70%"  stop-color="#e8e8e8" />
-            <stop offset="100%" stop-color="#d0d0d0" />
-          </radialGradient>
-          <radialGradient id="g-cheek" cx="50%" cy="50%" r="50%">
-            <stop offset="0%"   stop-color="oklch(0.82 0.14 25 / 0.75)" />
-            <stop offset="100%" stop-color="oklch(0.82 0.14 25 / 0)" />
-          </radialGradient>
-        </defs>
+    <div class="float-wrap">
+      <button class="avatar-btn" id="avatarBtn" type="button" aria-label="Avatar de Privanote">
+        <svg viewBox="0 0 80 150" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+          <defs>
+            <radialGradient id="g-skin" cx="50%" cy="38%" r="65%">
+              <stop offset="0%"   stop-color="#ffffff"/>
+              <stop offset="55%"  stop-color="#f0f0f0"/>
+              <stop offset="100%" stop-color="#d8d8d8"/>
+            </radialGradient>
+            <radialGradient id="g-body" cx="50%" cy="25%" r="70%">
+              <stop offset="0%"   stop-color="#f8f8f8"/>
+              <stop offset="65%"  stop-color="#e6e6e6"/>
+              <stop offset="100%" stop-color="#cccccc"/>
+            </radialGradient>
+            <radialGradient id="g-cheek" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stop-color="oklch(0.82 0.14 25 / 0.7)"/>
+              <stop offset="100%" stop-color="oklch(0.82 0.14 25 / 0)"/>
+            </radialGradient>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#00000022"/>
+            </filter>
+          </defs>
 
-        <!-- Legs -->
-        <rect x="22" y="95" width="14" height="38" rx="7"
-          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
-        <rect x="44" y="95" width="14" height="38" rx="7"
-          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
+          <!-- ── Legs ── -->
+          <rect x="24" y="102" width="12" height="38" rx="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+          <rect x="44" y="102" width="12" height="38" rx="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+          <!-- Feet -->
+          <ellipse cx="30" cy="140" rx="10" ry="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+          <ellipse cx="50" cy="140" rx="10" ry="6" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
 
-        <!-- Arms -->
-        <rect x="4"  y="50" width="15" height="38" rx="7.5"
-          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
-        <rect x="61" y="50" width="15" height="38" rx="7.5"
-          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
+          <!-- ── Torso ── -->
+          <rect id="torso" x="17" y="44" width="46" height="64" rx="18"
+            fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8" filter="url(#shadow)"/>
 
-        <!-- Torso -->
-        <rect x="16" y="40" width="48" height="62" rx="18"
-          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
+          <!-- Shirt collar detail -->
+          <path d="M34 46 Q40 52 46 46" stroke="#b8b8b8" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.6"/>
 
-        <!-- Head -->
-        <circle cx="40" cy="22" r="20"
-          fill="url(#g-head)" stroke="#c4c4c4" stroke-width="1"/>
+          <!-- ── Left arm ── -->
+          <g id="arm-left">
+            <rect x="5" y="52" width="14" height="38" rx="7" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+            <circle cx="12" cy="92" r="7" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+          </g>
 
-        <!-- Head highlight -->
-        <ellipse cx="32" cy="13" rx="7" ry="4" fill="white" opacity="0.6"/>
+          <!-- ── Right arm ── -->
+          <g id="arm-right">
+            <rect x="61" y="52" width="14" height="38" rx="7" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+            <circle cx="68" cy="92" r="7" fill="url(#g-body)" stroke="#c0c0c0" stroke-width="0.8"/>
+          </g>
 
-        <!-- Cheeks -->
-        <circle cx="25" cy="26" r="4.5" fill="url(#g-cheek)"/>
-        <circle cx="55" cy="26" r="4.5" fill="url(#g-cheek)"/>
+          <!-- ── Head ── -->
+          <circle cx="40" cy="26" r="22" fill="url(#g-skin)" stroke="#c0c0c0" stroke-width="0.8" filter="url(#shadow)"/>
 
-        <!-- Eyes -->
-        <ellipse id="eye-left"    cx="33" cy="20" rx="2.6" ry="3.2" fill="#1e293b"/>
-        <ellipse id="eye-right"   cx="47" cy="20" rx="2.6" ry="3.2" fill="#1e293b"/>
-        <circle  id="shine-left"  cx="34" cy="19" r="0.9"  fill="white"/>
-        <circle  id="shine-right" cx="48" cy="19" r="0.9"  fill="white"/>
+          <!-- Head highlight -->
+          <ellipse cx="31" cy="16" rx="8" ry="4.5" fill="white" opacity="0.55"/>
 
-        <!-- Mouth -->
-        <path id="mouth-closed"
-          d="M34 31 Q40 36 46 31"
-          stroke="#1e293b" stroke-width="2" stroke-linecap="round" fill="none"/>
-        <path id="mouth-open"
-          d="M33 30 Q40 39 47 30 Q40 35 33 30 Z"
-          fill="#1e293b" opacity="0.8" style="display:none;"/>
+          <!-- Cheeks -->
+          <circle cx="24" cy="30" r="5" fill="url(#g-cheek)"/>
+          <circle cx="56" cy="30" r="5" fill="url(#g-cheek)"/>
 
-        <!-- Shirt detail: small collar line -->
-        <path d="M34 41 Q40 46 46 41"
-          stroke="#b0b0b0" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.5"/>
-      </svg>
-    </button>
+          <!-- Eyes -->
+          <ellipse id="eye-left"    cx="33" cy="24" rx="2.8" ry="3.4" fill="#1e293b"/>
+          <ellipse id="eye-right"   cx="47" cy="24" rx="2.8" ry="3.4" fill="#1e293b"/>
+          <circle  id="shine-left"  cx="34.2" cy="22.5" r="1" fill="white"/>
+          <circle  id="shine-right" cx="48.2" cy="22.5" r="1" fill="white"/>
+
+          <!-- Mouth -->
+          <path id="mouth-closed"
+            d="M34 36 Q40 41 46 36"
+            stroke="#1e293b" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <path id="mouth-open"
+            d="M33 35 Q40 44 47 35 Q40 40 33 35 Z"
+            fill="#1e293b" opacity="0.8" style="display:none;"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <script>
     'use strict';
 
     const greetings = [
-      { text: '¡Hola! Soy Nota, tu asistente favorita.', pitch: 1.45, rate: 1.1 },
-      { text: '¡Vamos a grabar algo increíble hoy!',     pitch: 1.5,  rate: 1.15 },
-      { text: 'Tus notas están súper seguras conmigo.',   pitch: 1.3,  rate: 1.05 },
-      { text: '¡Local first... siempre contigo!',         pitch: 1.4,  rate: 1.1 },
-      { text: '¡Aquí estoy! ¿Qué capturamos hoy?',       pitch: 1.5,  rate: 1.1 },
-      { text: '¡No olvides nada, para eso existo yo!',   pitch: 1.45, rate: 1.15 },
+      { text: '¡Hola! Soy Nota, tu asistente favorita.',  pitch: 1.45, rate: 1.1  },
+      { text: '¡Vamos a grabar algo increíble hoy!',      pitch: 1.5,  rate: 1.15 },
+      { text: 'Tus notas están súper seguras conmigo.',    pitch: 1.3,  rate: 1.05 },
+      { text: '¡Local first... siempre contigo!',          pitch: 1.4,  rate: 1.1  },
+      { text: '¡Aquí estoy! ¿Qué capturamos hoy?',        pitch: 1.5,  rate: 1.1  },
+      { text: '¡No olvides nada, para eso existo yo!',    pitch: 1.45, rate: 1.15 },
     ];
 
     const btn         = document.getElementById('avatarBtn');
@@ -166,101 +246,136 @@
     const shineRight  = document.getElementById('shine-right');
     const mouthClosed = document.getElementById('mouth-closed');
     const mouthOpen   = document.getElementById('mouth-open');
+    const armRight    = document.getElementById('arm-right');
 
     let bubbleTimer  = null;
-    let talkInterval = null;
+    let talkTimer    = null;
+    let currentAudio = null;
 
-    // --- Blinking ---
+    // ── Blinking ────────────────────────────────────────
     function scheduleBlink() {
-      const delay = 2000 + Math.random() * 3000;
       setTimeout(() => {
-        eyeLeft.setAttribute('ry', '0.3');
-        eyeRight.setAttribute('ry', '0.3');
+        eyeLeft.setAttribute('ry', '0.4');
+        eyeRight.setAttribute('ry', '0.4');
         shineLeft.style.display = 'none';
         shineRight.style.display = 'none';
         setTimeout(() => {
-          eyeLeft.setAttribute('ry', '3.2');
-          eyeRight.setAttribute('ry', '3.2');
+          eyeLeft.setAttribute('ry', '3.4');
+          eyeRight.setAttribute('ry', '3.4');
           shineLeft.style.display = '';
           shineRight.style.display = '';
           scheduleBlink();
-        }, 160);
-      }, delay);
+        }, 150);
+      }, 2200 + Math.random() * 2800);
     }
     scheduleBlink();
 
-    // --- Talking mouth animation (variable speed = more natural) ---
+    // ── Talking mouth (variable cadence) ─────────────────
     function startTalking() {
+      btn.classList.add('talking');
       let open = false;
       function tick() {
         open = !open;
         mouthClosed.style.display = open ? 'none' : '';
         mouthOpen.style.display   = open ? ''     : 'none';
-        talkInterval = setTimeout(tick, 100 + Math.random() * 120);
+        talkTimer = setTimeout(tick, 90 + Math.random() * 130);
       }
-      talkInterval = setTimeout(tick, 80);
+      talkTimer = setTimeout(tick, 60);
     }
 
     function stopTalking() {
-      if (talkInterval) { clearTimeout(talkInterval); talkInterval = null; }
+      btn.classList.remove('talking');
+      if (talkTimer) { clearTimeout(talkTimer); talkTimer = null; }
       mouthClosed.style.display = '';
       mouthOpen.style.display   = 'none';
     }
 
-    // --- Voice selection: prefer neural/enhanced macOS voices ---
-    function getBestVoice() {
-      const voices = window.speechSynthesis.getVoices();
-      // Priority: named neural macOS voices → any Enhanced → any Spanish
-      const priority = ['Paulina', 'Mónica', 'Monica', 'Juan', 'Jorge'];
-      for (const name of priority) {
-        const v = voices.find(v => v.name === name);
-        if (v) return v;
-      }
-      const enhanced = voices.find(v => v.lang.startsWith('es') && v.name.includes('Enhanced'));
-      if (enhanced) return enhanced;
-      return voices.find(v => v.lang.startsWith('es')) || null;
+    // ── Arm wave ─────────────────────────────────────────
+    function waveArm() {
+      armRight.classList.add('waving');
+      armRight.addEventListener('animationend', () => armRight.classList.remove('waving'), { once: true });
     }
 
-    // --- Voice (Web Speech API) ---
-    function speak(greeting) {
-      if (!window.speechSynthesis) return;
+    // ── Hide bubble ───────────────────────────────────────
+    function hideBubble(delay = 500) {
+      if (bubbleTimer) clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(() => { bubble.style.display = 'none'; }, delay);
+    }
+
+    // ── ElevenLabs voice via IPC ──────────────────────────
+    async function speakElevenLabs(greeting) {
+      if (!window.avatarAPI) return false;
+      try {
+        const base64 = await window.avatarAPI.speak(greeting.text);
+        if (!base64) return false;
+
+        if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+        const audio = new Audio('data:audio/mpeg;base64,' + base64);
+        currentAudio = audio;
+
+        audio.onplay  = () => startTalking();
+        audio.onended = () => { stopTalking(); hideBubble(500); currentAudio = null; };
+        audio.onerror = () => { stopTalking(); hideBubble(2000); currentAudio = null; };
+        await audio.play();
+        return true;
+      } catch { return false; }
+    }
+
+    // ── Web Speech fallback ───────────────────────────────
+    function speakFallback(greeting) {
+      if (!window.speechSynthesis) { hideBubble(3000); return; }
       window.speechSynthesis.cancel();
+
+      const voices = window.speechSynthesis.getVoices();
+      const priority = ['Paulina', 'Mónica', 'Monica', 'Juan', 'Jorge'];
+      let voice = null;
+      for (const name of priority) {
+        voice = voices.find(v => v.name === name);
+        if (voice) break;
+      }
+      if (!voice) voice = voices.find(v => v.lang.startsWith('es') && v.name.includes('Enhanced'));
+      if (!voice) voice = voices.find(v => v.lang.startsWith('es'));
 
       const utter    = new SpeechSynthesisUtterance(greeting.text);
       utter.lang     = 'es-MX';
-      utter.pitch    = greeting.pitch + (Math.random() * 0.08 - 0.04); // tiny natural variation
+      utter.pitch    = greeting.pitch + (Math.random() * 0.08 - 0.04);
       utter.rate     = greeting.rate  + (Math.random() * 0.06 - 0.03);
       utter.volume   = 1.0;
-
-      const voice = getBestVoice();
       if (voice) utter.voice = voice;
 
       utter.onstart = () => startTalking();
-      utter.onend   = () => {
-        stopTalking();
-        if (bubbleTimer) clearTimeout(bubbleTimer);
-        bubbleTimer = setTimeout(() => { bubble.style.display = 'none'; }, 500);
-      };
+      utter.onend   = () => { stopTalking(); hideBubble(500); };
       utter.onerror = () => stopTalking();
-
       window.speechSynthesis.speak(utter);
     }
 
-    // --- Hover mouth ---
+    // ── Speak: ElevenLabs → fallback ─────────────────────
+    async function speak(greeting) {
+      const ok = await speakElevenLabs(greeting);
+      if (!ok) speakFallback(greeting);
+    }
+
+    // ── Hover ─────────────────────────────────────────────
     btn.addEventListener('mouseover', () => {
-      if (!talkInterval) { mouthClosed.style.display = 'none'; mouthOpen.style.display = ''; }
+      if (!talkTimer) { mouthClosed.style.display = 'none'; mouthOpen.style.display = ''; }
     });
     btn.addEventListener('mouseleave', () => {
-      if (!talkInterval) { mouthClosed.style.display = ''; mouthOpen.style.display = 'none'; }
+      if (!talkTimer) { mouthClosed.style.display = ''; mouthOpen.style.display = 'none'; }
     });
 
-    // --- Click: bounce + bubble + voice ---
+    // ── Click ─────────────────────────────────────────────
     btn.addEventListener('click', () => {
-      // Bounce
+      // Stop any current speech
+      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      stopTalking();
+
+      // Bounce + wave
       btn.classList.remove('bouncing');
       void btn.offsetWidth;
       btn.classList.add('bouncing');
       btn.addEventListener('animationend', () => btn.classList.remove('bouncing'), { once: true });
+      waveArm();
 
       // Show bubble
       const greeting = greetings[Math.floor(Math.random() * greetings.length)];
@@ -268,8 +383,8 @@
       bubble.style.display = 'block';
       if (bubbleTimer) clearTimeout(bubbleTimer);
 
-      // Speak — voices may need a tick to load on first call
-      if (window.speechSynthesis.getVoices().length === 0) {
+      // Speak
+      if (window.speechSynthesis && window.speechSynthesis.getVoices().length === 0) {
         window.speechSynthesis.addEventListener('voiceschanged', () => speak(greeting), { once: true });
       } else {
         speak(greeting);

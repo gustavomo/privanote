@@ -810,8 +810,35 @@ function stopAppDetection() {
   }
 }
 
+async function handleAvatarSpeak(_event, text) {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  if (!apiKey) return null;
+
+  const voiceId = process.env.PRIVANOTE_AVATAR_VOICE_ID || 'cgSgspJ2msm6clMCkdW9'; // Jessica
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'xi-api-key': apiKey,
+      'Content-Type': 'application/json',
+      'Accept': 'audio/mpeg',
+    },
+    body: JSON.stringify({
+      text,
+      model_id: 'eleven_multilingual_v2',
+      voice_settings: { stability: 0.28, similarity_boost: 0.8, style: 0.55, use_speaker_boost: true },
+    }),
+  });
+
+  if (!res.ok) return null;
+  const buf = await res.arrayBuffer();
+  return Buffer.from(buf).toString('base64');
+}
+
 function registerIpcHandlers() {
   ipcMain.handle('backend:request', (_event, request) => proxyBackendRequest(request));
+  ipcMain.handle('avatar:speak', handleAvatarSpeak);
   ipcMain.handle('backend:upload', (_event, request) => proxyBackendUpload(request));
   ipcMain.handle('attachments:get-content-url', async (_event, attachmentId) => {
     const backend = await ensureBackendReady();

@@ -185,9 +185,10 @@ Recent decisions affecting current work:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260408-7nz | Add loading states and animations to all action buttons | 2026-04-08 | c29dd08 | [260408-7nz-add-loading-states-and-animations-to-all](./quick/260408-7nz-add-loading-states-and-animations-to-all/) |
+| 260408-n3y | Make avatar always-on-top overlay on left edge | 2026-04-08 | 283220b | [260408-n3y-make-avatar-always-on-top-overlay-on-lef](./quick/260408-n3y-make-avatar-always-on-top-overlay-on-lef/) |
 
 ## Session Continuity
 
-Last session: 2026-04-02T00:00:00.000Z
-Stopped at: Completed 15-06-PLAN.md — Milestone v1.0 complete
+Last session: 2026-04-08T00:00:00.000Z
+Stopped at: Completed quick task 260408-n3y: Make avatar always-on-top overlay on left edge
 Resume file: None

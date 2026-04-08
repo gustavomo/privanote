@@ -85,6 +85,7 @@ function renderProviderCard({
           <Button
             size="lg"
             onClick={() => onBeginProviderConnection(provider)}
+            loading={isSaving}
             disabled={isLoading || isSaving}
           >
             <Link className="size-4" />
@@ -95,6 +96,7 @@ function renderProviderCard({
             variant="destructive-outline"
             size="lg"
             onClick={() => onDisconnectProvider(provider)}
+            loading={isSaving}
             disabled={isLoading || isSaving}
           >
             <Unlink className="size-4" />
@@ -221,6 +223,7 @@ export default function SettingsView({
             variant="outline"
             size="lg"
             onClick={onChooseDirectory}
+            loading={isSaving}
             disabled={isLoading || isSaving || !isLocalDestination}
           >
             <FolderOpen className="size-4" />
@@ -343,6 +346,7 @@ export default function SettingsView({
         <Button
           size="lg"
           onClick={onSave}
+          loading={isSaving}
           disabled={isLoading || isSaving}
         >
           <Save className="size-4" />

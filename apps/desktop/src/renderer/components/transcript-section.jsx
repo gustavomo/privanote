@@ -14,6 +14,7 @@ export default function TranscriptSection({
   isLoading,
   onRefresh,
   onRetry,
+  isRetrying = false,
 }) {
   useEffect(() => {
     if (!noteId || !isProcessingTranscript(transcript)) {
@@ -69,7 +70,13 @@ export default function TranscriptSection({
               {transcript.text}
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button variant="outline" size="lg" onClick={onRetry}>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={onRetry}
+                loading={isRetrying}
+                disabled={isRetrying}
+              >
                 <RefreshCw className="size-4" />
                 Regenerate Transcript
               </Button>
@@ -82,7 +89,13 @@ export default function TranscriptSection({
             <div>Transcript could not be generated. Check your transcription settings and try again.</div>
             {transcript.last_error ? <div className="text-xs text-destructive/80">{transcript.last_error}</div> : null}
             <div className="flex flex-wrap gap-3">
-              <Button variant="destructive-outline" size="lg" onClick={onRetry}>
+              <Button
+                variant="destructive-outline"
+                size="lg"
+                onClick={onRetry}
+                loading={isRetrying}
+                disabled={isRetrying}
+              >
                 <RefreshCw className="size-4" />
                 Retry Transcript
               </Button>

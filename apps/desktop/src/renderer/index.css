@@ -103,6 +103,23 @@
   animation: indeterminate 1.5s ease-in-out infinite;
 }
 
+/* Button loading state — hide original svg icons so the spinner visually replaces them */
+[data-slot="button"].button-loading > svg:not(.button-spinner) {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="button"] {
+    transition: none !important;
+  }
+  [data-slot="button"]:active {
+    transform: none !important;
+  }
+  .animate-spin {
+    animation-duration: 3s !important;
+  }
+}
+
 /* Floating avatar animations */
 @keyframes floating-avatar-float {
   0%, 100% { transform: translateY(0) rotate(-1deg); }

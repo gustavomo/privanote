@@ -86,4 +86,8 @@ contextBridge.exposeInMainWorld('captureApi', {
     return () => ipcRenderer.removeListener('pr:analysis-error', handler);
   },
   isPrAnalysisEnabled: () => ipcRenderer.invoke('pr:is-enabled'),
+
+  // --- Drag to reposition ---
+  moveTo:    (x, y) => ipcRenderer.send('overlay:move', { windowName: 'capture', x, y }),
+  getBounds: ()     => ipcRenderer.invoke('overlay:get-bounds', 'capture'),
 });

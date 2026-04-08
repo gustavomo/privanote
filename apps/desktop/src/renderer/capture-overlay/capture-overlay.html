@@ -845,6 +845,37 @@
       });
     }
 
+    // ── Long-press drag to reposition the overlay ─────────
+    {
+      let dragState      = null;
+      let longPressTimer = null;
+
+      const container = document.querySelector('.container');
+
+      container.addEventListener('mousedown', async (e) => {
+        // Only on the container background, not buttons
+        if (e.target !== container) return;
+        if (e.button !== 0) return;
+        const bounds = await window.captureApi.getBounds();
+        longPressTimer = setTimeout(() => {
+          longPressTimer = null;
+          dragState = { sx: e.screenX, sy: e.screenY, wx: bounds.x, wy: bounds.y };
+          container.style.cursor = 'grabbing';
+        }, 300);
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!dragState) return;
+        window.captureApi.moveTo(dragState.wx + e.screenX - dragState.sx,
+                                 dragState.wy + e.screenY - dragState.sy);
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+        if (dragState) { dragState = null; container.style.cursor = ''; }
+      });
+    }
+
     // Initial height for clipboard-only
     recalcHeight();
   </script>

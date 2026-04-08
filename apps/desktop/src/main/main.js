@@ -313,6 +313,8 @@ function createAvatarOverlay() {
 
   avatarOverlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   avatarOverlay.setAlwaysOnTop(true, 'floating');
+  // Pass-through by default; renderer re-enables when cursor is over the avatar
+  avatarOverlay.setIgnoreMouseEvents(true, { forward: true });
   avatarOverlay.loadFile(path.join(__dirname, '..', 'renderer', 'avatar-overlay', 'avatar-overlay.html'));
   avatarOverlay.on('closed', () => { avatarOverlay = null; });
 
@@ -839,6 +841,24 @@ async function handleAvatarSpeak(_event, text) {
 function registerIpcHandlers() {
   ipcMain.handle('backend:request', (_event, request) => proxyBackendRequest(request));
   ipcMain.handle('avatar:speak', handleAvatarSpeak);
+
+  // Avatar click-through toggle
+  ipcMain.on('avatar:set-ignore-mouse', (_event, ignore) => {
+    if (avatarOverlay && !avatarOverlay.isDestroyed()) {
+      avatarOverlay.setIgnoreMouseEvents(ignore, { forward: true });
+    }
+  });
+
+  // Drag any overlay window by position
+  ipcMain.on('overlay:move', (_event, { windowName, x, y }) => {
+    const win = windowName === 'avatar' ? avatarOverlay : captureOverlay;
+    if (win && !win.isDestroyed()) win.setPosition(Math.round(x), Math.round(y));
+  });
+
+  ipcMain.handle('overlay:get-bounds', (_event, windowName) => {
+    const win = windowName === 'avatar' ? avatarOverlay : captureOverlay;
+    return (win && !win.isDestroyed()) ? win.getBounds() : null;
+  });
   ipcMain.handle('backend:upload', (_event, request) => proxyBackendUpload(request));
   ipcMain.handle('attachments:get-content-url', async (_event, attachmentId) => {
     const backend = await ensureBackendReady();

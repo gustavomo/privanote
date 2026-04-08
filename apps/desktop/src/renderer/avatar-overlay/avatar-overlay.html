@@ -356,39 +356,10 @@
     }
 
     // ── Click-through: pass mouse to windows below except over the avatar ──
-    let isDragging = false;
-
     document.addEventListener('mousemove', (e) => {
-      if (isDragging) return;
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const over = !!(el && el.closest('#avatarBtn'));
       window.avatarAPI.setIgnoreMouse(!over);
-    });
-
-    // ── Long-press drag ────────────────────────────────────
-    let dragState      = null;
-    let longPressTimer = null;
-
-    btn.addEventListener('mousedown', async (e) => {
-      if (e.button !== 0) return;
-      const bounds = await window.avatarAPI.getBounds();
-      longPressTimer = setTimeout(() => {
-        longPressTimer = null;
-        isDragging = true;
-        dragState = { sx: e.screenX, sy: e.screenY, wx: bounds.x, wy: bounds.y };
-        document.body.style.cursor = 'grabbing';
-      }, 300);
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!dragState) return;
-      window.avatarAPI.moveTo(dragState.wx + e.screenX - dragState.sx,
-                              dragState.wy + e.screenY - dragState.sy);
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-      if (isDragging) { isDragging = false; dragState = null; document.body.style.cursor = ''; }
     });
 
     // ── Hover ─────────────────────────────────────────────

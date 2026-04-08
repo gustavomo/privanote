@@ -287,12 +287,13 @@ function createAvatarOverlay() {
   if (isSmokeNoWindow) return null;
 
   const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+  const overlayHeight = 160; // avatar (80) + bubble space above (80)
 
   avatarOverlay = new BrowserWindow({
     width: 80,
-    height: 80,
+    height: overlayHeight,
     x: 16,
-    y: Math.round(screenHeight / 2) - 40,
+    y: screenHeight - overlayHeight - 16,
     alwaysOnTop: true,
     frame: false,
     transparent: true,

@@ -13,7 +13,7 @@
 
     html, body {
       width: 80px;
-      height: 80px;
+      height: 160px;
       background: transparent;
       overflow: hidden;
     }
@@ -26,14 +26,14 @@
     .container {
       position: relative;
       width: 80px;
-      height: 80px;
+      height: 160px;
       -webkit-app-region: drag;
     }
 
     .bubble {
       display: none;
       position: absolute;
-      bottom: 72px;
+      bottom: 88px; /* sits just above the avatar */
       left: 0;
       background: white;
       border: 1px solid #e2e8f0;
@@ -48,7 +48,7 @@
 
     .avatar-btn {
       position: absolute;
-      top: 0;
+      bottom: 0;
       left: 0;
       width: 80px;
       height: 80px;

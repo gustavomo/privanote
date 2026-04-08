@@ -65,7 +65,9 @@ export default function MediaCard({
   onOpenFile,
   onRemove,
   onRetrySync,
+  pendingAction,
 }) {
+  const isAnyPending = Boolean(pendingAction);
   const [contentUrl, setContentUrl] = useState('');
   const [contentError, setContentError] = useState('');
 
@@ -201,20 +203,33 @@ export default function MediaCard({
 
           <div className="flex flex-wrap gap-3">
             {showSyncFailure ? (
-              <Button onClick={onRetrySync}>
+              <Button
+                onClick={onRetrySync}
+                loading={pendingAction === 'retry'}
+                disabled={isAnyPending}
+              >
                 <RefreshCw className="size-4" />
                 Retry Sync
               </Button>
             ) : null}
             {attachment.kind === 'file' ? (
-              <Button variant="outline" onClick={() => onOpenFile(attachment.local_path)}>
+              <Button
+                variant="outline"
+                onClick={() => onOpenFile(attachment.local_path)}
+                loading={pendingAction === 'open'}
+                disabled={isAnyPending}
+              >
                 <ExternalLink className="size-4" />
                 Open File
               </Button>
             ) : null}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive-outline">
+                <Button
+                  variant="destructive-outline"
+                  loading={pendingAction === 'remove'}
+                  disabled={isAnyPending}
+                >
                   <Trash2 className="size-4" />
                   Remove Media
                 </Button>
@@ -227,10 +242,11 @@ export default function MediaCard({
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel disabled={isAnyPending}>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     variant="destructive"
                     onClick={onRemove}
+                    disabled={isAnyPending}
                   >
                     Remove
                   </AlertDialogAction>

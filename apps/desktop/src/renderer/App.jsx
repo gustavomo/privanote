@@ -18,6 +18,7 @@ import ThemeToggle from './components/theme-toggle.jsx';
 import MediaCard from './components/media-card.jsx';
 import SettingsView from './components/settings-view.jsx';
 import TranscriptSection from './components/transcript-section.jsx';
+import FloatingAvatar from './components/floating-avatar.jsx';
 
 const captureModes = [
   { value: 'audio', label: 'Audio' },
@@ -249,6 +250,13 @@ export default function App({ api }) {
   const [captureError, setCaptureError] = useState('');
   const [reviewRecording, setReviewRecording] = useState(null);
   const [isSavingRecording, setIsSavingRecording] = useState(false);
+  const [isDiscardingRecording, setIsDiscardingRecording] = useState(false);
+  const [isStartingRecording, setIsStartingRecording] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isDeletingNode, setIsDeletingNode] = useState(false);
+  const [isSavingNode, setIsSavingNode] = useState(false);
+  const [isRetryingTranscript, setIsRetryingTranscript] = useState(false);
+  const [attachmentPending, setAttachmentPending] = useState({});
   const [settingsDraft, setSettingsDraft] = useState(defaultSettings);
   const [providerConnections, setProviderConnections] = useState([]);
   const [isSettingsLoading, setIsSettingsLoading] = useState(true);
@@ -786,6 +794,7 @@ export default function App({ api }) {
     }
 
     setError('');
+    setIsSavingNode(true);
 
     try {
       const updatedNode = await client.updateNode({
@@ -802,11 +811,14 @@ export default function App({ api }) {
     } catch (updateError) {
       setError(updateError.message || 'Unable to update note.');
       toast.error('Could not save changes. Try again.');
+    } finally {
+      setIsSavingNode(false);
     }
   }
 
   async function handleDeleteNode(nodeId) {
     setError('');
+    setIsDeletingNode(true);
 
     try {
       await client.deleteNode(nodeId);
@@ -815,6 +827,8 @@ export default function App({ api }) {
     } catch (deleteError) {
       setError(deleteError.message || 'Unable to delete note.');
       toast.error('Could not delete note. Try again.');
+    } finally {
+      setIsDeletingNode(false);
     }
   }
 
@@ -832,6 +846,7 @@ export default function App({ api }) {
   async function handleImportFiles() {
     setError('');
     setCaptureError('');
+    setIsImporting(true);
 
     try {
       const sourcePath = await handlePickFile();
@@ -853,7 +868,21 @@ export default function App({ api }) {
     } catch (importError) {
       setError(importError.message || 'Unable to import files.');
       toast.error('Import failed. Check the file and try again.');
+    } finally {
+      setIsImporting(false);
     }
+  }
+
+  function setAttachmentPendingAction(attachmentId, action) {
+    setAttachmentPending((current) => {
+      const next = { ...current };
+      if (action) {
+        next[attachmentId] = action;
+      } else {
+        delete next[attachmentId];
+      }
+      return next;
+    });
   }
 
   async function handleDeleteAttachment(attachmentId) {
@@ -862,17 +891,21 @@ export default function App({ api }) {
     }
 
     setError('');
+    setAttachmentPendingAction(attachmentId, 'remove');
 
     try {
       await client.deleteAttachment(attachmentId);
       await loadAttachments(selectedNode.id);
     } catch (deleteError) {
       setError(deleteError.message || 'Unable to remove media.');
+    } finally {
+      setAttachmentPendingAction(attachmentId, null);
     }
   }
 
-  async function handleOpenAttachment(localPath) {
+  async function handleOpenAttachment(attachmentId, localPath) {
     setError('');
+    setAttachmentPendingAction(attachmentId, 'open');
 
     try {
       const message = await client.openPath(localPath);
@@ -881,6 +914,8 @@ export default function App({ api }) {
       }
     } catch (openError) {
       setError(openError.message || 'Unable to open saved file.');
+    } finally {
+      setAttachmentPendingAction(attachmentId, null);
     }
   }
 
@@ -903,6 +938,7 @@ export default function App({ api }) {
       return;
     }
 
+    setIsStartingRecording(true);
     try {
       const noteContext = await ensureCaptureNode(captureMode);
       await ensureCapturePermissions(captureMode);
@@ -1026,6 +1062,8 @@ export default function App({ api }) {
       } else {
         setCaptureError(captureFailureCopy);
       }
+    } finally {
+      setIsStartingRecording(false);
     }
   }
 
@@ -1092,11 +1130,14 @@ export default function App({ api }) {
       return;
     }
 
+    setIsDiscardingRecording(true);
     try {
       await client.deleteNode(placeholderNoteId);
       await loadNodes();
     } catch (deleteError) {
       setError(deleteError.message || 'Unable to remove placeholder note.');
+    } finally {
+      setIsDiscardingRecording(false);
     }
   }
 
@@ -1271,11 +1312,22 @@ export default function App({ api }) {
             )}
 
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" onClick={handleSaveRecording} disabled={isSavingRecording}>
+              <Button
+                size="lg"
+                onClick={handleSaveRecording}
+                loading={isSavingRecording}
+                disabled={isSavingRecording || isDiscardingRecording}
+              >
                 <Save className="size-4" />
                 Save Recording
               </Button>
-              <Button variant="destructive-outline" size="lg" onClick={handleDiscardRecording} disabled={isSavingRecording}>
+              <Button
+                variant="destructive-outline"
+                size="lg"
+                onClick={handleDiscardRecording}
+                loading={isDiscardingRecording}
+                disabled={isSavingRecording || isDiscardingRecording}
+              >
                 <X className="size-4" />
                 Discard Recording
               </Button>
@@ -1303,17 +1355,33 @@ export default function App({ api }) {
 
             <div className="flex flex-wrap gap-3">
               {isRecording || isStopping ? (
-                <Button variant="outline" size="lg" onClick={handleStopRecording} disabled={isStopping}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleStopRecording}
+                  loading={isStopping}
+                >
                   <Square className="size-4" />
                   Stop Recording
                 </Button>
               ) : (
                 <>
-                  <Button size="lg" onClick={handleStartRecording}>
+                  <Button
+                    size="lg"
+                    onClick={handleStartRecording}
+                    loading={isStartingRecording}
+                    disabled={isStartingRecording || isImporting}
+                  >
                     <Circle className="size-4 fill-current" />
                     Start Recording
                   </Button>
-                  <Button variant="outline" size="lg" onClick={handleImportFiles}>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={handleImportFiles}
+                    loading={isImporting}
+                    disabled={isStartingRecording || isImporting}
+                  >
                     <Upload className="size-4" />
                     Import Files
                   </Button>
@@ -1334,12 +1402,15 @@ export default function App({ api }) {
     }
 
     setTranscriptError('');
+    setIsRetryingTranscript(true);
 
     try {
       const nextTranscript = await client.retryNoteTranscript(selectedNode.id);
       setTranscript(nextTranscript);
     } catch (retryError) {
       setTranscriptError(retryError.message || 'Unable to retry transcript.');
+    } finally {
+      setIsRetryingTranscript(false);
     }
   }
 
@@ -1349,12 +1420,15 @@ export default function App({ api }) {
     }
 
     setError('');
+    setAttachmentPendingAction(attachmentId, 'retry');
 
     try {
       await client.retryAttachmentSync(attachmentId);
       await loadAttachments(selectedNode.id);
     } catch (retryError) {
       setError(retryError.message || 'Unable to retry sync.');
+    } finally {
+      setAttachmentPendingAction(attachmentId, null);
     }
   }
 
@@ -1438,7 +1512,7 @@ export default function App({ api }) {
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive-outline" size="lg">
+                  <Button variant="destructive-outline" size="lg" disabled={isDeletingNode}>
                     <Trash2 className="size-4" />
                     Delete Note
                   </Button>
@@ -1451,10 +1525,11 @@ export default function App({ api }) {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel disabled={isDeletingNode}>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       variant="destructive"
                       onClick={() => handleDeleteNode(selectedNode.id)}
+                      disabled={isDeletingNode}
                     >
                       Delete
                     </AlertDialogAction>
@@ -1476,7 +1551,7 @@ export default function App({ api }) {
                 <Label>Tags</Label>
                 <Input value={editTags} onChange={(event) => setEditTags(event.target.value)} />
               </div>
-              <Button type="submit" size="lg">
+              <Button type="submit" size="lg" loading={isSavingNode}>
                 <Save className="size-4" />
                 Save Changes
               </Button>
@@ -1489,6 +1564,7 @@ export default function App({ api }) {
               isLoading={isTranscriptLoading}
               onRefresh={loadTranscript}
               onRetry={handleRetryTranscript}
+              isRetrying={isRetryingTranscript}
             />
 
             <Card className="rounded-[28px] bg-secondary/70 border-0 ring-0 shadow-none">
@@ -1514,9 +1590,10 @@ export default function App({ api }) {
                       attachment={attachment}
                       formatDate={formatDate}
                       getAttachmentContentUrl={client.getAttachmentContentUrl}
-                      onOpenFile={handleOpenAttachment}
+                      onOpenFile={(localPath) => handleOpenAttachment(attachment.id, localPath)}
                       onRemove={() => handleDeleteAttachment(attachment.id)}
                       onRetrySync={() => handleRetryAttachmentSync(attachment.id)}
+                      pendingAction={attachmentPending[attachment.id]}
                     />
                   ))}
                 </ul>
@@ -1615,6 +1692,7 @@ export default function App({ api }) {
       </div>
     </main>
     <Toaster />
+    <FloatingAvatar />
     </>
   );
 }

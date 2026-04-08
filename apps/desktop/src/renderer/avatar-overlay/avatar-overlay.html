@@ -5,15 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nota Avatar</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       width: 300px;
-      height: 160px;
+      height: 220px;
       background: transparent;
       overflow: hidden;
     }
@@ -26,16 +22,16 @@
     .container {
       position: relative;
       width: 300px;
-      height: 160px;
+      height: 220px;
       -webkit-app-region: drag;
     }
 
     .bubble {
       display: none;
       position: absolute;
-      bottom: 28px;
-      left: 88px;
-      max-width: 200px;
+      bottom: 80px;      /* centered on torso */
+      left: 92px;
+      max-width: 196px;
       background: white;
       border: 1px solid #e2e8f0;
       border-radius: 14px;
@@ -53,7 +49,7 @@
       bottom: 0;
       left: 0;
       width: 80px;
-      height: 80px;
+      height: 140px;
       background: transparent;
       border: none;
       padding: 0;
@@ -64,61 +60,88 @@
 
     .avatar-btn svg {
       width: 80px;
-      height: 80px;
+      height: 140px;
       display: block;
     }
 
     @keyframes bounce {
       0%   { transform: translateY(0); }
-      30%  { transform: translateY(-8px); }
+      30%  { transform: translateY(-10px); }
       60%  { transform: translateY(0); }
-      80%  { transform: translateY(-4px); }
+      80%  { transform: translateY(-5px); }
       100% { transform: translateY(0); }
     }
 
-    .avatar-btn.bouncing {
-      animation: bounce 600ms ease;
-    }
+    .avatar-btn.bouncing { animation: bounce 600ms ease; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="bubble" id="bubble"></div>
+
     <button class="avatar-btn" id="avatarBtn" type="button" aria-label="Avatar de Privanote">
-      <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 80 140" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="avatar-body" cx="50%" cy="38%" r="65%">
-            <stop offset="0%" stop-color="#ffffff" />
-            <stop offset="60%" stop-color="#f1f1f1" />
-            <stop offset="100%" stop-color="#d4d4d4" />
+          <radialGradient id="g-head" cx="50%" cy="38%" r="65%">
+            <stop offset="0%"   stop-color="#ffffff" />
+            <stop offset="60%"  stop-color="#f1f1f1" />
+            <stop offset="100%" stop-color="#d8d8d8" />
           </radialGradient>
-          <radialGradient id="avatar-cheek" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="oklch(0.82 0.14 25 / 0.75)" />
+          <radialGradient id="g-body" cx="50%" cy="30%" r="70%">
+            <stop offset="0%"   stop-color="#f7f7f7" />
+            <stop offset="70%"  stop-color="#e8e8e8" />
+            <stop offset="100%" stop-color="#d0d0d0" />
+          </radialGradient>
+          <radialGradient id="g-cheek" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="oklch(0.82 0.14 25 / 0.75)" />
             <stop offset="100%" stop-color="oklch(0.82 0.14 25 / 0)" />
           </radialGradient>
         </defs>
 
-        <!-- Body -->
-        <circle cx="40" cy="42" r="26" fill="url(#avatar-body)" stroke="#c8c8c8" stroke-width="1" />
+        <!-- Legs -->
+        <rect x="22" y="95" width="14" height="38" rx="7"
+          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
+        <rect x="44" y="95" width="14" height="38" rx="7"
+          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
 
-        <!-- Top highlight -->
-        <ellipse cx="30" cy="28" rx="9" ry="5" fill="white" opacity="0.6" />
+        <!-- Arms -->
+        <rect x="4"  y="50" width="15" height="38" rx="7.5"
+          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
+        <rect x="61" y="50" width="15" height="38" rx="7.5"
+          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
+
+        <!-- Torso -->
+        <rect x="16" y="40" width="48" height="62" rx="18"
+          fill="url(#g-body)" stroke="#c4c4c4" stroke-width="1"/>
+
+        <!-- Head -->
+        <circle cx="40" cy="22" r="20"
+          fill="url(#g-head)" stroke="#c4c4c4" stroke-width="1"/>
+
+        <!-- Head highlight -->
+        <ellipse cx="32" cy="13" rx="7" ry="4" fill="white" opacity="0.6"/>
 
         <!-- Cheeks -->
-        <circle cx="26" cy="46" r="5" fill="url(#avatar-cheek)" />
-        <circle cx="54" cy="46" r="5" fill="url(#avatar-cheek)" />
+        <circle cx="25" cy="26" r="4.5" fill="url(#g-cheek)"/>
+        <circle cx="55" cy="26" r="4.5" fill="url(#g-cheek)"/>
 
         <!-- Eyes -->
-        <ellipse id="eye-left"  cx="32" cy="40" rx="2.6" ry="3.2" fill="#1e293b" />
-        <ellipse id="eye-right" cx="48" cy="40" rx="2.6" ry="3.2" fill="#1e293b" />
-        <circle  id="shine-left"  cx="33" cy="39" r="0.9" fill="white" />
-        <circle  id="shine-right" cx="49" cy="39" r="0.9" fill="white" />
+        <ellipse id="eye-left"    cx="33" cy="20" rx="2.6" ry="3.2" fill="#1e293b"/>
+        <ellipse id="eye-right"   cx="47" cy="20" rx="2.6" ry="3.2" fill="#1e293b"/>
+        <circle  id="shine-left"  cx="34" cy="19" r="0.9"  fill="white"/>
+        <circle  id="shine-right" cx="48" cy="19" r="0.9"  fill="white"/>
 
-        <!-- Mouth — closed smile / open talking -->
-        <path id="mouth-closed" d="M33 51 Q40 56 47 51"
-          stroke="#1e293b" stroke-width="2" stroke-linecap="round" fill="none" />
-        <path id="mouth-open" d="M32 50 Q40 59 48 50 Q40 56 32 50 Z"
-          fill="#1e293b" opacity="0.8" style="display:none;" />
+        <!-- Mouth -->
+        <path id="mouth-closed"
+          d="M34 31 Q40 36 46 31"
+          stroke="#1e293b" stroke-width="2" stroke-linecap="round" fill="none"/>
+        <path id="mouth-open"
+          d="M33 30 Q40 39 47 30 Q40 35 33 30 Z"
+          fill="#1e293b" opacity="0.8" style="display:none;"/>
+
+        <!-- Shirt detail: small collar line -->
+        <path d="M34 41 Q40 46 46 41"
+          stroke="#b0b0b0" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.5"/>
       </svg>
     </button>
   </div>
@@ -135,16 +158,16 @@
       'Captura, no olvides nada.',
     ];
 
-    const btn        = document.getElementById('avatarBtn');
-    const bubble     = document.getElementById('bubble');
-    const eyeLeft    = document.getElementById('eye-left');
-    const eyeRight   = document.getElementById('eye-right');
-    const shineLeft  = document.getElementById('shine-left');
-    const shineRight = document.getElementById('shine-right');
+    const btn         = document.getElementById('avatarBtn');
+    const bubble      = document.getElementById('bubble');
+    const eyeLeft     = document.getElementById('eye-left');
+    const eyeRight    = document.getElementById('eye-right');
+    const shineLeft   = document.getElementById('shine-left');
+    const shineRight  = document.getElementById('shine-right');
     const mouthClosed = document.getElementById('mouth-closed');
     const mouthOpen   = document.getElementById('mouth-open');
 
-    let bubbleTimer = null;
+    let bubbleTimer  = null;
     let talkInterval = null;
 
     // --- Blinking ---
@@ -164,10 +187,9 @@
         }, 160);
       }, delay);
     }
-
     scheduleBlink();
 
-    // --- Talking animation ---
+    // --- Talking mouth animation ---
     function startTalking() {
       let open = false;
       talkInterval = setInterval(() => {
@@ -178,30 +200,47 @@
     }
 
     function stopTalking() {
-      if (talkInterval) {
-        clearInterval(talkInterval);
-        talkInterval = null;
-      }
+      if (talkInterval) { clearInterval(talkInterval); talkInterval = null; }
       mouthClosed.style.display = '';
       mouthOpen.style.display   = 'none';
     }
 
+    // --- Voice (Web Speech API) ---
+    function speak(text) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang   = 'es-MX';
+      utter.rate   = 0.95;
+      utter.pitch  = 1.3;
+      utter.volume = 1.0;
+
+      // Pick a Spanish voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const esVoice = voices.find(v => v.lang.startsWith('es')) || null;
+      if (esVoice) utter.voice = esVoice;
+
+      utter.onstart = () => startTalking();
+      utter.onend   = () => {
+        stopTalking();
+        if (bubbleTimer) clearTimeout(bubbleTimer);
+        bubbleTimer = setTimeout(() => { bubble.style.display = 'none'; }, 600);
+      };
+      utter.onerror = () => stopTalking();
+
+      window.speechSynthesis.speak(utter);
+    }
+
     // --- Hover mouth ---
     btn.addEventListener('mouseover', () => {
-      if (!talkInterval) {
-        mouthClosed.style.display = 'none';
-        mouthOpen.style.display = '';
-      }
+      if (!talkInterval) { mouthClosed.style.display = 'none'; mouthOpen.style.display = ''; }
     });
-
     btn.addEventListener('mouseleave', () => {
-      if (!talkInterval) {
-        mouthClosed.style.display = '';
-        mouthOpen.style.display = 'none';
-      }
+      if (!talkInterval) { mouthClosed.style.display = ''; mouthOpen.style.display = 'none'; }
     });
 
-    // --- Click: bounce + greeting + talk ---
+    // --- Click: bounce + bubble + voice ---
     btn.addEventListener('click', () => {
       // Bounce
       btn.classList.remove('bouncing');
@@ -213,15 +252,14 @@
       const text = greetings[Math.floor(Math.random() * greetings.length)];
       bubble.textContent = text;
       bubble.style.display = 'block';
-
-      // Talk while bubble is visible
-      startTalking();
-
       if (bubbleTimer) clearTimeout(bubbleTimer);
-      bubbleTimer = setTimeout(() => {
-        bubble.style.display = 'none';
-        stopTalking();
-      }, 3000);
+
+      // Speak — voices may need a tick to load on first call
+      if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.addEventListener('voiceschanged', () => speak(text), { once: true });
+      } else {
+        speak(text);
+      }
     });
   </script>
 </body>

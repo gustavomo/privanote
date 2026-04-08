@@ -24,6 +24,7 @@ let prServiceContext = null;
 let backendStartupPromise = null;
 let isQuitting = false;
 let captureOverlay = null;
+let avatarOverlay = null;
 let captureSession = null;
 let clipboardSession = null;
 let mainWindow = null;
@@ -280,6 +281,41 @@ function createCaptureOverlay() {
   });
 
   return captureOverlay;
+}
+
+function createAvatarOverlay() {
+  if (isSmokeNoWindow) return null;
+
+  const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+
+  avatarOverlay = new BrowserWindow({
+    width: 80,
+    height: 80,
+    x: 16,
+    y: Math.round(screenHeight / 2) - 40,
+    alwaysOnTop: true,
+    frame: false,
+    transparent: true,
+    skipTaskbar: true,
+    resizable: false,
+    movable: false,
+    hasShadow: false,
+    focusable: false,
+    type: process.platform === 'darwin' ? 'panel' : undefined,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload-avatar.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  });
+
+  avatarOverlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  avatarOverlay.setAlwaysOnTop(true, 'floating');
+  avatarOverlay.loadFile(path.join(__dirname, '..', 'renderer', 'avatar-overlay', 'avatar-overlay.html'));
+  avatarOverlay.on('closed', () => { avatarOverlay = null; });
+
+  return avatarOverlay;
 }
 
 function broadcastCaptureState(state) {
@@ -1158,6 +1194,7 @@ app.whenReady().then(async () => {
   try {
     await createWindow();
     createCaptureOverlay();
+    createAvatarOverlay();
     setupTray();
 
     // Hide overlay by default until whitelist match (D-01, Pitfall 6)
@@ -1239,6 +1276,9 @@ app.on('before-quit', () => {
   if (clipboardSession) {
     clipboardSession.destroy();
     clipboardSession = null;
+  }
+  if (avatarOverlay && !avatarOverlay.isDestroyed()) {
+    avatarOverlay.close();
   }
 });
 

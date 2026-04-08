@@ -18,8 +18,6 @@ import ThemeToggle from './components/theme-toggle.jsx';
 import MediaCard from './components/media-card.jsx';
 import SettingsView from './components/settings-view.jsx';
 import TranscriptSection from './components/transcript-section.jsx';
-import FloatingAvatar from './components/floating-avatar.jsx';
-
 const captureModes = [
   { value: 'audio', label: 'Audio' },
   { value: 'video', label: 'Video' },
@@ -1692,7 +1690,6 @@ export default function App({ api }) {
       </div>
     </main>
     <Toaster />
-    <FloatingAvatar />
     </>
   );
 }
